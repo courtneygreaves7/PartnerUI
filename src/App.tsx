@@ -33,6 +33,12 @@ import { CalDdlTakeupChart } from "@/components/charts/cal-ddl-takeup-chart"
 import { LeadTimeChart } from "@/components/charts/lead-time-chart"
 import { Button } from "@/components/ui/button"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -108,6 +114,7 @@ function App() {
       >
         {/* ════ Left sidebar ════ */}
         <aside className="relative flex h-full min-h-0 flex-col overflow-visible">
+          <TooltipProvider>
           {leftSidebarOpen ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-visible">
               <div className="px-5">
@@ -116,16 +123,20 @@ function App() {
                     <SquareChartGantt className="size-5 shrink-0 text-foreground" />
                     <span className="truncate text-base font-semibold tracking-tight">Keystone</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="size-8 shrink-0"
-                    onClick={() => setLeftSidebarOpen(false)}
-                    aria-label="Minimise sidebar"
-                    title="Minimise sidebar"
-                  >
-                    <ChevronsLeft className="size-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8 shrink-0"
+                        onClick={() => setLeftSidebarOpen(false)}
+                        aria-label="Minimise sidebar"
+                      >
+                        <ChevronsLeft className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Minimise sidebar</TooltipContent>
+                  </Tooltip>
                 </div>
 
                 <nav className="mt-3 space-y-0.5">
@@ -210,6 +221,7 @@ function App() {
               </div>
             </div>
           )}
+          </TooltipProvider>
         </aside>
 
         {/* ════ Main column — wrapped panel ════ */}
