@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
-import { ArrowLeftRight, Play } from "lucide-react"
+import { ArrowLeftRight } from "lucide-react"
 
-import { CompareFilterPanel } from "@/components/compare/compare-filter-panel"
+import { CompareHeader } from "@/components/compare/compare-header"
 import { CompareMetricSection } from "@/components/compare/compare-metric-section"
 import { Button } from "@/components/ui/button"
 import {
@@ -44,29 +44,15 @@ export function ComparePage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 xl:grid-cols-2">
-        <CompareFilterPanel
-          variant="primary"
-          filters={primaryDraft}
-          onChange={setPrimaryDraft}
-          disablePartnerId={comparisonDraft.partner}
-        />
-        <CompareFilterPanel
-          variant="comparison"
-          filters={comparisonDraft}
-          onChange={setComparisonDraft}
-          disablePartnerId={primaryDraft.partner}
-        />
-      </div>
+      <CompareHeader
+        primaryDraft={primaryDraft}
+        comparisonDraft={comparisonDraft}
+        onPrimaryChange={setPrimaryDraft}
+        onComparisonChange={setComparisonDraft}
+        onRun={runComparison}
+      />
 
-      <div className="flex justify-center">
-        <Button className="min-w-52" onClick={runComparison}>
-          <Play className="size-3.5" />
-          Run comparison
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card px-5 py-4 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card px-5 py-4">
         <div className="flex min-w-0 flex-1 items-stretch gap-3">
           <span className="w-1 shrink-0 rounded-full bg-emerald-600" />
           <div className="min-w-0">

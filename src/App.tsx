@@ -8,13 +8,14 @@ import {
   Download,
   SquareChartGantt,
   ArrowLeftRight,
-  LayoutDashboard,
+  Zap,
   LogOut,
   MoonStar,
-  ShieldCheck,
+  Settings2,
   Sun,
 } from "lucide-react"
 
+import { BookingEnginePage } from "@/components/booking-engine-page"
 import { ComparePage } from "@/components/compare-page"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { LoginPage } from "@/components/login-page"
@@ -50,22 +51,24 @@ import { cn } from "@/lib/utils"
 import { type ActiveFilters, DEFAULT_FILTERS } from "@/lib/chart-data"
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Insights", icon: BarChart3, active: true },
-  { label: "Admin", icon: ShieldCheck },
+  { id: "booking-engine" as const, label: "Booking engine", icon: Zap },
+  { id: "insights" as const, label: "Insights", icon: BarChart3 },
+  { id: "admin" as const, label: "Admin", icon: Settings2 },
 ]
+
+type ActiveSection = (typeof navItems)[number]["id"]
+type InsightsView = "insights" | "compare"
 
 function SectionDivider() {
   return <div aria-hidden className="h-px w-full bg-border" />
 }
 
-type ActiveView = "insights" | "compare"
-
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true)
   const [isDark, setIsDark] = useState(false)
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
-  const [activeView, setActiveView] = useState<ActiveView>("insights")
+  const [activeSection, setActiveSection] = useState<ActiveSection>("booking-engine")
+  const [insightsView, setInsightsView] = useState<InsightsView>("insights")
   const [hasRun, setHasRun] = useState(false)
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(DEFAULT_FILTERS)
 
@@ -122,27 +125,28 @@ function App() {
                 </div>
 
                 <nav className="mt-3 space-y-0.5">
-                  {navItems.map(({ label, icon: Icon, active }) => (
-                    <a
-                      key={label}
-                      href="#"
-                      aria-current={active ? "page" : undefined}
+                  {navItems.map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setActiveSection(id)}
+                      aria-current={activeSection === id ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                        active
+                        "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        activeSection === id
                           ? "bg-accent text-accent-foreground"
                           : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                       )}
                     >
                       <Icon className="size-4 shrink-0" />
                       {label}
-                    </a>
+                    </button>
                   ))}
                 </nav>
               </div>
 
               <div className="relative z-30 mt-auto shrink-0 overflow-visible px-5 pb-6 pt-4">
-                {hasRun && <SectionNav />}
+                {activeSection === "insights" && hasRun && <SectionNav />}
                 <Button
                   variant="outline"
                   className={cn("w-full justify-center gap-2 bg-card", hasRun && "mt-4")}
@@ -169,26 +173,27 @@ function App() {
               </div>
 
               <nav className="mt-4 flex w-full flex-col items-center gap-1">
-                {navItems.map(({ label, icon: Icon, active }) => (
-                  <a
-                    key={label}
-                    href="#"
-                    aria-current={active ? "page" : undefined}
+                {navItems.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveSection(id)}
+                    aria-current={activeSection === id ? "page" : undefined}
                     title={label}
                     className={cn(
                       "flex size-9 items-center justify-center rounded-md transition-colors",
-                      active
+                      activeSection === id
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                     )}
                   >
                     <Icon className="size-4" />
-                  </a>
+                  </button>
                 ))}
               </nav>
 
               <div className="relative z-30 mt-auto flex w-full shrink-0 flex-col items-center gap-1 overflow-visible px-2 pb-4 pt-4">
-                {hasRun && <SectionNav collapsed />}
+                {activeSection === "insights" && hasRun && <SectionNav collapsed />}
                 <button
                   type="button"
                   title="Log out"
@@ -217,7 +222,13 @@ function App() {
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbPage>
-                    {activeView === "compare" ? "Compare" : "Sales metrics"}
+                    {activeSection === "booking-engine"
+                      ? "Booking engine"
+                      : activeSection === "admin"
+                        ? "Admin"
+                        : insightsView === "compare"
+                          ? "Compare"
+                          : "Insights"}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
@@ -275,15 +286,33 @@ function App() {
           <div
             className={cn(
               "grid min-h-0 flex-1 overflow-hidden",
-              activeView === "compare" ? "grid-cols-1" : "grid-cols-[1fr_300px]"
+              activeSection === "insights" && insightsView !== "compare"
+                ? "grid-cols-[1fr_300px]"
+                : "grid-cols-1"
             )}
           >
             {/* Center stage */}
             <div className="min-h-0 min-w-0 overflow-hidden">
               <section className="h-full overflow-y-auto px-20 py-12 xl:px-24 xl:py-14">
+              {activeSection === "booking-engine" ? (
+                <BookingEnginePage />
+              ) : activeSection === "admin" ? (
+                <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/10 py-14 text-center">
+                  <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
+                    <Settings2 className="size-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Admin</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Admin tools will be available here soon.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
               <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  {activeView !== "compare" && (
+                  {insightsView !== "compare" && (
                     <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1">
                       <BarChart3 className="size-3.5 text-muted-foreground" />
                       <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
@@ -292,11 +321,13 @@ function App() {
                     </div>
                   )}
                   <h1 className="text-[22px] font-semibold tracking-tight">
-                    Sales, cancellation &amp; re-let metrics
+                    {insightsView === "compare"
+                      ? "Compare partners"
+                      : "Sales, cancellation & re-let metrics"}
                   </h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {activeView === "compare"
-                      ? "Real-time across 3 partners · last updated just now"
+                    {insightsView === "compare"
+                      ? "Set filters for a primary and comparison side, then run to review metrics side by side."
                       : "Real-time across 3 partners"}
                   </p>
                 </div>
@@ -310,10 +341,10 @@ function App() {
                     variant="outline"
                     className="text-xs"
                     onClick={() =>
-                      setActiveView((view) => (view === "compare" ? "insights" : "compare"))
+                      setInsightsView((view) => (view === "compare" ? "insights" : "compare"))
                     }
                   >
-                    {activeView === "compare" ? (
+                    {insightsView === "compare" ? (
                       <>
                         <ArrowLeftRight className="size-3.5" />
                         Exit compare
@@ -332,7 +363,7 @@ function App() {
                 </div>
               </div>
 
-              {activeView === "compare" ? (
+              {insightsView === "compare" ? (
                 <ComparePage />
               ) : !hasRun ? (
                 <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/10 py-14 text-center">
@@ -393,10 +424,12 @@ function App() {
                   </div>
                 </div>
               )}
+                </>
+              )}
               </section>
             </div>
 
-            {activeView !== "compare" && (
+            {activeSection === "insights" && insightsView !== "compare" && (
               <FilterSidebar
                 onRun={(filters) => {
                   setActiveFilters(filters)
