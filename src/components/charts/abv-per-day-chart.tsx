@@ -25,16 +25,23 @@ const SERIES = [
 
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
 
-export function AbvPerDayChart({ filters }: { filters: ActiveFilters }) {
+type AbvPerDayChartProps = {
+  filters: ActiveFilters
+  compact?: boolean
+}
+
+export function AbvPerDayChart({ filters, compact }: AbvPerDayChartProps) {
   const data = buildAbvPerDayData(filters)
 
   return (
     <section>
-      <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
-        ABV (excl. fees) per day
-      </h2>
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
-        <ResponsiveContainer width="100%" height={280}>
+      {!compact && (
+        <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
+          ABV (excl. fees) per day
+        </h2>
+      )}
+      <div className={compact ? "p-0" : "rounded-xl border border-border bg-card p-4 shadow-xs"}>
+        <ResponsiveContainer width="100%" height={compact ? 200 : 280}>
           <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis

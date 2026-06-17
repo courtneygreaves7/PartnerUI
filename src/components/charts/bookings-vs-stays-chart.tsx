@@ -15,16 +15,23 @@ import { type ActiveFilters, buildDailyBookingsData } from "@/lib/chart-data"
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
 const EVERY_NTH = 13
 
-export function BookingsVsStaysChart({ filters }: { filters: ActiveFilters }) {
+type BookingsVsStaysChartProps = {
+  filters: ActiveFilters
+  compact?: boolean
+}
+
+export function BookingsVsStaysChart({ filters, compact }: BookingsVsStaysChartProps) {
   const data = buildDailyBookingsData(filters)
 
   return (
     <section>
-      <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
-        Bookings made vs stays starting per day
-      </h2>
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
-        <ResponsiveContainer width="100%" height={260}>
+      {!compact && (
+        <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
+          Bookings made vs stays starting per day
+        </h2>
+      )}
+      <div className={compact ? "p-0" : "rounded-xl border border-border bg-card p-4 shadow-xs"}>
+        <ResponsiveContainer width="100%" height={compact ? 200 : 260}>
           <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis

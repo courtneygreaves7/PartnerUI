@@ -25,16 +25,23 @@ const SERIES = [
 
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
 
-export function LeadTimeChart({ filters }: { filters: ActiveFilters }) {
+type LeadTimeChartProps = {
+  filters: ActiveFilters
+  compact?: boolean
+}
+
+export function LeadTimeChart({ filters, compact }: LeadTimeChartProps) {
   const data = buildLeadTimeData(filters)
 
   return (
     <section>
-      <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
-        Avg booking to stay lead time per day
-      </h2>
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
-        <ResponsiveContainer width="100%" height={260}>
+      {!compact && (
+        <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
+          Avg booking to stay lead time per day
+        </h2>
+      )}
+      <div className={compact ? "p-0" : "rounded-xl border border-border bg-card p-4 shadow-xs"}>
+        <ResponsiveContainer width="100%" height={compact ? 200 : 260}>
           <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis

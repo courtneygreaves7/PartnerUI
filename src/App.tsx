@@ -290,17 +290,18 @@ function App() {
           <div
             className={cn(
               "grid min-h-0 flex-1 overflow-hidden",
-              activeSection === "insights" && insightsView !== "compare"
+              activeSection === "insights" && insightsView !== "compare" && insightsView !== "dashboard"
                 ? "grid-cols-[1fr_300px]"
                 : "grid-cols-1"
             )}
           >
             {/* Center stage */}
-            <div className="min-h-0 min-w-0 overflow-hidden">
+            <div className={cn("min-h-0 min-w-0 overflow-hidden", insightsView === "dashboard" && "flex flex-col")}>
               <section
                 className={cn(
-                  "h-full overflow-y-auto",
-                  insightsView === "dashboard" ? "px-8 py-10 xl:px-10 xl:py-12" : "px-20 py-12 xl:px-24 xl:py-14"
+                  insightsView === "dashboard"
+                    ? "flex min-h-0 flex-1 flex-col px-6 py-5 xl:px-8"
+                    : "h-full overflow-y-auto px-20 py-12 xl:px-24 xl:py-14"
                 )}
               >
               {activeSection === "booking-engine" ? (
@@ -319,7 +320,7 @@ function App() {
                 </div>
               ) : (
                 <>
-              <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+              <div className={cn("flex flex-wrap items-start justify-between gap-4", insightsView === "dashboard" ? "mb-4 shrink-0" : "mb-8")}>
                 <div>
                   {insightsView !== "compare" && (
                     <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1">
@@ -405,6 +406,15 @@ function App() {
 
               {insightsView === "compare" ? (
                 <ComparePage />
+              ) : insightsView === "dashboard" ? (
+                <InsightsDashboardPage
+                  filters={activeFilters}
+                  hasRun={hasRun}
+                  onRun={(filters) => {
+                    setActiveFilters(filters)
+                    setHasRun(true)
+                  }}
+                />
               ) : !hasRun ? (
                 <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/10 py-14 text-center">
                   <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
@@ -417,8 +427,6 @@ function App() {
                     </p>
                   </div>
                 </div>
-              ) : insightsView === "dashboard" ? (
-                <InsightsDashboardPage filters={activeFilters} />
               ) : (
                 <div>
                   <div id="section-bookings" className="scroll-mt-6 py-8">
@@ -471,7 +479,7 @@ function App() {
               </section>
             </div>
 
-            {activeSection === "insights" && insightsView !== "compare" && (
+            {activeSection === "insights" && insightsView !== "compare" && insightsView !== "dashboard" && (
               <FilterSidebar
                 onRun={(filters) => {
                   setActiveFilters(filters)

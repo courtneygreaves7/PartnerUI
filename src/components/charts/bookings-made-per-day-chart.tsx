@@ -13,16 +13,23 @@ import { type ActiveFilters, buildBookingsMadePerDayData } from "@/lib/chart-dat
 
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
 
-export function BookingsMadePerDayChart({ filters }: { filters: ActiveFilters }) {
+type BookingsMadePerDayChartProps = {
+  filters: ActiveFilters
+  compact?: boolean
+}
+
+export function BookingsMadePerDayChart({ filters, compact }: BookingsMadePerDayChartProps) {
   const data = buildBookingsMadePerDayData(filters)
 
   return (
     <section>
-      <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
-        Bookings made per day
-      </h2>
-      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
-        <ResponsiveContainer width="100%" height={240}>
+      {!compact && (
+        <h2 className="mb-4 text-xs font-semibold tracking-wide uppercase">
+          Bookings made per day
+        </h2>
+      )}
+      <div className={compact ? "p-0" : "rounded-xl border border-border bg-card p-4 shadow-xs"}>
+        <ResponsiveContainer width="100%" height={compact ? 200 : 240}>
           <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barSize={4}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
             <XAxis
