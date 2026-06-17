@@ -58,6 +58,8 @@ type KpiCard = {
 type DashboardSlide = {
   id: string
   title: string
+  heading: string
+  description: string
   content: ReactNode
 }
 
@@ -155,7 +157,17 @@ function DashboardCarousel({ slides }: { slides: DashboardSlide[] }) {
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-5">{current.content}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="px-5 pt-12 pb-6">
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold">{current.heading}</h3>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+              {current.description}
+            </p>
+          </div>
+          <div className="w-full">{current.content}</div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -250,16 +262,25 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     {
       id: "bookings",
       title: "Bookings",
+      heading: "Booking volume & take-up",
+      description:
+        "Total bookings alongside CAL and DDL sales and take-up rates for your selected partners, brands and period.",
       content: <KpiGrid kpis={bookingKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" />,
     },
     {
       id: "abv",
       title: "Average booking value",
+      heading: "Average booking value",
+      description:
+        "ABV in GBP and EUR, with and without booking fees, plus CAL customer price as a share of ABV.",
       content: <KpiGrid kpis={abvKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" />,
     },
     {
       id: "cal-financials",
       title: "CAL financials (GBP)",
+      heading: "CAL financials",
+      description:
+        "Premium breakdown in GBP — payable totals, IPT, commissions, capacity net and gross written premium.",
       content: (
         <KpiGrid kpis={calFinancialKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" />
       ),
@@ -267,36 +288,57 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     {
       id: "timing",
       title: "Timing",
+      heading: "Booking & cancellation timing",
+      description:
+        "Average lead time from booking to stay start, by currency, plus days from cancellation to stay.",
       content: <KpiGrid kpis={timingKpis} columns="grid-cols-1 sm:grid-cols-3" />,
     },
     {
       id: "bookings-vs-stays",
       title: "Bookings vs stays per day",
+      heading: "Bookings made vs stays starting",
+      description:
+        "Daily trend comparing new bookings against stays commencing, useful for spotting demand vs occupancy shifts.",
       content: <BookingsVsStaysChart filters={filters} compact />,
     },
     {
       id: "cal-ddl-takeup",
       title: "CAL & DDL take-up %",
+      heading: "CAL & DDL take-up",
+      description:
+        "Daily take-up percentages for cancellation liability and deposit loss cover, including partner-level splits.",
       content: <CalDdlTakeupChart filters={filters} compact />,
     },
     {
       id: "lead-time",
       title: "Lead time per day",
+      heading: "Lead time per day",
+      description:
+        "How far in advance guests book, tracked daily across total volume and individual partners.",
       content: <LeadTimeChart filters={filters} compact />,
     },
     {
       id: "abv-per-day",
       title: "ABV per day",
+      heading: "ABV per day",
+      description:
+        "Daily average booking value excluding fees, broken down by partner for the filtered period.",
       content: <AbvPerDayChart filters={filters} compact />,
     },
     {
       id: "bookings-per-day",
       title: "Bookings made per day",
+      heading: "Bookings made per day",
+      description:
+        "Daily booking count across the selected filters — a quick read on volume momentum through the month.",
       content: <BookingsMadePerDayChart filters={filters} compact />,
     },
     {
       id: "partners",
       title: "Partner performance",
+      heading: "Partner performance",
+      description:
+        "Side-by-side bookings, CAL and DDL totals by brand and currency for the active filter set.",
       content: (
         <Table>
           <TableHeader>
