@@ -7,6 +7,7 @@ import {
   ChevronsRight,
   Download,
   SquareChartGantt,
+  ArrowLeftRight,
   LayoutDashboard,
   LogOut,
   MoonStar,
@@ -14,6 +15,7 @@ import {
   Sun,
 } from "lucide-react"
 
+import { ComparePage } from "@/components/compare-page"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { LoginPage } from "@/components/login-page"
 import { SectionNav } from "@/components/section-nav"
@@ -57,10 +59,13 @@ function SectionDivider() {
   return <div aria-hidden className="h-px w-full bg-border" />
 }
 
+type ActiveView = "insights" | "compare"
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true)
   const [isDark, setIsDark] = useState(false)
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
+  const [activeView, setActiveView] = useState<ActiveView>("insights")
   const [hasRun, setHasRun] = useState(false)
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(DEFAULT_FILTERS)
 
@@ -211,11 +216,9 @@ function App() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="#">Insights</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Sales metrics</BreadcrumbPage>
+                  <BreadcrumbPage>
+                    {activeView === "compare" ? "Compare" : "Sales metrics"}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -269,23 +272,32 @@ function App() {
           </header>
 
           {/* ── Center + right sidebar ── */}
-          <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px] overflow-hidden">
+          <div
+            className={cn(
+              "grid min-h-0 flex-1 overflow-hidden",
+              activeView === "compare" ? "grid-cols-1" : "grid-cols-[1fr_300px]"
+            )}
+          >
             {/* Center stage */}
             <div className="min-h-0 min-w-0 overflow-hidden">
               <section className="h-full overflow-y-auto px-20 py-12 xl:px-24 xl:py-14">
               <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1">
-                    <BarChart3 className="size-3.5 text-muted-foreground" />
-                    <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                      Analytics
-                    </span>
-                  </div>
+                  {activeView !== "compare" && (
+                    <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1">
+                      <BarChart3 className="size-3.5 text-muted-foreground" />
+                      <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+                        Analytics
+                      </span>
+                    </div>
+                  )}
                   <h1 className="text-[22px] font-semibold tracking-tight">
                     Sales, cancellation &amp; re-let metrics
                   </h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Real-time across 3 partners
+                    {activeView === "compare"
+                      ? "Real-time across 3 partners · last updated just now"
+                      : "Real-time across 3 partners"}
                   </p>
                 </div>
 
@@ -294,9 +306,24 @@ function App() {
                     <Calendar className="size-3.5" />
                     Schedule report
                   </Button>
-                  <Button variant="outline" className="text-xs">
-                    <ArrowUpRight className="size-3.5" />
-                    Compare
+                  <Button
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() =>
+                      setActiveView((view) => (view === "compare" ? "insights" : "compare"))
+                    }
+                  >
+                    {activeView === "compare" ? (
+                      <>
+                        <ArrowLeftRight className="size-3.5" />
+                        Exit compare
+                      </>
+                    ) : (
+                      <>
+                        <ArrowUpRight className="size-3.5" />
+                        Compare
+                      </>
+                    )}
                   </Button>
                   <Button className="text-xs">
                     <Download className="size-3.5" />
@@ -305,7 +332,9 @@ function App() {
                 </div>
               </div>
 
-              {!hasRun ? (
+              {activeView === "compare" ? (
+                <ComparePage />
+              ) : !hasRun ? (
                 <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/10 py-14 text-center">
                   <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
                     <BarChart3 className="size-6" />
@@ -367,13 +396,14 @@ function App() {
               </section>
             </div>
 
-            {/* Filter sidebar */}
-            <FilterSidebar
-              onRun={(filters) => {
-                setActiveFilters(filters)
-                setHasRun(true)
-              }}
-            />
+            {activeView !== "compare" && (
+              <FilterSidebar
+                onRun={(filters) => {
+                  setActiveFilters(filters)
+                  setHasRun(true)
+                }}
+              />
+            )}
           </div>
 
           </div>{/* end rounded panel */}
