@@ -139,13 +139,14 @@ body {
   margin-top: 2px;
 }
 
-[data-snapshot-pill] {
+[data-snapshot-pill],
+[data-snapshot-filter-chip] {
   display: inline-block;
   box-sizing: border-box;
   height: 2rem;
   padding-inline: 1rem;
   padding-block: 0;
-  border: 1px solid transparent;
+  border-radius: 9999px;
   text-align: center;
   vertical-align: middle;
   font-size: 11px;
@@ -154,8 +155,13 @@ body {
   white-space: nowrap;
 }
 
+[data-snapshot-filter-chip] {
+  border: 1px solid var(--border);
+}
+
 button[data-snapshot-pill] {
   appearance: none;
   cursor: pointer;
   font-family: inherit;
+  border: 1px solid transparent;
 }

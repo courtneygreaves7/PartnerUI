@@ -531,8 +531,8 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
                 {filterChips.map((chip) => (
                   <span
                     key={chip}
-                    className="rounded-full border border-border bg-card text-muted-foreground"
-                    data-snapshot-pill
+                    className="text-muted-foreground"
+                    data-snapshot-filter-chip
                   >
                     {chip}
                   </span>

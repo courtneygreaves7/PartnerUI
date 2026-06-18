@@ -66,7 +66,9 @@ function restoreElementStyles(resets: StyleReset[]) {
 }
 
 function fixSnapshotAlignment(root: HTMLElement) {
-  root.querySelectorAll<HTMLElement>("[data-snapshot-pill]").forEach((pill) => {
+  root
+    .querySelectorAll<HTMLElement>("[data-snapshot-pill], [data-snapshot-filter-chip]")
+    .forEach((pill) => {
     pill.style.display = "inline-block"
     pill.style.boxSizing = "border-box"
     pill.style.height = "32px"
@@ -75,6 +77,7 @@ function fixSnapshotAlignment(root: HTMLElement) {
     pill.style.paddingBottom = "0"
     pill.style.paddingLeft = "16px"
     pill.style.paddingRight = "16px"
+    pill.style.borderRadius = "9999px"
     pill.style.textAlign = "center"
     pill.style.verticalAlign = "middle"
     pill.style.fontSize = "11px"
@@ -82,7 +85,12 @@ function fixSnapshotAlignment(root: HTMLElement) {
     pill.style.margin = "0"
     pill.style.whiteSpace = "nowrap"
 
-    if (getComputedStyle(pill).borderWidth === "0px") {
+    if (pill.hasAttribute("data-snapshot-filter-chip")) {
+      const borderColor =
+        getComputedStyle(document.documentElement).getPropertyValue("--border").trim() ||
+        "#d5e0ea"
+      pill.style.border = `1px solid ${borderColor}`
+    } else if (getComputedStyle(pill).borderWidth === "0px") {
       pill.style.border = "1px solid transparent"
     }
   })
