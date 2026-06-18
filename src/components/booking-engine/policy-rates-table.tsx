@@ -40,10 +40,7 @@ export function PolicyRatesTable({ policies, selectedBrandId }: PolicyRatesTable
             return (
               <TableRow
                 key={policy.id}
-                className={cn(
-                  isHighlighted && "bg-muted/40",
-                  !isActive && "text-muted-foreground"
-                )}
+                className={cn(isHighlighted && "bg-muted/40")}
               >
                 <TableCell className="px-5 py-4">
                   <div className="flex items-start gap-2">
@@ -54,7 +51,12 @@ export function PolicyRatesTable({ policies, selectedBrandId }: PolicyRatesTable
                       )}
                     />
                     <div>
-                      <p className={cn("font-medium", !isActive && "font-normal")}>
+                      <p
+                        className={cn(
+                          "font-medium text-foreground",
+                          !isActive && "font-normal text-muted-foreground"
+                        )}
+                      >
                         {policy.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -63,19 +65,19 @@ export function PolicyRatesTable({ policies, selectedBrandId }: PolicyRatesTable
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums">
+                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums text-foreground">
                   {formatRate(policy.netRate)}
                 </TableCell>
-                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums">
+                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums text-foreground">
                   {formatRate(policy.grossRate)}
                 </TableCell>
-                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums">
+                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums text-foreground">
                   {policy.calCommission > 0 ? `${formatRate(policy.calCommission)}%` : "—"}
                 </TableCell>
-                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums">
+                <TableCell className="px-5 py-4 text-right font-mono text-sm tabular-nums text-foreground">
                   {formatCurrency(policy.maxLiability, policy.currency)}
                 </TableCell>
-                <TableCell className="px-5 py-4 text-sm">{policy.currency}</TableCell>
+                <TableCell className="px-5 py-4 text-sm text-foreground">{policy.currency}</TableCell>
               </TableRow>
             )
           })}
