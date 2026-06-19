@@ -1,14 +1,8 @@
 import {
   Bath,
-  BedDouble,
   Car,
   Flame,
-  Home,
-  MapPin,
-  PawPrint,
-  Star,
   TreePine,
-  Users,
   Waves,
   Wifi,
   Wine,
@@ -16,23 +10,13 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { DataSnapshotWidget } from "@/components/widgets/data-snapshot-widget"
 import {
   type PropertyDetails,
   type PropertyFeatureId,
-  type PropertyOverviewField,
 } from "@/lib/property-details-data"
-
-const OVERVIEW_ICONS: Record<string, LucideIcon> = {
-  Type: Home,
-  Grade: Star,
-  Location: MapPin,
-  Guests: Users,
-  Bedrooms: BedDouble,
-  Bathrooms: Bath,
-  Pets: PawPrint,
-}
 
 const FEATURE_ICONS: Record<PropertyFeatureId, LucideIcon> = {
   pool: Waves,
@@ -44,28 +28,6 @@ const FEATURE_ICONS: Record<PropertyFeatureId, LucideIcon> = {
   wifi: Wifi,
 }
 
-function OverviewCard({ field }: { field: PropertyOverviewField }) {
-  const Icon = OVERVIEW_ICONS[field.label] ?? Home
-
-  return (
-    <Card className="flex h-full flex-col overflow-hidden bg-card shadow-xs">
-      <CardHeader className="items-center border-b border-border/60 bg-muted/25 p-3 pb-2">
-        <div className="flex items-center gap-2">
-          <div className="grid size-6 shrink-0 place-items-center rounded-md bg-canvas text-muted-foreground dark:bg-muted">
-            <Icon className="size-3" />
-          </div>
-          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-            {field.label}
-          </p>
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col bg-card p-3 pt-0 dark:bg-muted/10">
-        <p className="text-base font-medium tracking-tight">{field.value}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
 type PropertyDetailsProps = {
   details: PropertyDetails
 }
@@ -73,10 +35,14 @@ type PropertyDetailsProps = {
 export function PropertyDetailsPanel({ details }: PropertyDetailsProps) {
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        {details.overview.map((field) => (
-          <OverviewCard key={field.label} field={field} />
-        ))}
+      <div className="@container min-w-0">
+        <DataSnapshotWidget
+          title="Overview"
+          rows={details.overview.map((field) => ({
+            label: field.label,
+            value: field.value,
+          }))}
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">

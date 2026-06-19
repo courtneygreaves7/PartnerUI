@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react"
 
 import { PolicyRatesTable } from "@/components/booking-engine/policy-rates-table"
+import { DualDataWidget } from "@/components/dual-data-widget"
 import { Button } from "@/components/ui/button"
 import {
   formatCount,
@@ -37,6 +38,14 @@ export function PartnerCard({ partner, expanded, onToggle, onViewProperty }: Par
   )
 
   const visiblePolicies = partner.policies
+  const calPct =
+    partner.activity.bookings > 0
+      ? `${Math.round((partner.activity.withCal / partner.activity.bookings) * 100)}%`
+      : "0%"
+  const ddlPct =
+    partner.activity.bookings > 0
+      ? `${Math.round((partner.activity.withDdl / partner.activity.bookings) * 100)}%`
+      : "0%"
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -81,33 +90,34 @@ export function PartnerCard({ partner, expanded, onToggle, onViewProperty }: Par
 
       {expanded && (
         <div className="border-t border-border">
-          <div className="grid lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className="space-y-8 border-border px-7 py-7 dark:bg-card lg:border-r">
-              <div>
-                <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                  Activity
-                </p>
-                <dl className="mt-4 grid grid-cols-2 gap-4">
-                  {[
-                    { label: "Bookings", value: partner.activity.bookings },
-                    { label: "Properties", value: partner.activity.properties },
-                    { label: "With CAL", value: partner.activity.withCal },
-                    { label: "With DDL", value: partner.activity.withDdl },
-                  ].map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="rounded-lg border border-border bg-canvas px-3.5 py-3 dark:bg-canvas"
-                    >
-                      <dt className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                        {stat.label}
-                      </dt>
-                      <dd className="mt-0.5 text-sm font-semibold tabular-nums">
-                        {formatCount(stat.value)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
+          <div className="grid lg:grid-cols-[280px_minmax(0,1fr)]">
+            <aside className="space-y-4 border-border px-5 py-5 dark:bg-card lg:border-r">
+              <DualDataWidget
+                primaryTitle="Volume"
+                datasetA={{
+                  title: "Bookings",
+                  value: formatCount(partner.activity.bookings),
+                  clarification: "Total bookings",
+                }}
+                datasetB={{
+                  title: "Properties",
+                  value: formatCount(partner.activity.properties),
+                  clarification: "On platform",
+                }}
+              />
+              <DualDataWidget
+                primaryTitle="Product uptake"
+                datasetA={{
+                  title: "With CAL",
+                  value: formatCount(partner.activity.withCal),
+                  clarification: `${calPct} of bookings`,
+                }}
+                datasetB={{
+                  title: "With DDL",
+                  value: formatCount(partner.activity.withDdl),
+                  clarification: `${ddlPct} of bookings`,
+                }}
+              />
 
               <div>
                 <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">

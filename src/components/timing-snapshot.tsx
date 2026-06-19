@@ -19,6 +19,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { type ActiveFilters, getTimingProfile } from "@/lib/chart-data"
+import {
+  INSIGHTS_WIDGET_HELP_TEXT,
+  INSIGHTS_WIDGET_SUBHEADING,
+} from "@/lib/insights-widget-labels"
 
 const BASE_TIMING_ROWS = [
   { brand: "Partner Alpha",       ccy: "GBP", color: "bg-blue-500"   },
@@ -114,7 +118,7 @@ export function TimingSnapshot({ filters }: { filters: ActiveFilters }) {
         <div className="@container min-w-0">
           <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,240px)]">
           <DualDataWidget
-            primaryTitle="Avg booking to stay"
+            primaryTitle={INSIGHTS_WIDGET_SUBHEADING}
             datasetA={{
               title: "GBP",
               value: profile.gbpDays,
@@ -125,13 +129,13 @@ export function TimingSnapshot({ filters }: { filters: ActiveFilters }) {
               value: profile.eurDays,
               clarification: profile.eurCal,
             }}
-            helpText="Average number of days between booking date and stay start date, with CAL average shown below."
+            helpText={INSIGHTS_WIDGET_HELP_TEXT}
           />
           <HeadlineDataWidget
-            title="Avg cancellation to stay"
+            title={INSIGHTS_WIDGET_SUBHEADING}
             value="—"
             label="Days from cancellation to stay start"
-            helpText="Average number of days between cancellation date and stay start date."
+            helpText={INSIGHTS_WIDGET_HELP_TEXT}
           />
         </div>
         </div>

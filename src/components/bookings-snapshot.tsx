@@ -19,6 +19,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { type ActiveFilters, getBookingProfile } from "@/lib/chart-data"
+import {
+  INSIGHTS_WIDGET_HELP_TEXT,
+  INSIGHTS_WIDGET_SUBHEADING,
+} from "@/lib/insights-widget-labels"
 
 const BASE_PARTNER_ROWS = [
   { brand: "Partner Alpha", ccy: "GBP", color: "bg-blue-500" },
@@ -114,24 +118,24 @@ export function BookingsSnapshot({ filters }: { filters: ActiveFilters }) {
       <div className="@container min-w-0">
         <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
           <HeadlineDataWidget
-            title="Total bookings"
+            title={INSIGHTS_WIDGET_SUBHEADING}
             value={profile.total}
             label="All selected partners and brands"
-            helpText="Total number of bookings across all selected partners and brands."
+            helpText={INSIGHTS_WIDGET_HELP_TEXT}
           />
           <DualDataWidget
-            primaryTitle="Payment method split"
+            primaryTitle={INSIGHTS_WIDGET_SUBHEADING}
             datasetA={{
-              title: "CAL sales",
+              title: "CAL",
               value: profile.calSales,
               clarification: `${profile.calPct} take-up`,
             }}
             datasetB={{
-              title: "DDL sales",
+              title: "DDL",
               value: profile.ddlSales,
               clarification: `${profile.ddlPct} take-up`,
             }}
-            helpText="Compare CAL and DDL sales volume and conversion rates side by side."
+            helpText={INSIGHTS_WIDGET_HELP_TEXT}
           />
         </div>
       </div>
