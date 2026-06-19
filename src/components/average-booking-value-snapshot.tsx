@@ -112,7 +112,7 @@ export function AverageBookingValueSnapshot({ filters }: { filters: ActiveFilter
         }
       >
         <div className="@container min-w-0">
-          <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 @md:grid-cols-2 @4xl:grid-cols-3">
           <DualDataWidget
             primaryTitle="ABV (excl. booking fee)"
             datasetA={{
@@ -141,12 +141,14 @@ export function AverageBookingValueSnapshot({ filters }: { filters: ActiveFilter
             }}
             helpText="Average booking value including the booking fee, with CAL ABV shown below each currency."
           />
+          <div className="@md:col-span-2 @4xl:col-span-1">
           <HeadlineDataWidget
             title="CAL customer price"
             value={profile.calPct}
             label="% of ABV inc. booking fee"
             helpText="Share of customer price against ABV including booking fee."
           />
+          </div>
         </div>
         </div>
 

@@ -16,10 +16,12 @@ export function HeadlineDataWidget({ title, value, label, helpText }: HeadlineDa
         <WidgetHelpButton title={title} helpText={helpText} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col justify-between pb-5 pt-4">
-        <p className="text-3xl font-bold tracking-tight tabular-nums text-foreground @sm:text-4xl">
-          {value}
-        </p>
+      <CardContent className="flex flex-1 flex-col pb-5">
+        <div className="flex flex-1 items-center">
+          <p className="text-3xl font-bold tracking-tight tabular-nums text-foreground @sm:text-4xl">
+            {value}
+          </p>
+        </div>
         <p className="text-xs italic text-muted-foreground @sm:text-sm">{label}</p>
       </CardContent>
     </Card>

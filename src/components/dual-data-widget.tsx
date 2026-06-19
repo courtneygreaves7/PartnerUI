@@ -41,7 +41,7 @@ export function DualDataWidget({
         <WidgetHelpButton title={primaryTitle} helpText={helpText} />
       </CardHeader>
 
-      <CardContent className="pb-5">
+      <CardContent className="flex flex-1 flex-col justify-center pb-5">
         <div className="flex min-w-0 items-stretch">
           <div className="min-w-0 flex-1 pr-3 @sm:pr-6">
             <DatasetColumn {...datasetA} />
