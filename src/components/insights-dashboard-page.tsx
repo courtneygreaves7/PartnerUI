@@ -67,6 +67,8 @@ type KpiCard = {
 type DashboardSlide = {
   id: string
   title: string
+  heading: string
+  description: string
   content: ReactNode
 }
 
@@ -111,46 +113,43 @@ function KpiGrid({ kpis, columns }: { kpis: KpiCard[]; columns: string }) {
   )
 }
 
-function DashboardPanel({
+function DashboardCarousel({
   slides,
-  className,
+  onExport,
+  isExporting,
 }: {
   slides: DashboardSlide[]
-  className?: string
+  onExport: (slideId: string) => void
+  isExporting: boolean
 }) {
   const [index, setIndex] = useState(0)
   const current = slides[index]
 
   function goPrev() {
-    setIndex((i) => (i === 0 ? slides.length - 1 : i - 1))
+    setIndex((currentIndex) => (currentIndex === 0 ? slides.length - 1 : currentIndex - 1))
   }
 
   function goNext() {
-    setIndex((i) => (i === slides.length - 1 ? 0 : i + 1))
+    setIndex((currentIndex) => (currentIndex === slides.length - 1 ? 0 : currentIndex + 1))
   }
 
   return (
-    <div
-      className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs",
-        className
-      )}
-    >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3.5">
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="size-7 shrink-0"
+          className="size-8 shrink-0"
           onClick={goPrev}
           aria-label="Previous section"
         >
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="size-4" />
         </Button>
 
         <div className="min-w-0 flex-1 text-center">
-          <h2 className="truncate text-sm font-semibold">{current.title}</h2>
-          <p className="text-[10px] text-muted-foreground">
+          <h2 className="truncate text-base font-semibold">{current.title}</h2>
+          <p className="text-xs text-muted-foreground">
             {index + 1} of {slides.length}
           </p>
         </div>
@@ -159,37 +158,60 @@ function DashboardPanel({
           type="button"
           variant="outline"
           size="icon"
-          className="size-7 shrink-0"
+          className="size-8 shrink-0"
           onClick={goNext}
           aria-label="Next section"
         >
-          <ChevronRight className="size-3.5" />
+          <ChevronRight className="size-4" />
         </Button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--panel-bg)]">
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4" data-snapshot-scroll>
-          <div className="w-full">{current.content}</div>
+      <div className="flex min-h-0 flex-1 flex-col bg-card">
+        <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border bg-card px-4 py-3">
+          {slides.map((slide, slideIndex) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => setIndex(slideIndex)}
+              className={cn(
+                "shrink-0 rounded-full border border-transparent transition-colors",
+                slideIndex === index
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+              data-snapshot-pill
+            >
+              {slide.title}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--panel-bg)]" data-snapshot-scroll>
+          <div className="px-5 pt-8 pb-6">
+            <div className="mb-5">
+              <h3 className="text-sm font-semibold">{current.heading}</h3>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                {current.description}
+              </p>
+            </div>
+            <div className="w-full">{current.content}</div>
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-function DashboardGrid({
-  topLeftSlides,
-  topRightSlides,
-  bottomSlides,
-}: {
-  topLeftSlides: DashboardSlide[]
-  topRightSlides: DashboardSlide[]
-  bottomSlides: DashboardSlide[]
-}) {
-  return (
-    <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-[minmax(0,1fr)_minmax(0,1.15fr)] gap-3">
-      <DashboardPanel slides={topLeftSlides} className="min-h-0" />
-      <DashboardPanel slides={topRightSlides} className="min-h-0" />
-      <DashboardPanel slides={bottomSlides} className="col-span-2 min-h-0" />
+      <div className="flex shrink-0 items-center justify-end border-t border-border bg-card px-4 py-3" data-snapshot-exclude>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={() => onExport(current.id)}
+          disabled={isExporting}
+        >
+          <Camera className="size-3.5" />
+          {isExporting ? "Exporting…" : "Export snapshot"}
+        </Button>
+      </div>
     </div>
   )
 }
@@ -351,61 +373,87 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     },
   ]
 
-  const topLeftSlides: DashboardSlide[] = [
+  const slides: DashboardSlide[] = [
     {
       id: "bookings",
       title: "Bookings",
-      content: <KpiGrid kpis={bookingKpis} columns="grid-cols-2" />,
+      heading: "Booking volume & take-up",
+      description:
+        "Total bookings alongside CAL and DDL sales and take-up rates for your selected partners, brands and period.",
+      content: <KpiGrid kpis={bookingKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" />,
     },
     {
       id: "abv",
       title: "Average booking value",
-      content: <KpiGrid kpis={abvKpis} columns="grid-cols-2" />,
+      heading: "Average booking value",
+      description:
+        "ABV in GBP and EUR, with and without booking fees, plus CAL customer price as a share of ABV.",
+      content: <KpiGrid kpis={abvKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" />,
     },
-  ]
-
-  const topRightSlides: DashboardSlide[] = [
     {
       id: "cal-financials",
       title: "CAL financials (GBP)",
-      content: <KpiGrid kpis={calFinancialKpis} columns="grid-cols-2" />,
+      heading: "CAL financials",
+      description:
+        "Premium breakdown in GBP — payable totals, IPT, commissions, capacity net and gross written premium.",
+      content: (
+        <KpiGrid kpis={calFinancialKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" />
+      ),
     },
     {
       id: "timing",
       title: "Timing",
-      content: <KpiGrid kpis={timingKpis} columns="grid-cols-1" />,
+      heading: "Booking & cancellation timing",
+      description:
+        "Average lead time from booking to stay start, by currency, plus days from cancellation to stay.",
+      content: <KpiGrid kpis={timingKpis} columns="grid-cols-1 sm:grid-cols-3" />,
     },
-  ]
-
-  const bottomSlides: DashboardSlide[] = [
     {
       id: "bookings-vs-stays",
       title: "Bookings vs stays per day",
+      heading: "Bookings made vs stays starting",
+      description:
+        "Daily trend comparing new bookings against stays commencing, useful for spotting demand vs occupancy shifts.",
       content: <BookingsVsStaysChart filters={filters} compact />,
     },
     {
       id: "cal-ddl-takeup",
       title: "CAL & DDL take-up %",
+      heading: "CAL & DDL take-up",
+      description:
+        "Daily take-up percentages for cancellation liability and deposit loss cover, including partner-level splits.",
       content: <CalDdlTakeupChart filters={filters} compact />,
     },
     {
       id: "lead-time",
       title: "Lead time per day",
+      heading: "Lead time per day",
+      description:
+        "How far in advance guests book, tracked daily across total volume and individual partners.",
       content: <LeadTimeChart filters={filters} compact />,
     },
     {
       id: "abv-per-day",
       title: "ABV per day",
+      heading: "ABV per day",
+      description:
+        "Daily average booking value excluding fees, broken down by partner for the filtered period.",
       content: <AbvPerDayChart filters={filters} compact />,
     },
     {
       id: "bookings-per-day",
       title: "Bookings made per day",
+      heading: "Bookings made per day",
+      description:
+        "Daily booking count across the selected filters — a quick read on volume momentum through the month.",
       content: <BookingsMadePerDayChart filters={filters} compact />,
     },
     {
       id: "partners",
       title: "Partner performance",
+      heading: "Partner performance",
+      description:
+        "Side-by-side bookings, CAL and DDL totals by brand and currency for the active filter set.",
       content: (
         <Table>
           <TableHeader>
@@ -444,14 +492,14 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     },
   ]
 
-  async function handleExportSnapshot() {
+  async function handleExportSnapshot(slideId: string) {
     if (!snapshotRef.current || isExporting) return
 
     setIsExporting(true)
     try {
       await exportElementSnapshot(
         snapshotRef.current,
-        buildSnapshotFilename("dashboard", filters)
+        buildSnapshotFilename(slideId, filters)
       )
     } finally {
       setIsExporting(false)
@@ -472,7 +520,7 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
         data-snapshot-capture={hasRun ? true : undefined}
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        {false && hasRun && (
+        {hasRun && (
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {filterChips.map((chip) => (
               <span
@@ -489,33 +537,18 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
         <div className="flex min-h-0 flex-1 gap-5">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {!hasRun ? (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/10 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/10 py-10 text-center">
                 <p className="text-sm font-medium">No data to display</p>
                 <p className="max-w-sm text-sm text-muted-foreground">
                   Adjust filters on the right, then press <strong>Run</strong> to load the dashboard.
                 </p>
               </div>
             ) : (
-              <div className="flex min-h-0 flex-1 flex-col gap-3">
-                <DashboardGrid
-                  topLeftSlides={topLeftSlides}
-                  topRightSlides={topRightSlides}
-                  bottomSlides={bottomSlides}
-                />
-                <div className="flex shrink-0 justify-end" data-snapshot-exclude>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    onClick={handleExportSnapshot}
-                    disabled={isExporting}
-                  >
-                    <Camera className="size-3.5" />
-                    {isExporting ? "Exporting…" : "Export snapshot"}
-                  </Button>
-                </div>
-              </div>
+              <DashboardCarousel
+                slides={slides}
+                onExport={handleExportSnapshot}
+                isExporting={isExporting}
+              />
             )}
           </div>
 
