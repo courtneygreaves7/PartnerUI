@@ -38,6 +38,26 @@ export const componentCategories: ComponentCategory[] = [
     description: "Components specific to partner, property, and volume views.",
   },
   {
+    id: "insights",
+    title: "Insights",
+    description: "Filters, snapshots, and report sections for the Insights experience.",
+  },
+  {
+    id: "navigation",
+    title: "Navigation",
+    description: "In-app navigation helpers and section jump menus.",
+  },
+  {
+    id: "compare",
+    title: "Compare",
+    description: "Side-by-side partner comparison UI.",
+  },
+  {
+    id: "auth",
+    title: "Authentication",
+    description: "Login and access screens.",
+  },
+  {
     id: "report-layout",
     title: "Report & layout",
     description: "Section wrappers, export controls, and page structure for Insights reports.",
@@ -447,20 +467,6 @@ const { hiddenKeys, toggleSeries, isHidden } = useHiddenChartSeries(SERIES_KEYS)
 
 <CalDdlTakeupChart filters={filters} />`,
   },
-]
-
-export const uiPrimitivesCatalog = [
-  { name: "Button", filePath: "src/components/ui/button.tsx", variants: "default, outline, ghost · sizes: default, sm, icon" },
-  { name: "Card", filePath: "src/components/ui/card.tsx", variants: "Card, CardHeader, CardContent, CardFooter" },
-  { name: "Table", filePath: "src/components/ui/table.tsx", variants: "Table, TableHeader, TableBody, TableRow, TableHead, TableCell" },
-  { name: "Select", filePath: "src/components/ui/select.tsx", variants: "Select, SelectTrigger, SelectContent, SelectItem" },
-  { name: "Tabs", filePath: "src/components/ui/tabs.tsx", variants: "Tabs, TabsList, TabsTrigger, TabsContent" },
-  { name: "Tooltip", filePath: "src/components/ui/tooltip.tsx", variants: "TooltipProvider, Tooltip, TooltipTrigger, TooltipContent" },
-  { name: "DropdownMenu", filePath: "src/components/ui/dropdown-menu.tsx", variants: "Full Radix dropdown composition" },
-  { name: "Breadcrumb", filePath: "src/components/ui/breadcrumb.tsx", variants: "Breadcrumb, BreadcrumbList, BreadcrumbItem, …" },
-  { name: "Input", filePath: "src/components/ui/input.tsx", variants: "Standard text input" },
-  { name: "Label", filePath: "src/components/ui/label.tsx", variants: "Form label" },
-  { name: "Separator", filePath: "src/components/ui/separator.tsx", variants: "Horizontal / vertical divider" },
 ]
 
 export const figureStyleTokens = [

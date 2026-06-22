@@ -1,6 +1,10 @@
 import type { ReactNode } from "react"
 import { Info, Lightbulb } from "lucide-react"
 
+import {
+  ComponentPreview,
+  getPreviewLayout,
+} from "@/components/components-doc/component-previews"
 import type { ComponentCatalogEntry, ComponentPropDoc } from "@/lib/components-catalog"
 import { cn } from "@/lib/utils"
 
@@ -102,20 +106,16 @@ export function PreviewFrame({ children, wide }: { children: ReactNode; wide?: b
   )
 }
 
-export function ComponentDocBlock({
-  entry,
-  preview,
-}: {
-  entry: ComponentCatalogEntry
-  preview?: ReactNode
-}) {
+export function ComponentDocBlock({ entry }: { entry: ComponentCatalogEntry }) {
+  const { wide } = getPreviewLayout(entry.id)
+
   return (
     <article id={entry.id} className="scroll-mt-24 space-y-6 border-b border-border pb-12 last:border-b-0">
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-lg font-semibold tracking-tight">{entry.name}</h3>
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-            {entry.category.replace("-", " ")}
+            {entry.category.replace(/-/g, " ")}
           </span>
         </div>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{entry.description}</p>
@@ -123,14 +123,14 @@ export function ComponentDocBlock({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="space-y-6">
-          {preview ? (
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Preview
-              </p>
-              <PreviewFrame wide={entry.id === "graph-widget"}>{preview}</PreviewFrame>
-            </div>
-          ) : null}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Preview
+            </p>
+            <PreviewFrame wide={wide}>
+              <ComponentPreview id={entry.id} />
+            </PreviewFrame>
+          </div>
 
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -139,12 +139,14 @@ export function ComponentDocBlock({
             <DocCallout>{entry.whenToUse}</DocCallout>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Props
-            </p>
-            <PropsTable props={entry.props} />
-          </div>
+          {entry.props.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Props
+              </p>
+              <PropsTable props={entry.props} />
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <CodeBlock code={entry.usageExample} />

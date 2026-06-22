@@ -1,12 +1,84 @@
-import { DualDataWidget } from "@/components/dual-data-widget"
+import { useRef, useState } from "react"
+
+import { AverageBookingValueBreakdown } from "@/components/average-booking-value-breakdown"
+import { AverageBookingValueSnapshot } from "@/components/average-booking-value-snapshot"
+import { BookingsSnapshot } from "@/components/bookings-snapshot"
+import { PolicyRatesTable } from "@/components/booking-engine/policy-rates-table"
+import { PartnerCard } from "@/components/booking-engine/partner-card"
 import { PartnerVolumeWidget } from "@/components/booking-engine/partner-volume-widget"
+import { PropertiesTable } from "@/components/booking-engine/properties-table"
+import { PropertyBookingsTable } from "@/components/booking-engine/property-bookings-table"
+import { CalFinancials } from "@/components/cal-financials"
+import { AbvPerDayChart } from "@/components/charts/abv-per-day-chart"
+import { BookingsMadePerDayChart } from "@/components/charts/bookings-made-per-day-chart"
+import { BookingsVsStaysChart } from "@/components/charts/bookings-vs-stays-chart"
+import { CalDdlTakeupChart } from "@/components/charts/cal-ddl-takeup-chart"
+import { InteractiveChartLegend } from "@/components/charts/interactive-chart-legend"
+import { LeadTimeChart } from "@/components/charts/lead-time-chart"
+import { useHiddenChartSeries } from "@/components/charts/use-hidden-chart-series"
+import { CompareFilterPanel } from "@/components/compare/compare-filter-panel"
+import { CompareHeader } from "@/components/compare/compare-header"
+import { CompareMetricSection } from "@/components/compare/compare-metric-section"
+import { PreviewShell } from "@/components/components-doc/preview-shell"
+import { DashboardFilterBar } from "@/components/dashboard-filter-bar"
+import { DualDataWidget } from "@/components/dual-data-widget"
+import { ExportSnapshotButton } from "@/components/export-snapshot-button"
+import { FilterSidebar } from "@/components/filter-sidebar"
+import { LoginPage } from "@/components/login-page"
+import { PartnerBreakdown } from "@/components/partner-breakdown"
+import { ReportSection } from "@/components/report-section"
+import { SectionNav } from "@/components/section-nav"
+import { TimingBreakdown } from "@/components/timing-breakdown"
+import { TimingSnapshot } from "@/components/timing-snapshot"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { BreakdownDataWidget } from "@/components/widgets/breakdown-data-widget"
 import { DataSnapshotWidget } from "@/components/widgets/data-snapshot-widget"
 import { DualDataListWidget } from "@/components/widgets/dual-data-list-widget"
 import { GraphWidget } from "@/components/widgets/graph-widget"
 import { HeadlineDataWidget } from "@/components/widgets/headline-data-widget"
 import { WidgetHelpButton } from "@/components/widgets/widget-help-button"
+import { BOOKING_ENGINE_PARTNERS } from "@/lib/booking-engine-data"
+import { DEFAULT_FILTERS } from "@/lib/chart-data"
+import {
+  buildCompareSections,
+  DEFAULT_COMPARE_SIDE,
+  type CompareSideFilters,
+} from "@/lib/compare-data"
 import { FIGURE_30PX_CLASS } from "@/lib/figure-styles"
+import { MOCK_PROPERTY } from "@/lib/property-data"
+import { getPropertiesForPartner } from "@/lib/properties-list-data"
 
 const graphSampleData = [
   { label: "Jan", layer1: 12, layer2: 8, layer3: 4 },
@@ -24,7 +96,83 @@ const snapshotRows = [
   { label: "Max occupancy", value: "6 guests" },
 ]
 
+function CompareFilterPanelPreview() {
+  const [filters, setFilters] = useState<CompareSideFilters>(DEFAULT_COMPARE_SIDE)
+
+  return (
+    <CompareFilterPanel variant="primary" filters={filters} onChange={setFilters} />
+  )
+}
+
+function CompareHeaderPreview() {
+  const [primary, setPrimary] = useState<CompareSideFilters>(DEFAULT_COMPARE_SIDE)
+  const [comparison, setComparison] = useState<CompareSideFilters>({
+    ...DEFAULT_COMPARE_SIDE,
+    partner: "partner-b",
+  })
+
+  return (
+    <CompareHeader
+      primaryDraft={primary}
+      comparisonDraft={comparison}
+      onPrimaryChange={setPrimary}
+      onComparisonChange={setComparison}
+      onRun={() => undefined}
+    />
+  )
+}
+
+function ChartLegendPreview() {
+  const { hiddenKeys, toggleSeries } = useHiddenChartSeries(["made", "starting"])
+
+  return (
+    <InteractiveChartLegend
+      payload={[
+        { dataKey: "made", value: "Made", color: "#3b82f6", type: "line" },
+        { dataKey: "starting", value: "Starting", color: "#a855f7", type: "line" },
+      ]}
+      hiddenKeys={hiddenKeys}
+      onToggleSeries={toggleSeries}
+    />
+  )
+}
+
+function ExportSnapshotPreview() {
+  const ref = useRef<HTMLDivElement>(null)
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+        <p className="text-sm font-medium">Sample export target</p>
+        <ExportSnapshotButton getTarget={() => ref.current} exportSlug="preview" />
+      </div>
+      <div ref={ref} className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
+        This panel would be captured as PNG.
+      </div>
+    </div>
+  )
+}
+
+function ReportSectionPreview() {
+  return (
+    <ReportSection title="Bookings" exportSlug="bookings-preview" filters={DEFAULT_FILTERS}>
+      <HeadlineDataWidget
+        title="Total bookings"
+        value="124,500"
+        label="All selected partners and brands"
+      />
+    </ReportSection>
+  )
+}
+
 export function ComponentPreview({ id }: { id: string }) {
+  const filters = DEFAULT_FILTERS
+  const partner = BOOKING_ENGINE_PARTNERS[0]
+  const compareSection = buildCompareSections(DEFAULT_COMPARE_SIDE, {
+    ...DEFAULT_COMPARE_SIDE,
+    partner: "partner-b",
+  })[0]
+
   switch (id) {
     case "headline-data-widget":
       return (
@@ -40,16 +188,8 @@ export function ComponentPreview({ id }: { id: string }) {
       return (
         <DualDataWidget
           primaryTitle="Product split"
-          datasetA={{
-            title: "CAL",
-            value: "23,304",
-            clarification: "3% take-up",
-          }}
-          datasetB={{
-            title: "DDL",
-            value: "18,422",
-            clarification: "2% take-up",
-          }}
+          datasetA={{ title: "CAL", value: "23,304", clarification: "3% take-up" }}
+          datasetB={{ title: "DDL", value: "18,422", clarification: "2% take-up" }}
           helpText="Supporting context for this headline metric."
         />
       )
@@ -61,7 +201,6 @@ export function ComponentPreview({ id }: { id: string }) {
             { label: "Cancellation rate", value: "4.2%" },
             { label: "Repeat guests", value: "18%" },
           ]}
-          helpText="Each row represents a separate metric."
         />
       )
     case "breakdown-data-widget":
@@ -70,7 +209,7 @@ export function ComponentPreview({ id }: { id: string }) {
           title="Total volume"
           primaryValue="94,200"
           primaryLabel="All partners"
-          subdataA={{ label: "CAL attach", value: "12,480", helpText: "Bookings with CAL." }}
+          subdataA={{ label: "CAL attach", value: "12,480" }}
           subdataB={{ label: "DDL attach", value: "8,920" }}
         />
       )
@@ -85,7 +224,6 @@ export function ComponentPreview({ id }: { id: string }) {
           layers={[
             { id: "l1", label: "Series A", color: "#2563eb", dataKey: "layer1" },
             { id: "l2", label: "Series B", color: "#dc2626", dataKey: "layer2" },
-            { id: "l3", label: "Series C", color: "#71717a", dataKey: "layer3" },
           ]}
           data={graphSampleData}
         />
@@ -94,10 +232,7 @@ export function ComponentPreview({ id }: { id: string }) {
       return (
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
           <span className="text-sm text-muted-foreground">Hover the icon →</span>
-          <WidgetHelpButton
-            title="Example metric"
-            helpText="Supporting context for this headline metric."
-          />
+          <WidgetHelpButton title="Example metric" helpText="Supporting context for this headline metric." />
         </div>
       )
     case "partner-volume-widget":
@@ -113,20 +248,252 @@ export function ComponentPreview({ id }: { id: string }) {
           }}
         />
       )
+    case "report-section":
+      return <ReportSectionPreview />
+    case "export-snapshot-button":
+      return <ExportSnapshotPreview />
+    case "interactive-chart-legend":
+      return <ChartLegendPreview />
+    case "bookings-vs-stays-chart":
+      return <BookingsVsStaysChart filters={filters} compact />
+    case "abv-per-day-chart":
+      return <AbvPerDayChart filters={filters} compact />
+    case "lead-time-chart":
+      return <LeadTimeChart filters={filters} compact />
+    case "bookings-made-per-day-chart":
+      return <BookingsMadePerDayChart filters={filters} compact />
+    case "cal-ddl-takeup-chart":
+      return <CalDdlTakeupChart filters={filters} compact />
+    case "filter-sidebar":
+      return (
+        <PreviewShell className="h-[540px] w-full max-w-[300px] bg-background">
+          <FilterSidebar onRun={() => undefined} />
+        </PreviewShell>
+      )
+    case "dashboard-filter-bar":
+      return (
+        <PreviewShell className="h-[480px] w-full max-w-[240px] bg-background">
+          <DashboardFilterBar filters={filters} onRun={() => undefined} />
+        </PreviewShell>
+      )
+    case "bookings-snapshot":
+      return <BookingsSnapshot filters={filters} />
+    case "average-booking-value-snapshot":
+      return <AverageBookingValueSnapshot filters={filters} />
+    case "cal-financials":
+      return <CalFinancials filters={filters} />
+    case "timing-snapshot":
+      return <TimingSnapshot filters={filters} />
+    case "timing-breakdown":
+      return <TimingBreakdown />
+    case "partner-breakdown":
+      return <PartnerBreakdown />
+    case "average-booking-value-breakdown":
+      return <AverageBookingValueBreakdown />
+    case "section-nav":
+      return (
+        <PreviewShell className="max-w-xs bg-background p-4">
+          <SectionNav />
+        </PreviewShell>
+      )
+    case "compare-filter-panel":
+      return (
+        <PreviewShell className="max-w-md bg-background">
+          <CompareFilterPanelPreview />
+        </PreviewShell>
+      )
+    case "compare-header":
+      return (
+        <PreviewShell className="bg-background p-4">
+          <CompareHeaderPreview />
+        </PreviewShell>
+      )
+    case "compare-metric-section":
+      return compareSection ? (
+        <CompareMetricSection
+          section={compareSection}
+          exportSlug="compare-bookings"
+          filters={filters}
+        />
+      ) : null
+    case "partner-card":
+      return (
+        <PartnerCard
+          partner={partner}
+          expanded
+          onToggle={() => undefined}
+          onViewProperty={() => undefined}
+        />
+      )
+    case "policy-rates-table":
+      return (
+        <PolicyRatesTable
+          policies={partner.policies.slice(0, 4)}
+          selectedBrandId={partner.brands[0]?.id ?? null}
+        />
+      )
+    case "properties-table":
+      return (
+        <PropertiesTable
+          properties={getPropertiesForPartner("partner-a").slice(0, 4)}
+          onViewProperty={() => undefined}
+        />
+      )
+    case "property-bookings-table":
+      return <PropertyBookingsTable bookings={MOCK_PROPERTY.bookings.slice(0, 5)} />
+    case "login-page":
+      return (
+        <PreviewShell className="relative h-[420px] bg-background">
+          <div className="origin-top scale-[0.72]">
+            <LoginPage onLogin={() => undefined} />
+          </div>
+        </PreviewShell>
+      )
+    case "ui-button":
+      return (
+        <div className="flex flex-wrap gap-2">
+          <Button>Default</Button>
+          <Button variant="outline">Outline</Button>
+          <Button variant="ghost">Ghost</Button>
+          <Button size="sm">Small</Button>
+        </div>
+      )
+    case "ui-card":
+      return (
+        <Card className="max-w-sm">
+          <CardHeader>
+            <h3 className="text-sm font-semibold">Card title</h3>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Card content area for widgets and forms.</p>
+          </CardContent>
+        </Card>
+      )
+    case "ui-select":
+      return (
+        <div className="max-w-xs space-y-2">
+          <Label htmlFor="preview-select">Partner</Label>
+          <Select defaultValue="all-partners">
+            <SelectTrigger id="preview-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-partners">All partners</SelectItem>
+              <SelectItem value="partner-a">Partner Alpha</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )
+    case "ui-table":
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Brand</TableHead>
+              <TableHead className="text-right">Bookings</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Partner Alpha</TableCell>
+              <TableCell className="text-right tabular-nums">42,310</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Partner Beta</TableCell>
+              <TableCell className="text-right tabular-nums">38,750</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      )
+    case "ui-tabs":
+      return (
+        <Tabs defaultValue="bookings" className="max-w-md">
+          <TabsList>
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="details">Details</TabsTrigger>
+          </TabsList>
+          <TabsContent value="bookings" className="text-sm text-muted-foreground">
+            Bookings tab content
+          </TabsContent>
+        </Tabs>
+      )
+    case "ui-input":
+      return (
+        <div className="max-w-xs space-y-2">
+          <Label htmlFor="preview-email">Email</Label>
+          <Input id="preview-email" type="email" placeholder="you@company.com" />
+        </div>
+      )
+    case "ui-label":
+      return (
+        <div className="max-w-xs space-y-2">
+          <Label htmlFor="preview-label">Partner</Label>
+          <Input id="preview-label" readOnly value="All partners" />
+        </div>
+      )
+    case "ui-tooltip":
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="sm">
+              Hover me
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Tooltip content appears here</TooltipContent>
+        </Tooltip>
+      )
+    case "ui-breadcrumb":
+      return (
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>Booking engine</BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Properties</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      )
+    case "ui-separator":
+      return (
+        <div className="max-w-xs space-y-4">
+          <p className="text-sm">Content above</p>
+          <Separator />
+          <p className="text-sm text-muted-foreground">Content below</p>
+        </div>
+      )
+    case "ui-dropdown-menu":
+      return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>See App header user menu for full DropdownMenu composition.</span>
+        </div>
+      )
     default:
-      return null
+      return (
+        <p className="text-sm text-muted-foreground">
+          Preview not yet configured for this component.
+        </p>
+      )
   }
 }
 
-export function hasComponentPreview(id: string) {
-  return [
-    "headline-data-widget",
-    "dual-data-widget",
-    "dual-data-list-widget",
-    "breakdown-data-widget",
-    "data-snapshot-widget",
+export function getPreviewLayout(id: string) {
+  const wide = [
     "graph-widget",
-    "widget-help-button",
-    "partner-volume-widget",
-  ].includes(id)
+    "bookings-snapshot",
+    "average-booking-value-snapshot",
+    "cal-financials",
+    "timing-snapshot",
+    "partner-card",
+    "compare-header",
+    "compare-metric-section",
+    "bookings-vs-stays-chart",
+    "abv-per-day-chart",
+    "lead-time-chart",
+    "cal-ddl-takeup-chart",
+    "login-page",
+  ]
+
+  return { wide: wide.includes(id) }
 }
