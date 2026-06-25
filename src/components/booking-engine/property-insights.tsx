@@ -1,6 +1,8 @@
+import { PropertyBookingsWidget } from "@/components/booking-engine/property-bookings-widget"
+import { PropertyCancelBenchmarkWidget } from "@/components/booking-engine/property-cancel-benchmark-widget"
 import { PropertyOccupancyWidget } from "@/components/booking-engine/property-occupancy-widget"
+import { PropertyStayProfileWidget } from "@/components/booking-engine/property-stay-profile-widget"
 import { GraphWidget } from "@/components/widgets/graph-widget"
-import { MetricBenchmarkWidget } from "@/components/widgets/metric-benchmark-widget"
 import { MetricFinancialTrendWidget } from "@/components/widgets/metric-financial-trend-widget"
 import { MetricGaugeWidget } from "@/components/widgets/metric-gauge-widget"
 import { MetricTrendWidget } from "@/components/widgets/metric-trend-widget"
@@ -13,8 +15,12 @@ import {
   getBookingSourceTotal,
   getDirectSharePercent,
   getInsightBenchmarkPercent,
+  PROPERTY_AVG_GUESTS,
+  PROPERTY_AVG_NIGHTS,
   PROPERTY_BOOKINGS_COUNT_TREND,
   PROPERTY_BOOKING_VALUE_TREND,
+  PROPERTY_CANCEL_FROM_BOOKING,
+  PROPERTY_CANCEL_TO_STAY,
   PROPERTY_INSIGHT_METRICS,
   PROPERTY_LEAD_DAYS_TREND,
   PROPERTY_MONTHLY_TRENDS,
@@ -45,13 +51,9 @@ function InsightsSectionHeader({
 
 export function PropertyInsights() {
   const leadDays = metric("avg-lead-days")
-  const cancelFromBooking = metric("avg-cancel-from-booking")
-  const cancelToStay = metric("avg-cancel-to-stay")
   const avgBookingValue = metric("avg-booking-value")
   const calCoverage = metric("cal-coverage")
   const ddlCoverage = metric("ddl-coverage")
-  const avgNights = metric("avg-nights")
-  const avgGuests = metric("avg-guests")
   const cancellationRate = metric("cancellation-rate")
   const repeatGuests = metric("repeat-guests")
 
@@ -75,13 +77,13 @@ export function PropertyInsights() {
               {
                 id: "bookings-made",
                 label: "Bookings made",
-                color: "#3b82f6",
+                color: "var(--foreground)",
                 dataKey: "bookingsMade",
               },
               {
                 id: "stay-start",
                 label: "Stay start month",
-                color: "#10b981",
+                color: "var(--muted-foreground)",
                 dataKey: "stayStartMonth",
               },
             ]}
@@ -105,17 +107,7 @@ export function PropertyInsights() {
                 footerLabel="Based on 12 confirmed bookings"
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
-              <MetricTrendWidget
-                title="Bookings (12M)"
-                value={String(bookingSourceTotal)}
-                trendLabel="+5 in Feb"
-                trend="up"
-                comparisonLabel="1 cancellation in period"
-                chartData={PROPERTY_BOOKINGS_COUNT_TREND}
-                scopeLabel="Willowcroft House"
-                rateLabel="2.0 / month avg"
-                helpText={INSIGHTS_WIDGET_HELP_TEXT}
-              />
+              <PropertyBookingsWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
               <PropertyOccupancyWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
             </div>
           </div>
@@ -141,26 +133,12 @@ export function PropertyInsights() {
                 rateLabel={`${getInsightBenchmarkPercent(leadDays.value, PROPERTY_PORTFOLIO_BENCHMARKS.avgLeadDays)}% of benchmark`}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
-              <MetricBenchmarkWidget
-                title="Avg cancel — to stay"
-                value={cancelToStay.value}
-                comparisonLabel={PROPERTY_PORTFOLIO_BENCHMARKS.avgCancelToStay}
-                benchmarkPercent={getInsightBenchmarkPercent(
-                  cancelToStay.value,
-                  PROPERTY_PORTFOLIO_BENCHMARKS.avgCancelToStay
-                )}
-                benchmarkLabel="Days before stay start vs. portfolio"
+              <PropertyCancelBenchmarkWidget
+                data={PROPERTY_CANCEL_TO_STAY}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
-              <MetricBenchmarkWidget
-                title="Avg cancel — from booking"
-                value={cancelFromBooking.value}
-                comparisonLabel={PROPERTY_PORTFOLIO_BENCHMARKS.avgCancelFromBooking}
-                benchmarkPercent={getInsightBenchmarkPercent(
-                  cancelFromBooking.value,
-                  PROPERTY_PORTFOLIO_BENCHMARKS.avgCancelFromBooking
-                )}
-                benchmarkLabel="Days after booking made vs. portfolio"
+              <PropertyCancelBenchmarkWidget
+                data={PROPERTY_CANCEL_FROM_BOOKING}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
             </div>
@@ -195,26 +173,12 @@ export function PropertyInsights() {
                 }}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
-              <MetricBenchmarkWidget
-                title="Avg nights"
-                value={avgNights.value}
-                comparisonLabel={PROPERTY_PORTFOLIO_BENCHMARKS.avgNights}
-                benchmarkPercent={getInsightBenchmarkPercent(
-                  avgNights.value,
-                  PROPERTY_PORTFOLIO_BENCHMARKS.avgNights
-                )}
-                benchmarkLabel={`${avgNights.subtext ?? "per stay"} · vs. portfolio`}
+              <PropertyStayProfileWidget
+                data={PROPERTY_AVG_NIGHTS}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
-              <MetricBenchmarkWidget
-                title="Avg guests"
-                value={avgGuests.value}
-                comparisonLabel={PROPERTY_PORTFOLIO_BENCHMARKS.avgGuests}
-                benchmarkPercent={getInsightBenchmarkPercent(
-                  avgGuests.value,
-                  PROPERTY_PORTFOLIO_BENCHMARKS.avgGuests
-                )}
-                benchmarkLabel={`${avgGuests.subtext ?? "per stay"} · vs. portfolio`}
+              <PropertyStayProfileWidget
+                data={PROPERTY_AVG_GUESTS}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
               />
             </div>

@@ -1,0 +1,65 @@
+import { TrendingDown } from "lucide-react"
+
+import {
+  InsightBadge,
+  InsightBenchmarkBar,
+  InsightFooter,
+  InsightMiniSparkline,
+  InsightWidgetHeader,
+} from "@/components/booking-engine/property-insight-primitives"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import type { PropertyCancelBenchmarkInsight } from "@/lib/property-insights-data"
+import { cn } from "@/lib/utils"
+
+type PropertyCancelBenchmarkWidgetProps = {
+  data: PropertyCancelBenchmarkInsight
+  helpText?: string
+  className?: string
+}
+
+export function PropertyCancelBenchmarkWidget({
+  data,
+  helpText,
+  className,
+}: PropertyCancelBenchmarkWidgetProps) {
+  const vsLabel =
+    data.vsPortfolio > 0
+      ? `+${data.vsPortfolio} vs portfolio`
+      : `${data.vsPortfolio} vs portfolio`
+
+  return (
+    <Card className={cn("@container flex h-full min-w-0 flex-col bg-card shadow-xs", className)}>
+      <CardHeader className="space-y-0 pb-2">
+        <InsightWidgetHeader title={data.title} subtitle={data.subtitle} helpText={helpText} />
+      </CardHeader>
+
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-0">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
+            {data.valueLabel}
+          </p>
+          <InsightBadge variant="positive">
+            <TrendingDown className="size-3 shrink-0" strokeWidth={2.25} />
+            {vsLabel}
+          </InsightBadge>
+        </div>
+
+        <InsightBenchmarkBar
+          percent={data.benchmarkPercent}
+          label={`${data.benchmarkPercent}% of portfolio avg`}
+        />
+
+        <InsightMiniSparkline data={data.monthlyTrend} height={48} />
+
+        <InsightFooter
+          left={
+            <p className="text-[10px] text-muted-foreground">
+              <span className="font-medium text-foreground">12M portfolio average</span>{" "}
+              {data.portfolioAvgLabel}
+            </p>
+          }
+        />
+      </CardContent>
+    </Card>
+  )
+}

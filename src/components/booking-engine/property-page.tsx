@@ -36,6 +36,38 @@ function formatPartnerLabel(name: string) {
   return name.replace(/^Partner /, "")
 }
 
+function relationshipInitials(name: string) {
+  return name
+    .replace(/^Partner /, "")
+    .replace(/^Brand /, "")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+function RelationshipLogo({
+  initials,
+  variant = "partner",
+}: {
+  initials: string
+  variant?: "partner" | "brand"
+}) {
+  return (
+    <div
+      className={cn(
+        "mb-2.5 flex size-9 shrink-0 items-center justify-center rounded-lg border border-border text-[10px] font-semibold tracking-wide",
+        variant === "brand"
+          ? "bg-amber-500/10 text-amber-800 dark:text-amber-300"
+          : "bg-muted text-muted-foreground"
+      )}
+    >
+      {initials}
+    </div>
+  )
+}
+
 function PropertyPanel({
   title,
   children,
@@ -288,8 +320,12 @@ function PropertyOverviewTab({
         </PropertyPanel>
 
         <PropertyPanel title="Relationships" className="min-w-0 xl:col-start-3 xl:row-start-3">
-          <div className="flex min-w-0 items-stretch">
+          <div className="flex min-w-0 items-stretch pt-3">
             <div className="min-w-0 flex-1 pr-3">
+              <RelationshipLogo
+                initials={relationshipInitials(property.partner)}
+                variant="partner"
+              />
               <p className="text-[10px] text-muted-foreground">Booking partner</p>
               <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
                 {formatPartnerLabel(property.partner)}
@@ -298,6 +334,10 @@ function PropertyOverviewTab({
             </div>
             <div aria-hidden className="w-px shrink-0 self-stretch bg-border" />
             <div className="min-w-0 flex-1 pl-3">
+              <RelationshipLogo
+                initials={relationshipInitials(property.brand)}
+                variant="brand"
+              />
               <p className="text-[10px] text-muted-foreground">Property brand</p>
               <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
                 {formatBrandLabel(property.brand)}

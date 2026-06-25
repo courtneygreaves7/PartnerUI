@@ -28,6 +28,115 @@ export type OccupancyMonthPoint = {
   phase: "past" | "current" | "future"
 }
 
+export type PropertyCancelBenchmarkInsight = {
+  title: string
+  subtitle: string
+  valueLabel: string
+  portfolioAvgLabel: string
+  vsPortfolio: number
+  benchmarkPercent: number
+  monthlyTrend: InsightTrendPoint[]
+}
+
+export type PropertyStayProfileInsight = {
+  title: string
+  subtitle: string
+  valueLabel: string
+  portfolioAvg: string
+  benchmarkPercent: number
+  distributionTitle: string
+  distribution: Array<{ label: string; count: number }>
+  calFooter: string
+}
+
+export type InsightTrendPoint = { label: string; value: number }
+
+export const PROPERTY_BOOKINGS_INSIGHT = {
+  total: 12,
+  trendLabel: "+5 in Feb",
+  cancellations: 1,
+  monthAvg: 1.6,
+  calBookings: 0,
+  cancelledCount: 1,
+  propertyName: "Willowcroft House",
+  monthlyTrend: [
+    { label: "Jan", value: 1 },
+    { label: "Feb", value: 5 },
+    { label: "Mar", value: 1 },
+    { label: "Apr", value: 0 },
+    { label: "May", value: 0 },
+    { label: "Jun", value: 0 },
+  ] satisfies InsightTrendPoint[],
+}
+
+export const PROPERTY_CANCEL_TO_STAY: PropertyCancelBenchmarkInsight = {
+  title: "Avg cancel — to stay",
+  subtitle: "Days before stay start",
+  valueLabel: "130.5 days",
+  portfolioAvgLabel: "156 days",
+  vsPortfolio: -25.5,
+  benchmarkPercent: 84,
+  monthlyTrend: [
+    { label: "J", value: 142 },
+    { label: "F", value: 138 },
+    { label: "M", value: 134 },
+    { label: "A", value: 131 },
+    { label: "M", value: 129 },
+    { label: "J", value: 131 },
+  ],
+}
+
+export const PROPERTY_CANCEL_FROM_BOOKING: PropertyCancelBenchmarkInsight = {
+  title: "Avg cancel — from booking",
+  subtitle: "Days after booking made",
+  valueLabel: "214.6 days",
+  portfolioAvgLabel: "248 days",
+  vsPortfolio: -33.4,
+  benchmarkPercent: 87,
+  monthlyTrend: [
+    { label: "J", value: 228 },
+    { label: "F", value: 222 },
+    { label: "M", value: 218 },
+    { label: "A", value: 215 },
+    { label: "M", value: 212 },
+    { label: "J", value: 215 },
+  ],
+}
+
+export const PROPERTY_AVG_NIGHTS: PropertyStayProfileInsight = {
+  title: "Avg nights",
+  subtitle: "Per stay · vs portfolio",
+  valueLabel: "10.2 nights",
+  portfolioAvg: "11.4",
+  benchmarkPercent: 89,
+  distributionTitle: "Stay length distribution",
+  distribution: [
+    { label: "1–3n", count: 2 },
+    { label: "4–6n", count: 3 },
+    { label: "7–10n", count: 4 },
+    { label: "11–14n", count: 2 },
+    { label: "15+n", count: 1 },
+  ],
+  calFooter: "avg 9.8n per stay",
+}
+
+export const PROPERTY_AVG_GUESTS: PropertyStayProfileInsight = {
+  title: "Avg guests",
+  subtitle: "Per stay · vs portfolio",
+  valueLabel: "2.7 guests",
+  portfolioAvg: "3.2",
+  benchmarkPercent: 84,
+  distributionTitle: "Guest count distribution",
+  distribution: [
+    { label: "1", count: 3 },
+    { label: "2", count: 5 },
+    { label: "3", count: 2 },
+    { label: "4", count: 1 },
+    { label: "5+", count: 1 },
+  ],
+  calFooter: "avg 3.1 per stay",
+}
+
 export const PROPERTY_OCCUPANCY = {
   ratePercent: 33.4,
   rateLabel: "33.4%",
