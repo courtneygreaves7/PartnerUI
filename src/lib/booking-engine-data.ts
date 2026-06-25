@@ -483,6 +483,22 @@ export function getPartnerTrendContext() {
   return added > 0 ? `${added} new partner${added === 1 ? "" : "s"} since January` : "Stable since January"
 }
 
+export function getBookingsTrendContext() {
+  const monthlyBookings = [780, 810, 835, 860, 890, 950]
+  const lastMonth = monthlyBookings.at(-2)!
+  const current = monthlyBookings.at(-1)!
+  const change = current - lastMonth
+  return `+${formatCount(change)} bookings vs last month (+12%)`
+}
+
+export function getRevenueTrendContext() {
+  const aheadPct = 5.4
+  const aheadAmount = Math.round(
+    BOOKING_ENGINE_SUMMARY.totalRevenue * (aheadPct / 100) / (1 + aheadPct / 100)
+  )
+  return `${formatCompactCurrency(aheadAmount)} ahead of YTD target (+${aheadPct}%)`
+}
+
 export function getBrandsTrendContext() {
   const brandCounts = [9, 10, 11, 11, 12, 13]
   const added = brandCounts.at(-1)! - brandCounts[0]

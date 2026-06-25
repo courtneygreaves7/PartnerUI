@@ -34,10 +34,10 @@ import {
   formatCount,
   formatCurrency,
   getBrandsTrendContext,
-  getPartnerConnectionFooter,
+  getBookingsTrendContext,
   getPartnerTags,
   getPartnerTrendContext,
-  getTopPartnersBrandFooter,
+  getRevenueTrendContext,
   type Partner,
 } from "@/lib/booking-engine-data"
 import { MOCK_PROPERTY } from "@/lib/property-data"
@@ -153,7 +153,7 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               value={formatCount(BOOKING_ENGINE_SUMMARY.totalBookings)}
               icon={ShoppingCart}
               trendLabel="+12%"
-              trendContext="Up on last month"
+              trendContext={getBookingsTrendContext()}
               chartCaption="Monthly sales volume · YTD"
               chartValues={PAS_BOOKINGS_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
@@ -163,7 +163,7 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               value={formatCurrency(BOOKING_ENGINE_SUMMARY.totalRevenue, "GBP")}
               icon={Banknote}
               trendLabel="+5.4%"
-              trendContext="Ahead of YTD target"
+              trendContext={getRevenueTrendContext()}
               chartCaption="Monthly revenue · YTD"
               chartValues={PAS_REVENUE_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
@@ -177,7 +177,6 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               chartCaption="Partners on platform by month"
               chartValues={PAS_PARTNERS_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
-              footer={getPartnerConnectionFooter()}
             />
             <PasSummaryMetricCard
               title="Active brands"
@@ -188,7 +187,6 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               chartCaption="Active brands by month"
               chartValues={PAS_BRANDS_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
-              footer={getTopPartnersBrandFooter()}
             />
           </div>
         </div>
