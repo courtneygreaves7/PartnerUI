@@ -2,10 +2,14 @@ import { Calendar, Home, TrendingUp } from "lucide-react"
 
 import {
   InsightBadge,
+  InsightCardBody,
   InsightFooter,
+  InsightMetricGroup,
   InsightMiniSparkline,
   InsightStatRow,
+  InsightVisualGroup,
   InsightWidgetHeader,
+  insightCardHeaderClass,
 } from "@/components/booking-engine/property-insight-primitives"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { PROPERTY_BOOKINGS_INSIGHT } from "@/lib/property-insights-data"
@@ -23,7 +27,7 @@ export function PropertyBookingsWidget({ helpText, className }: PropertyBookings
 
   return (
     <Card className={cn("@container flex h-full min-w-0 flex-col bg-card shadow-xs", className)}>
-      <CardHeader className="space-y-0 pb-2">
+      <CardHeader className={insightCardHeaderClass}>
         <InsightWidgetHeader
           title="Bookings"
           subtitle="12-month rolling"
@@ -42,38 +46,43 @@ export function PropertyBookingsWidget({ helpText, className }: PropertyBookings
         />
       </CardHeader>
 
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-0">
-        <p className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
-          {PROPERTY_BOOKINGS_INSIGHT.total}
-        </p>
+      <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+        <InsightCardBody>
+          <InsightMetricGroup>
+            <p className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
+              {PROPERTY_BOOKINGS_INSIGHT.total}
+            </p>
+          </InsightMetricGroup>
 
-        <InsightMiniSparkline
-          data={PROPERTY_BOOKINGS_INSIGHT.monthlyTrend}
-          highlightIndex={peakIndex >= 0 ? peakIndex : undefined}
-        />
+          <InsightVisualGroup>
+            <InsightMiniSparkline
+              data={PROPERTY_BOOKINGS_INSIGHT.monthlyTrend}
+              highlightIndex={peakIndex >= 0 ? peakIndex : undefined}
+            />
+            <InsightStatRow
+              columns={[
+                { label: "Month avg", value: String(PROPERTY_BOOKINGS_INSIGHT.monthAvg) },
+                { label: "CAL", value: String(PROPERTY_BOOKINGS_INSIGHT.calBookings) },
+                { label: "Cancelled", value: String(PROPERTY_BOOKINGS_INSIGHT.cancelledCount) },
+              ]}
+            />
+          </InsightVisualGroup>
 
-        <InsightStatRow
-          columns={[
-            { label: "Month avg", value: String(PROPERTY_BOOKINGS_INSIGHT.monthAvg) },
-            { label: "CAL", value: String(PROPERTY_BOOKINGS_INSIGHT.calBookings) },
-            { label: "Cancelled", value: String(PROPERTY_BOOKINGS_INSIGHT.cancelledCount) },
-          ]}
-        />
-
-        <InsightFooter
-          left={
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <Home className="size-3.5 shrink-0" strokeWidth={2} />
-              <span className="truncate">{PROPERTY_BOOKINGS_INSIGHT.propertyName}</span>
-            </div>
-          }
-          right={
-            <div className="flex items-center gap-1.5 text-[10px] tabular-nums text-muted-foreground">
-              <Calendar className="size-3.5 shrink-0" strokeWidth={2} />
-              {PROPERTY_BOOKINGS_INSIGHT.monthAvg} / month avg
-            </div>
-          }
-        />
+          <InsightFooter
+            left={
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <Home className="size-3.5 shrink-0" strokeWidth={2} />
+                <span className="truncate">{PROPERTY_BOOKINGS_INSIGHT.propertyName}</span>
+              </div>
+            }
+            right={
+              <div className="flex items-center gap-1.5 text-[10px] tabular-nums text-muted-foreground">
+                <Calendar className="size-3.5 shrink-0" strokeWidth={2} />
+                {PROPERTY_BOOKINGS_INSIGHT.monthAvg} / month avg
+              </div>
+            }
+          />
+        </InsightCardBody>
       </CardContent>
     </Card>
   )

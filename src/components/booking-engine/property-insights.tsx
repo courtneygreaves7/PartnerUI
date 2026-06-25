@@ -106,6 +106,7 @@ export function PropertyInsights() {
                 ]}
                 footerLabel="Based on 12 confirmed bookings"
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
+                insightLayout
               />
               <PropertyBookingsWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
               <PropertyOccupancyWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
@@ -132,6 +133,7 @@ export function PropertyInsights() {
                 scopeLabel="Booking date to stay"
                 rateLabel={`${getInsightBenchmarkPercent(leadDays.value, PROPERTY_PORTFOLIO_BENCHMARKS.avgLeadDays)}% of benchmark`}
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
+                insightLayout
               />
               <PropertyCancelBenchmarkWidget
                 data={PROPERTY_CANCEL_TO_STAY}
@@ -206,6 +208,7 @@ export function PropertyInsights() {
                 breakdownRows={getBookingSourceBreakdown()}
                 footerLabel="Direct leads channel mix for this property"
                 helpText={INSIGHTS_WIDGET_HELP_TEXT}
+                insightLayout
               />
               <div className={cn(metricCardStackClass, "min-w-0")}>
                 <MetricGaugeWidget

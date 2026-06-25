@@ -154,7 +154,6 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               icon={ShoppingCart}
               trendLabel="+12%"
               trendContext={getBookingsTrendContext()}
-              chartCaption="Monthly sales volume · YTD"
               chartValues={PAS_BOOKINGS_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
             />
@@ -164,7 +163,6 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               icon={Banknote}
               trendLabel="+5.4%"
               trendContext={getRevenueTrendContext()}
-              chartCaption="Monthly revenue · YTD"
               chartValues={PAS_REVENUE_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
             />
@@ -174,7 +172,6 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               icon={Network}
               trendLabel="+17%"
               trendContext={getPartnerTrendContext()}
-              chartCaption="Partners on platform by month"
               chartValues={PAS_PARTNERS_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
             />
@@ -184,7 +181,6 @@ export function BookingEnginePage({ initialView = "partners" }: BookingEnginePag
               icon={LayoutGrid}
               trendLabel="+8%"
               trendContext={getBrandsTrendContext()}
-              chartCaption="Active brands by month"
               chartValues={PAS_BRANDS_CHART_STUB}
               chartLabels={PAS_YTD_MONTH_LABELS}
             />

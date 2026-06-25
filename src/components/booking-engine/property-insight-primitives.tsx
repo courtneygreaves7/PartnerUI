@@ -8,6 +8,46 @@ import { cn } from "@/lib/utils"
 
 const TICK_STYLE = { fontSize: 10, fill: "var(--color-muted-foreground)" }
 
+/** Shared layout tokens for property insight cards */
+export const insightCardHeaderClass = "space-y-0 pb-0"
+export const insightCardBodyClass =
+  "flex min-h-0 flex-1 flex-col gap-5 px-4 pb-4 pt-3"
+export const insightMetricGroupClass = "flex flex-col gap-1.5"
+export const insightVisualGroupClass = "flex flex-col gap-3"
+export const insightChartHeightClass = "h-[4.5rem] w-full min-h-0 shrink-0"
+
+export function InsightCardBody({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn(insightCardBodyClass, className)}>{children}</div>
+  )
+}
+
+export function InsightMetricGroup({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <div className={cn(insightMetricGroupClass, className)}>{children}</div>
+}
+
+export function InsightVisualGroup({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <div className={cn(insightVisualGroupClass, className)}>{children}</div>
+}
+
 export function InsightWidgetHeader({
   title,
   subtitle,
@@ -189,12 +229,19 @@ export function InsightDistributionBars({
 export function InsightFooter({
   left,
   right,
+  className,
 }: {
   left: ReactNode
   right?: ReactNode
+  className?: string
 }) {
   return (
-    <div className="mt-auto flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+    <div
+      className={cn(
+        "mt-auto flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5",
+        className
+      )}
+    >
       <div className="min-w-0">{left}</div>
       {right ? <div className="shrink-0">{right}</div> : null}
     </div>

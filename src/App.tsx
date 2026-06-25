@@ -391,7 +391,7 @@ function App() {
                   onClick={() => setIsCustomisingDashboard((value) => !value)}
                 >
                   <LayoutPanelTop className="size-4" />
-                  Customise dashboard
+                  Customise
                 </Button>
               ) : null}
 
