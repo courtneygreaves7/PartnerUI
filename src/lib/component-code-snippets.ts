@@ -106,6 +106,28 @@ export const componentCodeSnippets: Record<string, ComponentCodeSnippet[]> = {
 // Segment values use FIGURE_24PX_CLASS`,
     },
   ],
+  "metric-financial-trend-widget": [
+    {
+      id: "tailwind",
+      label: "Tailwind",
+      code: `// Segmented breakdown bar
+"flex h-2 w-full overflow-hidden rounded-full bg-muted"
+// Segments: bg-foreground, bg-muted-foreground/60, bg-muted-foreground/30
+
+// Breakdown row
+"flex items-center justify-between gap-3"
+// Dot + label / value
+
+// Footer
+"flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground"`,
+    },
+    {
+      id: "tokens",
+      label: "Tokens",
+      code: `import { buildCalFinBreakdown, buildFinancialTrendChart, deriveFinancialTrendMeta } from "@/lib/chart-data"
+import { METRIC_WIDGET_STACK_GAP_CLASS } from "@/lib/figure-styles"`,
+    },
+  ],
   "metric-trend-widget": [
     {
       id: "tailwind",
@@ -512,8 +534,8 @@ export const CHART_HEIGHT = 320`,
     {
       id: "layout",
       label: "Layout",
-      code: `<div className={cn(metricCardGridClass, "grid-cols-1 @4xl:grid-cols-[minmax(0,260px)_minmax(0,1fr)]")}>
-  <HeadlineDataWidget title="Total payable" ... />
+      code: `<div className={cn(metricCardGridClass, "grid-cols-1 @4xl:grid-cols-[minmax(0,300px)_minmax(0,1fr)]")}>
+  <MetricFinancialTrendWidget title="Total payable" ... />
   <DataSnapshotWidget title="Financial breakdown" rows={rows} />
 </div>`,
     },

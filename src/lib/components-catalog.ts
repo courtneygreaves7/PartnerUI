@@ -160,6 +160,49 @@ const trend = deriveBookingTrendMeta("124,500")
     ],
   },
   {
+    id: "metric-financial-trend-widget",
+    name: "MetricFinancialTrendWidget",
+    category: "metric-widgets",
+    description:
+      "Financial headline with trend, sparkline, segmented breakdown bar, top-line items, and liability footer.",
+    whenToUse:
+      "Use for CAL financial totals — total payable with capacity, commission, and IPT composition.",
+    importPath: '@/components/widgets/metric-financial-trend-widget',
+    filePath: "src/components/widgets/metric-financial-trend-widget.tsx",
+    props: [
+      { name: "title", type: "string", required: true, description: "Card heading." },
+      { name: "value", type: "string", required: true, description: "Primary formatted figure." },
+      { name: "trendLabel", type: "string", required: true, description: "Period change badge." },
+      { name: "trend", type: '"up" | "down" | "neutral"', defaultValue: '"up"', description: "Arrow direction in the trend badge." },
+      { name: "comparisonLabel", type: "string", required: true, description: "Prior period comparison line." },
+      { name: "chartData", type: "MetricTrendPoint[]", required: true, description: "Sparkline series." },
+      { name: "breakdownRows", type: "FinancialBreakdownRow[]", required: true, description: "Top components — drives bar segments and list rows." },
+      { name: "footerLabel", type: "string", required: true, description: "Footer caption, e.g. currency and liability context." },
+      { name: "helpText", type: "string", description: "Tooltip for the help button." },
+      { name: "className", type: "string", description: "Additional classes on the Card root." },
+    ],
+    usageExample: `import { MetricFinancialTrendWidget } from "@/components/widgets/metric-financial-trend-widget"
+import { buildCalFinBreakdown, buildFinancialTrendChart, deriveFinancialTrendMeta, getCalFinProfile } from "@/lib/chart-data"
+
+const profile = getCalFinProfile(filters)
+const trend = deriveFinancialTrendMeta(profile.totalPayable)
+
+<MetricFinancialTrendWidget
+  title="Total payable"
+  value={profile.totalPayable}
+  trendLabel={trend.trendLabel}
+  trend={trend.trend}
+  comparisonLabel={trend.comparisonLabel}
+  chartData={buildFinancialTrendChart(profile.totalPayable)}
+  breakdownRows={buildCalFinBreakdown(profile)}
+  footerLabel="GBP · primary liability"
+/>`,
+    notes: [
+      "Bar segments use neutral foreground tones at varying opacity.",
+      "Wrap in TooltipProvider when using helpText.",
+    ],
+  },
+  {
     id: "dual-data-widget",
     name: "DualDataWidget",
     category: "metric-widgets",

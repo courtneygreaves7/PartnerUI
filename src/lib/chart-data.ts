@@ -233,6 +233,57 @@ export function getCalFinProfile(filters: ActiveFilters) {
   return CAL_FIN_PROFILES[key] ?? CAL_FIN_PROFILES["all-partners:all-brands"]
 }
 
+const FINANCIAL_TREND_MONTHS = ["Jul", "Sep", "Nov", "Jan", "Mar", "May"] as const
+const FINANCIAL_TREND_SHAPE = [0.76, 0.8, 0.84, 0.88, 0.94, 1.0]
+const FINANCIAL_PRIOR_PERIOD_FACTOR = 1.075
+
+function parseCurrencyValue(value: string) {
+  const match = value.replace(/,/g, "").match(/[\d.]+/)
+  return match ? Number.parseFloat(match[0]) : 0
+}
+
+export function deriveFinancialTrendMeta(totalPayable: string) {
+  const totalValue = parseCurrencyValue(totalPayable)
+  const priorValue = Math.round(totalValue / FINANCIAL_PRIOR_PERIOD_FACTOR)
+  const changePct = priorValue > 0 ? ((totalValue - priorValue) / priorValue) * 100 : 0
+  const priorTotal = `£${priorValue.toLocaleString("en-GB")}`
+  const sign = changePct >= 0 ? "+" : ""
+
+  return {
+    priorTotal,
+    trendLabel: `${sign}${changePct.toFixed(1)}%`,
+    trend: changePct >= 0 ? ("up" as const) : ("down" as const),
+    comparisonLabel: `vs ${priorTotal} prior period`,
+  }
+}
+
+export function buildFinancialTrendChart(totalPayable: string): BookingTrendPoint[] {
+  const totalValue = parseCurrencyValue(totalPayable)
+  const monthlyBase = totalValue / FINANCIAL_TREND_MONTHS.length
+
+  return FINANCIAL_TREND_MONTHS.map((label, index) => ({
+    label,
+    value: Math.round(monthlyBase * FINANCIAL_TREND_SHAPE[index]),
+  }))
+}
+
+export function buildCalFinBreakdown(
+  profile: ReturnType<typeof getCalFinProfile>
+): Array<{ label: string; value: string; sharePercent: number }> {
+  const rows = [
+    { label: "Capacity net", value: profile.capacityNet },
+    { label: "PISL comm", value: profile.pislComm },
+    { label: "IPT", value: profile.ipt },
+  ]
+  const amounts = rows.map((row) => parseCurrencyValue(row.value))
+  const total = amounts.reduce((sum, amount) => sum + amount, 0)
+
+  return rows.map((row, index) => ({
+    ...row,
+    sharePercent: total > 0 ? Math.round((amounts[index] / total) * 100) : 0,
+  }))
+}
+
 const TIMING_PROFILES: Record<string, {
   gbpDays: string; gbpCal: string; eurDays: string; eurCal: string
 }> = {

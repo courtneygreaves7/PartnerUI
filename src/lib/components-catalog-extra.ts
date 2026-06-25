@@ -68,7 +68,7 @@ export const componentsCatalogExtra: ComponentCatalogEntry[] = [
     id: "cal-financials",
     name: "CalFinancials",
     category: "insights",
-    description: "CAL financials section — total payable headline plus financial breakdown snapshot.",
+    description: "CAL financials section — MetricFinancialTrendWidget total payable plus financial breakdown snapshot.",
     whenToUse: "Insights report — CAL financials (GBP) section.",
     importPath: "@/components/cal-financials",
     filePath: "src/components/cal-financials.tsx",

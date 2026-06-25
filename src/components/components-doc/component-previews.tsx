@@ -69,6 +69,7 @@ import { DualDataListWidget } from "@/components/widgets/dual-data-list-widget"
 import { GraphWidget } from "@/components/widgets/graph-widget"
 import { HeadlineDataWidget } from "@/components/widgets/headline-data-widget"
 import { MetricBenchmarkWidget } from "@/components/widgets/metric-benchmark-widget"
+import { MetricFinancialTrendWidget } from "@/components/widgets/metric-financial-trend-widget"
 import { MetricGaugeWidget } from "@/components/widgets/metric-gauge-widget"
 import { MetricTrendWidget } from "@/components/widgets/metric-trend-widget"
 import { ProductSplitWidget } from "@/components/widgets/product-split-widget"
@@ -207,6 +208,31 @@ export function ComponentPreview({ id }: { id: string }) {
           scopeLabel="All selected partners and brands"
           rateLabel="~4,150 /day"
           helpText="Total bookings across selected partners and brands."
+        />
+      )
+    case "metric-financial-trend-widget":
+      return (
+        <MetricFinancialTrendWidget
+          title="Total payable"
+          value="£214,500"
+          trendLabel="+7.5%"
+          trend="up"
+          comparisonLabel="vs £199,500 prior period"
+          chartData={[
+            { label: "Jul", value: 27200 },
+            { label: "Sep", value: 28600 },
+            { label: "Nov", value: 30000 },
+            { label: "Jan", value: 31500 },
+            { label: "Mar", value: 33600 },
+            { label: "May", value: 35750 },
+          ]}
+          breakdownRows={[
+            { label: "Capacity net", value: "£130,200", sharePercent: 61 },
+            { label: "PISL comm", value: "£61,800", sharePercent: 29 },
+            { label: "IPT", value: "£22,400", sharePercent: 10 },
+          ]}
+          footerLabel="GBP · primary liability"
+          helpText="Total CAL financial liability across selected partners."
         />
       )
     case "dual-data-widget":
@@ -566,6 +592,7 @@ export function getPreviewLayout(id: string) {
   const inset = [
     "headline-data-widget",
     "metric-trend-widget",
+    "metric-financial-trend-widget",
     "dual-data-widget",
     "product-split-widget",
     "metric-gauge-widget",
