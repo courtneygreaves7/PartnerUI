@@ -1,8 +1,10 @@
-import { Calendar, Moon, TrendingUp } from "lucide-react"
+import { TrendingUp } from "lucide-react"
 
 import {
+  InsightBadge,
   InsightCardBody,
   InsightFooter,
+  InsightStatRow,
   InsightVisualGroup,
   InsightWidgetHeader,
   insightCardHeaderClass,
@@ -16,6 +18,21 @@ type PropertyOccupancyWidgetProps = {
   className?: string
 }
 
+function describeArc(
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number
+) {
+  const startX = cx + radius * Math.cos(startAngle)
+  const startY = cy - radius * Math.sin(startAngle)
+  const endX = cx + radius * Math.cos(endAngle)
+  const endY = cy - radius * Math.sin(endAngle)
+  const largeArc = startAngle - endAngle > Math.PI ? 1 : 0
+  return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`
+}
+
 function OccupancyArcGauge({ percent }: { percent: number }) {
   const radius = 72
   const cx = 100
@@ -27,11 +44,10 @@ function OccupancyArcGauge({ percent }: { percent: number }) {
 
   const trackPath = describeArc(cx, cy, radius, startAngle, endAngle)
   const fillPath = describeArc(cx, cy, radius, startAngle, filledAngle)
-
   const ticks = [25, 50, 75]
 
   return (
-    <div className="relative mx-auto w-full max-w-[200px] py-1">
+    <div className="relative mx-auto w-full max-w-[200px]">
       <svg viewBox="0 0 200 108" className="h-auto w-full" aria-hidden>
         <path
           d={trackPath}
@@ -78,50 +94,6 @@ function OccupancyArcGauge({ percent }: { percent: number }) {
   )
 }
 
-function describeArc(
-  cx: number,
-  cy: number,
-  radius: number,
-  startAngle: number,
-  endAngle: number
-) {
-  const startX = cx + radius * Math.cos(startAngle)
-  const startY = cy - radius * Math.sin(startAngle)
-  const endX = cx + radius * Math.cos(endAngle)
-  const endY = cy - radius * Math.sin(endAngle)
-  const largeArc = startAngle - endAngle > Math.PI ? 1 : 0
-  return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`
-}
-
-function StatColumn({
-  label,
-  value,
-  unit,
-  mutedValue,
-}: {
-  label: string
-  value: string
-  unit: string
-  mutedValue?: boolean
-}) {
-  return (
-    <div className="flex min-w-0 flex-1 flex-col items-center px-2 text-center">
-      <p className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p
-        className={cn(
-          "mt-1 text-lg font-bold tabular-nums tracking-tight",
-          mutedValue ? "text-muted-foreground" : "text-foreground"
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-[11px] text-muted-foreground">{unit || "\u00A0"}</p>
-    </div>
-  )
-}
-
 export function PropertyOccupancyWidget({ helpText, className }: PropertyOccupancyWidgetProps) {
   return (
     <Card className={cn("@container flex h-full min-w-0 flex-col bg-card shadow-xs", className)}>
@@ -131,60 +103,71 @@ export function PropertyOccupancyWidget({ helpText, className }: PropertyOccupan
           subtitle="12-month rolling"
           helpText={helpText}
           badges={
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+            <InsightBadge variant="positive">
               <TrendingUp className="size-3 shrink-0" strokeWidth={2.25} />
               +{PROPERTY_OCCUPANCY.yoyChangePp}pp YoY
-            </span>
+            </InsightBadge>
           }
         />
       </CardHeader>
 
       <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         <InsightCardBody>
-          <InsightVisualGroup>
-            <OccupancyArcGauge percent={PROPERTY_OCCUPANCY.ratePercent} />
-          </InsightVisualGroup>
+          <div className="flex min-h-0 flex-1 flex-col justify-center gap-5">
+            <InsightVisualGroup className="items-center py-1">
+              <OccupancyArcGauge percent={PROPERTY_OCCUPANCY.ratePercent} />
+            </InsightVisualGroup>
 
-          <div className="flex items-stretch divide-x divide-border rounded-lg border border-border bg-muted/20 py-3">
-            <StatColumn
-              label="Booked"
-              value={String(PROPERTY_OCCUPANCY.bookedNights)}
-              unit="nights"
+            <InsightStatRow
+              columns={[
+                { label: "Booked", value: String(PROPERTY_OCCUPANCY.bookedNights), unit: "nights" },
+                {
+                  label: "Available",
+                  value: String(PROPERTY_OCCUPANCY.availableDays),
+                  unit: "days",
+                },
+                {
+                  label: "Prior yr",
+                  value: `${PROPERTY_OCCUPANCY.priorYearRatePercent}%`,
+                  unit: `+${PROPERTY_OCCUPANCY.priorYearDeltaPp}pp`,
+                },
+              ]}
             />
-            <StatColumn
-              label="Available"
-              value={String(PROPERTY_OCCUPANCY.availableDays)}
-              unit="days"
-            />
-            <StatColumn
-              label="Prior yr"
-              value={`${PROPERTY_OCCUPANCY.priorYearRatePercent}%`}
-              unit=""
-              mutedValue
-            />
+
+            <div>
+              <p className="mb-2 text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
+                Peak period
+              </p>
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {PROPERTY_OCCUPANCY.peakMonth}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {PROPERTY_OCCUPANCY.peakNights} nights booked
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-bold tabular-nums text-foreground">
+                    {PROPERTY_OCCUPANCY.peakOccupancyPercent}%
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">occupancy</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <InsightFooter
+            className="mt-0 shrink-0"
             left={
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <Moon className="size-3.5" strokeWidth={2} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground">
-                    Peak: {PROPERTY_OCCUPANCY.peakMonth}
-                  </p>
-                  <p className="text-[10px] tabular-nums text-muted-foreground">
-                    {PROPERTY_OCCUPANCY.peakNights} nights · {PROPERTY_OCCUPANCY.peakOccupancyPercent}%
-                  </p>
-                </div>
-              </div>
+              <span className="text-[10px] tabular-nums text-muted-foreground">
+                {PROPERTY_OCCUPANCY.periodLabel}
+              </span>
             }
             right={
-              <div className="flex items-center gap-1.5 text-[10px] tabular-nums text-muted-foreground">
-                <Calendar className="size-3.5 shrink-0" strokeWidth={2} />
-                {PROPERTY_OCCUPANCY.periodLabel}
-              </div>
+              <span className="text-[10px] tabular-nums text-muted-foreground">
+                vs {PROPERTY_OCCUPANCY.priorYearRatePercent}% prior year
+              </span>
             }
           />
         </InsightCardBody>

@@ -198,3 +198,18 @@ button[data-snapshot-pill] {
 .date-time-input::-moz-calendar-picker-indicator {
   opacity: 0;
 }
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.toast-progress {
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

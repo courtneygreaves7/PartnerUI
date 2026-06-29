@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Ban, Play, RefreshCw, TrendingUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -29,10 +30,11 @@ const months = [
 
 type DashboardFilterBarProps = {
   filters: ActiveFilters
+  hasRun?: boolean
   onRun: (filters: ActiveFilters) => void
 }
 
-export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) {
+export function DashboardFilterBar({ filters, hasRun = false, onRun }: DashboardFilterBarProps) {
   const [partner, setPartner] = useState(filters.partner)
   const [brand, setBrand] = useState(filters.brand)
   const [dateRange, setDateRange] = useState(filters.dateRange)
@@ -75,12 +77,12 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
       <div className="shrink-0 border-b border-border px-4 py-3.5">
         <h2 className="text-sm font-semibold">Filters</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Refine metrics by partner, brand, and period.
+          Refine metrics by partner, brand, and period, then update the report.
         </p>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-        <div className="flex flex-col gap-1.5">
+        <Field>
           <Label htmlFor="dash-partner" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Partner
           </Label>
@@ -95,10 +97,10 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
               <SelectItem value="partner-c">Partner Gamma</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
 
         {showBrand ? (
-        <div className="flex flex-col gap-1.5">
+        <Field>
           <Label htmlFor="dash-brand" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Brand
           </Label>
@@ -113,10 +115,10 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
               <SelectItem value="brand-c">Brand Gamma</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
         ) : null}
 
-        <div className="flex flex-col gap-1.5">
+        <Field>
           <Label htmlFor="dash-date-range" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Date range
           </Label>
@@ -130,10 +132,10 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
               <SelectItem value="custom-range">Custom range</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
+          <Field>
             <Label htmlFor="dash-year" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Year
             </Label>
@@ -147,9 +149,9 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
                 <SelectItem value="2026">2026</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
+          <Field>
             <Label htmlFor="dash-month" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               Month
             </Label>
@@ -165,10 +167,10 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <Field>
           <Label htmlFor="dash-metric" className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Metric
           </Label>
@@ -197,12 +199,26 @@ export function DashboardFilterBar({ filters, onRun }: DashboardFilterBarProps) 
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       </div>
 
       <div className="shrink-0 border-t border-border px-4 py-4">
-        <Button className="h-9 w-full" onClick={handleRun} aria-label="Run filters">
-          <Play className="size-3.5" />
+        <Button
+          className="h-9 w-full"
+          onClick={handleRun}
+          aria-label={hasRun ? "Update report with selected filters" : "Generate report from selected filters"}
+        >
+          {hasRun ? (
+            <>
+              <RefreshCw className="size-3.5" />
+              Update report
+            </>
+          ) : (
+            <>
+              <Play className="size-3.5" />
+              Generate report
+            </>
+          )}
         </Button>
       </div>
     </div>

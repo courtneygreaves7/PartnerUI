@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { Eye, PencilLine, Search, Tag, Zap } from "lucide-react"
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 
@@ -10,11 +10,14 @@ import {
   PasDeleteButton,
   PasInfoDrawer,
   PolicyInfoContent,
+  type PartnerInfoSection,
 } from "@/components/booking-engine/pas-info-panel"
+import { PasConfirmDialog } from "@/components/booking-engine/pas-confirm-dialog"
 import { PolicyRatesTable } from "@/components/booking-engine/policy-rates-table"
 import { PropertiesTable } from "@/components/booking-engine/properties-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/components/ui/toast"
 import {
   formatBrandLabel,
   formatCompactCount,
@@ -27,6 +30,7 @@ import {
   type PolicyRate,
 } from "@/lib/booking-engine-data"
 import { getPropertiesForPartner, type PropertyListItem } from "@/lib/properties-list-data"
+import { useScrollToTopOnChange } from "@/lib/scroll-to-top"
 import { cn } from "@/lib/utils"
 
 export type PartnerDetailTab = "overview" | "brands" | "bookings" | "properties"
@@ -42,6 +46,8 @@ type PartnerDetailPanelProps = {
   onViewProperty: (propertyId: string) => void
   activeTab: PartnerDetailTab
   onTabChange: (tab: PartnerDetailTab) => void
+  onOpenPartnerProfile?: () => void
+  contentResetKey?: string
   canDeletePartner?: boolean
   canEditBrand?: boolean
   canDeletePolicy?: (policyId: string) => boolean
@@ -100,7 +106,12 @@ function TabSummaryBar({
 }) {
   return (
     <div className={cn("flex flex-col gap-4", searchPlaceholder && "lg:flex-row lg:items-stretch")}>
-      <div className="grid w-full min-w-0 grid-cols-1 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div
+        className={cn(
+          "grid w-full min-w-0 grid-cols-1 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card sm:divide-x sm:divide-y-0",
+          metrics.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+        )}
+      >
         {metrics.map((metric) => (
           <TabSummaryMetric key={metric.label} label={metric.label} value={metric.value} />
         ))}
@@ -119,32 +130,40 @@ function SectionCard({
   subtitle,
   children,
   className,
+  contentClassName,
 }: {
   title: string
   subtitle?: string
   children: ReactNode
   className?: string
+  contentClassName?: string
 }) {
   return (
     <section className={cn("rounded-lg border border-border bg-card", className)}>
-      <div className="border-b border-border/60 px-4 py-3">
+      <div className="shrink-0 border-b border-border/60 px-4 py-3">
         <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
           {title}
         </p>
         {subtitle ? <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p> : null}
       </div>
-      <div className="p-4">{children}</div>
+      <div className={cn("p-4", contentClassName)}>{children}</div>
     </section>
   )
 }
 
-function OverviewTab({ partner }: { partner: Partner }) {
+function OverviewTab({
+  partner,
+  onViewBrand,
+}: {
+  partner: Partner
+  onViewBrand: (brandId: string) => void
+}) {
   const gradientId = `pas-trend-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`
   const trend = getPartnerBookingTrend(partner.id)
   const activePolicies = partner.policies.filter((policy) => policy.status === "active")
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px] xl:items-stretch">
       <SectionCard title="Booking trend" subtitle="12-month volume">
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">Daily booking volume</p>
@@ -187,21 +206,41 @@ function OverviewTab({ partner }: { partner: Partner }) {
         </div>
       </SectionCard>
 
-      <div className="flex flex-col gap-4">
-        <SectionCard title="Brands">
-          <ul className="space-y-3">
+      <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
+        <SectionCard
+          title="Brands"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          contentClassName="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
+          <ul className="space-y-2">
             {partner.brands.map((brand) => (
-              <li key={brand.id} className="flex items-start gap-2">
-                <Tag className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{formatBrandLabel(brand.name)}</p>
+              <li
+                key={brand.id}
+                className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background px-3 py-2"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <Tag className="size-3.5 shrink-0 text-muted-foreground" />
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {formatBrandLabel(brand.name)}
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => onViewBrand(brand.id)}
+                  className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  View
+                </button>
               </li>
             ))}
           </ul>
         </SectionCard>
 
-        <SectionCard title="Active policies">
+        <SectionCard
+          title="Active policies"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          contentClassName="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
           <ul className="space-y-3">
             {activePolicies.map((policy) => (
               <li key={policy.id} className="flex items-center justify-between gap-3">
@@ -464,6 +503,7 @@ function PropertiesTab({
           { label: "Properties", value: formatCount(properties.length) },
           { label: "Bookings", value: formatCount(partner.activity.bookings) },
           { label: "With CAL", value: formatCount(partner.activity.withCal) },
+          { label: "With DDL", value: formatCount(partner.activity.withDdl) },
         ]}
       />
       <PropertiesTable properties={properties} onViewProperty={onViewProperty} embedded />
@@ -479,6 +519,8 @@ export function PartnerDetailPanel({
   onViewProperty,
   activeTab,
   onTabChange,
+  onOpenPartnerProfile,
+  contentResetKey = "",
   canDeletePartner,
   canEditBrand,
   canDeletePolicy,
@@ -489,7 +531,12 @@ export function PartnerDetailPanel({
 }: PartnerDetailPanelProps) {
   const properties = getPropertiesForPartner(partner.id)
   const bookings = getBookingsForPartner(partner.id)
+  const { toast } = useToast()
+  const tabPanelRef = useRef<HTMLDivElement>(null)
   const [infoView, setInfoView] = useState<InfoView | null>(null)
+  const [deletePartnerOpen, setDeletePartnerOpen] = useState(false)
+
+  useScrollToTopOnChange(tabPanelRef, [activeTab, partner.id, contentResetKey])
 
   useEffect(() => {
     setInfoView(null)
@@ -514,16 +561,16 @@ export function PartnerDetailPanel({
     ? partner.brands.find((brand) => brand.id === viewedPolicy.brandId)
     : undefined
 
-  function handleDeletePartner() {
+  function handleDeletePartnerRequest() {
     if (!canDeletePartner || !onDeletePartner) return
-    if (
-      window.confirm(
-        `Delete ${partner.name}? This removes the partner and any policies you added for them.`
-      )
-    ) {
-      onDeletePartner()
-      setInfoView(null)
-    }
+    setDeletePartnerOpen(true)
+  }
+
+  function confirmDeletePartner() {
+    if (!canDeletePartner || !onDeletePartner) return
+    onDeletePartner()
+    setDeletePartnerOpen(false)
+    setInfoView(null)
   }
 
   function handleDeletePolicy(policyId: string) {
@@ -539,6 +586,21 @@ export function PartnerDetailPanel({
 
   function openPolicyView(policyId: string) {
     setInfoView({ type: "policy", policyId })
+  }
+
+  function handleEditPartnerSection(section: PartnerInfoSection) {
+    if (!canDeletePartner) return
+
+    if (section === "brands") {
+      setInfoView(null)
+      onTabChange("brands")
+      return
+    }
+
+    toast({
+      title: "Edit coming soon",
+      description: "Editing this section will be available in a future update.",
+    })
   }
 
   const tabCounts: Record<PartnerDetailTab, number | null> = {
@@ -624,8 +686,19 @@ export function PartnerDetailPanel({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-5">
-        {activeTab === "overview" ? <OverviewTab partner={partner} /> : null}
+      <div
+        ref={tabPanelRef}
+        className={cn(
+          "min-h-0 flex-1 p-5",
+          activeTab === "overview" ? "overflow-hidden" : "overflow-y-auto"
+        )}
+      >
+        {activeTab === "overview" ? (
+          <OverviewTab
+            partner={partner}
+            onViewBrand={(brandId) => setInfoView({ type: "brand", brandId })}
+          />
+        ) : null}
         {activeTab === "brands" ? (
           <BrandsTab
             partner={partner}
@@ -647,22 +720,38 @@ export function PartnerDetailPanel({
 
       <PasInfoDrawer
         open={infoView?.type === "partner"}
+        size="wide"
         title={partner.name}
         subtitle="Partner profile and onboarding details"
         onClose={() => setInfoView(null)}
+        onOpenPage={
+          onOpenPartnerProfile
+            ? () => {
+                setInfoView(null)
+                onOpenPartnerProfile()
+              }
+            : undefined
+        }
+        openPageLabel="Open partner profile"
         footer={
           canDeletePartner && onDeletePartner ? (
-            <PasDeleteButton label="Delete partner" onDelete={handleDeletePartner} />
+            <PasDeleteButton label="Delete partner" onDelete={handleDeletePartnerRequest} />
           ) : undefined
         }
       >
-        <PartnerInfoContent partner={partner} />
+        <PartnerInfoContent
+          partner={partner}
+          canEdit={Boolean(canDeletePartner)}
+          onEditSection={handleEditPartnerSection}
+          onViewBrand={(brandId) => setInfoView({ type: "brand", brandId })}
+        />
       </PasInfoDrawer>
 
       <PasInfoDrawer
         open={infoView?.type === "brand" && Boolean(viewedBrand)}
+        size="wide"
         title={viewedBrand ? formatBrandLabel(viewedBrand.name) : "Brand"}
-        subtitle={viewedBrand ? viewedBrand.policyGroup : undefined}
+        subtitle={viewedBrand ? formatBrandLabel(viewedBrand.name) : undefined}
         onClose={() => setInfoView(null)}
       >
         {viewedBrand ? (
@@ -678,7 +767,7 @@ export function PartnerDetailPanel({
       <PasInfoDrawer
         open={infoView?.type === "brand-edit" && Boolean(editingBrand)}
         title={editingBrand ? formatBrandLabel(editingBrand.name) : "Edit brand"}
-        subtitle="Update brand name and policy group"
+        subtitle="Update brand name"
         onClose={() => setInfoView(null)}
       >
         {editingBrand && onBrandUpdate ? (
@@ -695,6 +784,7 @@ export function PartnerDetailPanel({
 
       <PasInfoDrawer
         open={infoView?.type === "policy" && Boolean(viewedPolicy)}
+        size="wide"
         title={viewedPolicy?.name ?? "Policy"}
         subtitle={viewedPolicyBrand ? formatBrandLabel(viewedPolicyBrand.name) : undefined}
         onClose={() => setInfoView(null)}
@@ -718,6 +808,15 @@ export function PartnerDetailPanel({
           />
         ) : null}
       </PasInfoDrawer>
+
+      <PasConfirmDialog
+        open={deletePartnerOpen}
+        title={`Delete ${partner.name}?`}
+        description="This removes the partner and any policies you added for them. This action cannot be undone."
+        confirmLabel="Delete partner"
+        onConfirm={confirmDeletePartner}
+        onCancel={() => setDeletePartnerOpen(false)}
+      />
     </div>
   )
 }

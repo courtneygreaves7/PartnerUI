@@ -1,3 +1,4 @@
+import { PropertyAvgBookingValueWidget } from "@/components/booking-engine/property-avg-booking-value-widget"
 import { PropertyBookingsWidget } from "@/components/booking-engine/property-bookings-widget"
 import { PropertyCancelBenchmarkWidget } from "@/components/booking-engine/property-cancel-benchmark-widget"
 import { PropertyOccupancyWidget } from "@/components/booking-engine/property-occupancy-widget"
@@ -18,8 +19,6 @@ import {
   PROPERTY_AVG_GUESTS,
   PROPERTY_AVG_NIGHTS,
   PROPERTY_BOOKINGS_COUNT_TREND,
-  PROPERTY_BOOKING_VALUE_INSIGHT,
-  PROPERTY_BOOKING_VALUE_TREND,
   PROPERTY_CANCEL_FROM_BOOKING,
   PROPERTY_CANCEL_TO_STAY,
   PROPERTY_INSIGHT_METRICS,
@@ -50,9 +49,22 @@ function InsightsSectionHeader({
   )
 }
 
+export function PropertyPerformanceCards() {
+  return (
+    <div className="@container min-w-0">
+      <div
+        className={cn(metricCardGridClass, "grid-cols-1 @md:grid-cols-2 @4xl:grid-cols-3")}
+      >
+        <PropertyAvgBookingValueWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
+        <PropertyBookingsWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
+        <PropertyOccupancyWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
+      </div>
+    </div>
+  )
+}
+
 export function PropertyInsights() {
   const leadDays = metric("avg-lead-days")
-  const avgBookingValue = metric("avg-booking-value")
   const calCoverage = metric("cal-coverage")
   const ddlCoverage = metric("ddl-coverage")
   const cancellationRate = metric("cancellation-rate")
@@ -90,40 +102,7 @@ export function PropertyInsights() {
             ]}
           />
 
-          <div className="@container min-w-0">
-            <div
-              className={cn(metricCardGridClass, "grid-cols-1 @md:grid-cols-2 @4xl:grid-cols-3")}
-            >
-              <MetricFinancialTrendWidget
-                title="Avg booking value"
-                value={avgBookingValue.value}
-                trendLabel="+4.2%"
-                trend="up"
-                comparisonLabel={`Portfolio avg ${PROPERTY_PORTFOLIO_BENCHMARKS.avgBookingValue}`}
-                chartData={PROPERTY_BOOKING_VALUE_TREND}
-                breakdownRows={[
-                  { label: "Peak season", value: "£712", sharePercent: 52 },
-                  { label: "Off-peak", value: "£585", sharePercent: 48 },
-                ]}
-                insightBenchmark={{
-                  percent: PROPERTY_BOOKING_VALUE_INSIGHT.benchmarkPercent,
-                  label: PROPERTY_BOOKING_VALUE_INSIGHT.benchmarkLabel,
-                }}
-                insightHighlights={[
-                  { label: "Total revenue", value: PROPERTY_BOOKING_VALUE_INSIGHT.totalRevenue },
-                  {
-                    label: "Revenue / night",
-                    value: PROPERTY_BOOKING_VALUE_INSIGHT.revenuePerNight,
-                  },
-                ]}
-                footerLabel="Based on 12 confirmed bookings"
-                helpText={INSIGHTS_WIDGET_HELP_TEXT}
-                insightLayout
-              />
-              <PropertyBookingsWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
-              <PropertyOccupancyWidget helpText={INSIGHTS_WIDGET_HELP_TEXT} />
-            </div>
-          </div>
+          <PropertyPerformanceCards />
         </section>
 
         <section className="space-y-4">

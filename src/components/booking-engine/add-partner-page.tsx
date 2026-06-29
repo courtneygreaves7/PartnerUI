@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react"
 import { ArrowLeft, Building2, Plus, Trash2, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -23,10 +23,14 @@ import {
   type PartnerProduct,
 } from "@/lib/booking-engine-data"
 import { cn } from "@/lib/utils"
+import { Field } from "@/components/ui/field"
 
 type AddPartnerPageProps = {
   onBack: () => void
   onSubmit?: (values: AddPartnerFormValues) => void
+  initialValues?: AddPartnerFormValues
+  pageTitle?: string
+  submitLabel?: string
 }
 
 type FieldErrors = Partial<Record<keyof AddPartnerFormValues, string>> & {
@@ -167,7 +171,7 @@ function FormField({
   className?: string
 }) {
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <Field className={className}>
       <Label htmlFor={id} className="font-semibold normal-case tracking-normal text-foreground">
         {label}
       </Label>
@@ -179,7 +183,7 @@ function FormField({
       ) : hint ? (
         <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
-    </div>
+    </Field>
   )
 }
 
@@ -284,14 +288,35 @@ function FileDropzone({
   )
 }
 
-export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
-  const [values, setValues] = useState<AddPartnerFormValues>(EMPTY_FORM)
+export function AddPartnerPage({
+  onBack,
+  onSubmit,
+  initialValues,
+  pageTitle = "New partner",
+  submitLabel = "Save partner",
+}: AddPartnerPageProps) {
+  const [values, setValues] = useState<AddPartnerFormValues>(initialValues ?? EMPTY_FORM)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [submitted, setSubmitted] = useState(false)
-  const [initialsTouched, setInitialsTouched] = useState(false)
-  const [groupOptions, setGroupOptions] = useState<string[]>([...PARTNER_GROUP_OPTIONS])
+  const [initialsTouched, setInitialsTouched] = useState(Boolean(initialValues?.initials))
+  const [groupOptions, setGroupOptions] = useState<string[]>(() => {
+    const options: string[] = [...PARTNER_GROUP_OPTIONS]
+    const group = initialValues?.partnerGroup?.trim()
+    if (group && !options.includes(group)) {
+      options.push(group)
+    }
+    return options
+  })
   const [showNewGroup, setShowNewGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
+  const hydratedRef = useRef(false)
+
+  useEffect(() => {
+    if (!initialValues || hydratedRef.current) return
+    setValues(initialValues)
+    setInitialsTouched(true)
+    hydratedRef.current = true
+  }, [initialValues])
 
   function updateField<K extends keyof AddPartnerFormValues>(
     key: K,
@@ -401,7 +426,7 @@ export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
         <div className="min-w-0">
           <p className="text-xs font-medium text-muted-foreground">Partners &amp; policies</p>
-          <h1 className="mt-1 text-[22px] font-semibold tracking-tight">New partner</h1>
+          <h1 className="mt-1 text-[22px] font-semibold tracking-tight">{pageTitle}</h1>
         </div>
 
         <Button
@@ -416,41 +441,42 @@ export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
       </div>
 
       <form className="space-y-6 pb-24" onSubmit={handleSubmit} noValidate>
-        <article className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <div className="flex min-w-0 items-start gap-3">
+        <article className="rounded-xl border border-border bg-card p-5 shadow-xs">
+          <div className="flex flex-col items-start gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40 text-muted-foreground">
               <Building2 className="size-4" strokeWidth={2} />
             </div>
-            <div className="min-w-0">
-              <Label
-                htmlFor="companyRegistrationNumber"
-                className="text-sm font-semibold normal-case tracking-normal text-foreground"
-              >
-                Company registration number
-              </Label>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Search Companies House to pre-fill partner details
-              </p>
-            </div>
-          </div>
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-            <Input
-              id="companyRegistrationNumber"
-              value={values.companyRegistrationNumber}
-              onChange={(event) =>
-                updateField("companyRegistrationNumber", event.target.value)
-              }
-              placeholder="e.g. 12345678"
-              className="h-9 min-w-0 flex-1 text-xs sm:w-56 sm:flex-none"
-            />
-            <Button
-              type="button"
-              className="h-9 shrink-0 text-xs"
-              onClick={handleCompanySearch}
-              disabled={!values.companyRegistrationNumber.trim()}
+            <Label
+              htmlFor="companyRegistrationNumber"
+              className="text-sm font-semibold normal-case tracking-normal text-foreground"
             >
-              Search
-            </Button>
+              Company registration number
+            </Label>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Search Companies House to pre-fill partner details
+            </p>
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
+              <Input
+                id="companyRegistrationNumber"
+                value={values.companyRegistrationNumber}
+                onChange={(event) =>
+                  updateField("companyRegistrationNumber", event.target.value)
+                }
+                placeholder="e.g. 12345678"
+                className="h-9 min-w-0 flex-1 text-xs sm:max-w-xs"
+              />
+              <Button
+                type="button"
+                className="h-9 shrink-0 text-xs"
+                onClick={handleCompanySearch}
+                disabled={!values.companyRegistrationNumber.trim()}
+              >
+                Search
+              </Button>
+            </div>
           </div>
         </article>
 
@@ -544,68 +570,6 @@ export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
               className={textareaClass}
             />
           </FormField>
-        </div>
-
-        <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading>Brands</SectionHeading>
-            <Button type="button" variant="outline" className="h-8 gap-1.5 text-xs" onClick={addBrand}>
-              <Plus className="size-3.5" />
-              Add brand
-            </Button>
-          </div>
-          {errors.brands ? (
-            <p className="text-xs text-destructive">{errors.brands}</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Add one or more brands for this partner. Policy group defaults to the brand name if
-              left blank.
-            </p>
-          )}
-          <div className="space-y-4">
-            {values.brands.map((brand, index) => (
-              <div
-                key={`brand-${index}`}
-                className="rounded-lg border border-border/70 bg-muted/10 p-4"
-              >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-foreground">Brand {index + 1}</p>
-                  {values.brands.length > 1 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-destructive"
-                      onClick={() => removeBrand(index)}
-                    >
-                      <Trash2 className="size-3.5" />
-                      Remove
-                    </Button>
-                  ) : null}
-                </div>
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <FormField id={`brand-name-${index}`} label="Brand name">
-                    <Input
-                      id={`brand-name-${index}`}
-                      value={brand.name}
-                      onChange={(event) => updateBrand(index, { name: event.target.value })}
-                      placeholder="e.g. Brand Alpha"
-                    />
-                  </FormField>
-                  <FormField id={`brand-group-${index}`} label="Policy group">
-                    <Input
-                      id={`brand-group-${index}`}
-                      value={brand.policyGroup}
-                      onChange={(event) =>
-                        updateBrand(index, { policyGroup: event.target.value })
-                      }
-                      placeholder="Defaults to brand name"
-                    />
-                  </FormField>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
@@ -723,8 +687,9 @@ export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
-          <SectionHeading>Connection &amp; setup</SectionHeading>
+        <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
+            <SectionHeading>Connection &amp; setup</SectionHeading>
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="connectionType" label="Data connection">
               <Select
@@ -817,6 +782,56 @@ export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
               />
             </FormField>
           </div>
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <SectionHeading>Brands</SectionHeading>
+              <Button type="button" variant="outline" className="h-8 gap-1.5 text-xs" onClick={addBrand}>
+                <Plus className="size-3.5" />
+                Add brand
+              </Button>
+            </div>
+            {errors.brands ? (
+              <p className="text-xs text-destructive">{errors.brands}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Add one or more brands for this partner.
+              </p>
+            )}
+            <div className="space-y-4">
+              {values.brands.map((brand, index) => (
+                <div
+                  key={`brand-${index}`}
+                  className="rounded-lg border border-border/70 bg-muted/10 p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground">Brand {index + 1}</p>
+                    {values.brands.length > 1 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() => removeBrand(index)}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                  <FormField id={`brand-name-${index}`} label="Brand name">
+                    <Input
+                      id={`brand-name-${index}`}
+                      value={brand.name}
+                      onChange={(event) => updateBrand(index, { name: event.target.value })}
+                      placeholder="e.g. Brand Alpha"
+                    />
+                  </FormField>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-border bg-background/95 px-4 py-3 shadow-xs backdrop-blur-sm">
@@ -824,7 +839,7 @@ export function AddPartnerPage({ onBack, onSubmit }: AddPartnerPageProps) {
             Cancel
           </Button>
           <Button type="submit" className="h-9 text-xs">
-            Save partner
+            {submitLabel}
           </Button>
         </div>
       </form>

@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react"
 import {
-  Download,
+  BarChart3,
   FileText,
+  Package,
   PencilLine,
-  Plus,
   Search,
+  Users,
 } from "lucide-react"
 
 import {
@@ -12,17 +13,24 @@ import {
   type PartnerDetailTab,
 } from "@/components/booking-engine/partner-detail-panel"
 import { AddPartnerPage } from "@/components/booking-engine/add-partner-page"
+import { PartnerProfilePage } from "@/components/booking-engine/partner-profile-page"
 import { AddPolicyPage } from "@/components/booking-engine/add-policy-page"
+import { AddProductPage } from "@/components/booking-engine/add-product-page"
+import { AddCapacityPage } from "@/components/booking-engine/add-capacity-page"
 import { PartnerListItem } from "@/components/booking-engine/partner-list-item"
 import { PropertyPage } from "@/components/booking-engine/property-page"
 import type { BookingEngineAction, BookingEngineView } from "@/components/landing-dashboard-page"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/components/ui/toast"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import {
   getPartnerTags,
+  partnerToFormValues,
   type AddPartnerFormValues,
   type AddPolicyFormValues,
+  type AddProductFormValues,
+  type AddCapacityFormValues,
   type Partner,
 } from "@/lib/booking-engine-data"
 import {
@@ -34,8 +42,11 @@ import {
   getPasPolicyDetails,
   isUserAddedPartner,
   isUserAddedPolicy,
+  updatePasPartner,
   updatePasPartnerBrand,
 } from "@/lib/partner-store"
+import { addPasCapacity, addPasProduct } from "@/lib/pas-catalog-store"
+import { ScrollResetContainer } from "@/components/scroll-reset-container"
 import { MOCK_PROPERTY } from "@/lib/property-data"
 
 function partnerMatchesSearch(partner: Partner, query: string) {
@@ -101,6 +112,7 @@ export function BookingEnginePage({
   initialView = "partners",
   initialAction,
 }: BookingEnginePageProps) {
+  const { toast } = useToast()
   const [partners, setPartners] = useState<Partner[]>(() => getPasPartners())
   const initialState = getInitialPasState(initialView, partners)
   const [selectedPartnerId, setSelectedPartnerId] = useState(initialState.selectedPartnerId)
@@ -110,6 +122,10 @@ export function BookingEnginePage({
   const [partnerSearch, setPartnerSearch] = useState("")
   const [showAddPartner, setShowAddPartner] = useState(initialAction === "add-partner")
   const [showAddPolicy, setShowAddPolicy] = useState(initialAction === "add-policy")
+  const [showAddProduct, setShowAddProduct] = useState(initialAction === "add-product")
+  const [showAddCapacity, setShowAddCapacity] = useState(initialAction === "add-capacity")
+  const [partnerProfileId, setPartnerProfileId] = useState<string | null>(null)
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null)
 
   const filteredPartners = useMemo(
     () => partners.filter((partner) => partnerMatchesSearch(partner, partnerSearch)),
@@ -120,6 +136,13 @@ export function BookingEnginePage({
     partners.find((partner) => partner.id === selectedPartnerId) ??
     filteredPartners[0] ??
     partners[0]
+
+  const profilePartner =
+    partners.find((partner) => partner.id === partnerProfileId) ??
+    (partnerProfileId ? selectedPartner : undefined)
+
+  const editingPartner =
+    partners.find((partner) => partner.id === editingPartnerId) ?? undefined
 
   const maxPartnerBookings = useMemo(
     () => Math.max(1, ...partners.map((partner) => partner.activity.bookings)),
@@ -137,24 +160,51 @@ export function BookingEnginePage({
     setActiveTab("overview")
     setPartnerSearch("")
     setShowAddPartner(false)
+    toast({
+      title: "Partner added",
+      description: `${partner.name} is now in PAS.`,
+    })
   }
 
   function handleAddPolicy(values: AddPolicyFormValues) {
-    addPasPolicy(values.partnerId, values)
+    const policy = addPasPolicy(values.partnerId, values)
+    const partner = partners.find((item) => item.id === values.partnerId)
     refreshPartners()
     setSelectedPartnerId(values.partnerId)
     setActiveTab("brands")
     setPartnerSearch("")
     setShowAddPolicy(false)
+    toast({
+      title: "Policy added",
+      description: `${policy.name} added to ${partner?.name ?? "partner"}.`,
+    })
   }
 
-  function handleDeletePartner() {
-    if (!selectedPartner) return
-    if (deletePasPartner(selectedPartner.id)) {
+  function handleDeletePartner(targetPartnerId?: string) {
+    const partnerId = targetPartnerId ?? selectedPartner?.id
+    if (!partnerId) return
+    if (deletePasPartner(partnerId)) {
       const nextPartners = getPasPartners()
       setPartners(nextPartners)
       setSelectedPartnerId(nextPartners[0]?.id ?? "")
+      setPartnerProfileId(null)
+      setEditingPartnerId(null)
     }
+  }
+
+  function handleUpdatePartner(values: AddPartnerFormValues) {
+    if (!editingPartnerId) return
+    const updated = updatePasPartner(editingPartnerId, values)
+    if (!updated) return
+
+    refreshPartners()
+    setSelectedPartnerId(updated.id)
+    setPartnerProfileId(updated.id)
+    setEditingPartnerId(null)
+    toast({
+      title: "Partner updated",
+      description: `${updated.name} has been saved.`,
+    })
   }
 
   function handleDeletePolicy(policyId: string) {
@@ -170,40 +220,131 @@ export function BookingEnginePage({
     }
   }
 
+  function handleAddProduct(values: AddProductFormValues) {
+    const product = addPasProduct(values)
+    setShowAddProduct(false)
+    toast({
+      title: "Product added",
+      description: `${product.name} (${product.code}) is ready to use.`,
+    })
+  }
+
+  function handleAddCapacity(values: AddCapacityFormValues) {
+    const provider = addPasCapacity(values)
+    setShowAddCapacity(false)
+    toast({
+      title: "Capacity added",
+      description: `${provider.name} provider has been added.`,
+    })
+  }
+
+  if (editingPartner) {
+    return (
+      <ScrollResetContainer
+        resetKey={`edit-partner-${editingPartnerId}`}
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
+        <AddPartnerPage
+          initialValues={partnerToFormValues(editingPartner)}
+          pageTitle={`Edit ${editingPartner.name}`}
+          submitLabel="Save changes"
+          onBack={() => setEditingPartnerId(null)}
+          onSubmit={handleUpdatePartner}
+        />
+      </ScrollResetContainer>
+    )
+  }
+
+  if (profilePartner && partnerProfileId) {
+    return (
+      <ScrollResetContainer
+        resetKey={`profile-${partnerProfileId}`}
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
+        <PartnerProfilePage
+          partner={profilePartner}
+          canEdit={isUserAddedPartner(profilePartner.id)}
+          canDelete={isUserAddedPartner(profilePartner.id)}
+          onBack={() => setPartnerProfileId(null)}
+          onEditPartner={() => setEditingPartnerId(profilePartner.id)}
+          onDeletePartner={() => handleDeletePartner(profilePartner.id)}
+        />
+      </ScrollResetContainer>
+    )
+  }
+
+  if (showAddCapacity) {
+    return (
+      <ScrollResetContainer
+        resetKey="add-capacity"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
+        <AddCapacityPage onBack={() => setShowAddCapacity(false)} onSubmit={handleAddCapacity} />
+      </ScrollResetContainer>
+    )
+  }
+
+  if (showAddProduct) {
+    return (
+      <ScrollResetContainer
+        resetKey="add-product"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
+        <AddProductPage onBack={() => setShowAddProduct(false)} onSubmit={handleAddProduct} />
+      </ScrollResetContainer>
+    )
+  }
+
   if (showAddPolicy) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <ScrollResetContainer
+        resetKey="add-policy"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
         <AddPolicyPage
           partners={partners}
           initialPartnerId={selectedPartnerId}
           onBack={() => setShowAddPolicy(false)}
           onSubmit={handleAddPolicy}
         />
-      </div>
+      </ScrollResetContainer>
     )
   }
 
   if (showAddPartner) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <ScrollResetContainer
+        resetKey="add-partner"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
         <AddPartnerPage
           onBack={() => setShowAddPartner(false)}
           onSubmit={handleAddPartner}
         />
-      </div>
+      </ScrollResetContainer>
     )
   }
 
   if (selectedPropertyId) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <ScrollResetContainer
+        resetKey={`property-${selectedPropertyId}`}
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
         <PropertyPage
           property={MOCK_PROPERTY}
           onBack={() => setSelectedPropertyId(null)}
         />
-      </div>
+      </ScrollResetContainer>
     )
   }
+
+  const detailContentResetKey = [
+    selectedPartnerId,
+    selectedPropertyId,
+    partnerProfileId,
+    editingPartnerId,
+  ].join("|")
 
   return (
     <TooltipProvider>
@@ -216,10 +357,6 @@ export function BookingEnginePage({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" className="h-9 gap-2 text-xs">
-                <Download className="size-3.5" />
-                Export
-              </Button>
               <Button
                 variant="outline"
                 className="h-9 gap-2 text-xs"
@@ -229,11 +366,28 @@ export function BookingEnginePage({
                 Add policy
               </Button>
               <Button
+                variant="outline"
                 className="h-9 gap-2 text-xs"
                 onClick={() => setShowAddPartner(true)}
               >
-                <Plus className="size-3.5" />
+                <Users className="size-3.5" />
                 Add partner
+              </Button>
+              <Button
+                variant="outline"
+                className="h-9 gap-2 text-xs"
+                onClick={() => setShowAddProduct(true)}
+              >
+                <Package className="size-3.5" />
+                Add product
+              </Button>
+              <Button
+                variant="outline"
+                className="h-9 gap-2 text-xs"
+                onClick={() => setShowAddCapacity(true)}
+              >
+                <BarChart3 className="size-3.5" />
+                Add capacity
               </Button>
             </div>
           </div>
@@ -298,6 +452,8 @@ export function BookingEnginePage({
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 onViewProperty={setSelectedPropertyId}
+                onOpenPartnerProfile={() => setPartnerProfileId(selectedPartner.id)}
+                contentResetKey={detailContentResetKey}
                 canDeletePartner={isUserAddedPartner(selectedPartner.id)}
                 canEditBrand={isUserAddedPartner(selectedPartner.id)}
                 canDeletePolicy={isUserAddedPolicy}

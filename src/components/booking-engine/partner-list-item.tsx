@@ -1,3 +1,5 @@
+import { ArrowRight } from "lucide-react"
+
 import {
   formatCompactCount,
   getPartnerTags,
@@ -32,7 +34,16 @@ export function PartnerListItem({
           : "border-border bg-card hover:bg-muted/30"
       )}
     >
-      <p className="text-sm font-semibold text-foreground">{partner.name}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-sm font-semibold text-foreground">{partner.name}</p>
+        {selected ? (
+          <ArrowRight
+            className="size-4 shrink-0 text-foreground"
+            strokeWidth={2}
+            aria-hidden
+          />
+        ) : null}
+      </div>
       {partner.onboarding?.status === "draft" ? (
         <span className="mt-1 inline-flex rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           Draft

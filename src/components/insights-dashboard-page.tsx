@@ -24,6 +24,7 @@ import { BookingsVsStaysChart } from "@/components/charts/bookings-vs-stays-char
 import { CalDdlTakeupChart } from "@/components/charts/cal-ddl-takeup-chart"
 import { LeadTimeChart } from "@/components/charts/lead-time-chart"
 import { DashboardFilterBar } from "@/components/dashboard-filter-bar"
+import { FilterContextPill } from "@/components/filter-context-pill"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -214,13 +215,6 @@ function DashboardCarousel({
       </div>
     </div>
   )
-}
-
-function formatFilterLabel(value: string) {
-  return value
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
 }
 
 export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashboardPageProps) {
@@ -506,13 +500,6 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     }
   }
 
-  const filterChips = [
-    formatFilterLabel(filters.partner),
-    formatFilterLabel(filters.brand),
-    filters.dateRange.replace(/-/g, " "),
-    `${filters.month} ${filters.year}`,
-  ]
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div
@@ -520,19 +507,11 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
         data-snapshot-capture={hasRun ? true : undefined}
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        {hasRun && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {filterChips.map((chip) => (
-              <span
-                key={chip}
-                className="text-muted-foreground"
-                data-snapshot-filter-chip
-              >
-                {chip}
-              </span>
-            ))}
+        {hasRun ? (
+          <div className="flex shrink-0 justify-end">
+            <FilterContextPill filters={filters} snapshotChip />
           </div>
-        )}
+        ) : null}
 
         <div className="flex min-h-0 flex-1 gap-5">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -540,7 +519,7 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
               <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/10 py-10 text-center">
                 <p className="text-sm font-medium">No data to display</p>
                 <p className="max-w-sm text-sm text-muted-foreground">
-                  Adjust filters on the right, then press <strong>Run</strong> to load the dashboard.
+                  Adjust filters on the right, then press <strong>Generate report</strong> to load the dashboard.
                 </p>
               </div>
             ) : (
@@ -553,7 +532,7 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
           </div>
 
           <div className="flex w-56 shrink-0 flex-col min-h-0" data-snapshot-exclude>
-            <DashboardFilterBar filters={filters} onRun={onRun} />
+            <DashboardFilterBar filters={filters} hasRun={hasRun} onRun={onRun} />
           </div>
         </div>
       </div>

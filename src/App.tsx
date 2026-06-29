@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   BarChart3,
   ChevronsLeft,
@@ -21,6 +21,7 @@ import {
   type LandingDestination,
 } from "@/components/landing-dashboard-page"
 import { DesignSystemView } from "@/components/components-page"
+import { FilterContextPill } from "@/components/filter-context-pill"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { InsightsReportPage } from "@/components/insights-report-page"
 import { LoginPage } from "@/components/login-page"
@@ -50,6 +51,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { APP_MAIN_SCROLL_ID, scrollAppMainToTop, scrollToTop } from "@/lib/scroll-to-top"
 import { type ActiveFilters, DEFAULT_FILTERS } from "@/lib/chart-data"
 
 const navGroups = [
@@ -160,6 +162,7 @@ function App() {
   const [bookingEngineView, setBookingEngineView] = useState<BookingEngineView>("partners")
   const [bookingEngineAction, setBookingEngineAction] = useState<BookingEngineAction | undefined>()
   const [bookingEngineNavigationKey, setBookingEngineNavigationKey] = useState(0)
+  const mainScrollRef = useRef<HTMLElement>(null)
 
   function handleLogout() {
     setIsAuthenticated(false)
@@ -196,6 +199,12 @@ function App() {
     }, 150)
 
     return () => window.clearTimeout(timer)
+  }, [activeSection, insightsScrollTarget])
+
+  useEffect(() => {
+    if (activeSection === "insights" && insightsScrollTarget) return
+    scrollAppMainToTop()
+    scrollToTop(mainScrollRef.current)
   }, [activeSection, insightsScrollTarget])
 
   useEffect(() => {
@@ -447,6 +456,8 @@ function App() {
               <>
                 <div className="min-h-0 min-w-0 overflow-hidden">
                   <section
+                    id={APP_MAIN_SCROLL_ID}
+                    ref={mainScrollRef}
                     className={cn(
                       "relative h-full min-h-0 px-20 xl:px-24",
                       activeSection === "booking-engine"
@@ -480,13 +491,17 @@ function App() {
                       </div>
                     ) : (
                       <>
-                        <div className="mb-8">
-                          <h1 className="text-[22px] font-semibold tracking-tight">
-                            Sales, cancellation & re-let metrics
-                          </h1>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            Real-time across 3 partners
-                          </p>
+                        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <h1 className="text-[22px] font-semibold tracking-tight">
+                              Sales, cancellation & re-let metrics
+                            </h1>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Real-time across 3 partners
+                            </p>
+                          </div>
+
+                          <FilterContextPill filters={activeFilters} />
                         </div>
 
                         <InsightsReportPage filters={activeFilters} wideLayout={false} />

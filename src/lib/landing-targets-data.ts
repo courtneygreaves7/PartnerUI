@@ -55,6 +55,25 @@ export const LANDING_TARGET_PROGRESS_CHART: TargetProgressPoint[] = [
   { label: "Jun", value: 78 },
 ]
 
+export const TARGET_METRIC_TRENDS: Record<string, TargetProgressPoint[]> = {
+  bookings: [
+    { label: "Jan", value: 16 },
+    { label: "Feb", value: 31 },
+    { label: "Mar", value: 44 },
+    { label: "Apr", value: 58 },
+    { label: "May", value: 69 },
+    { label: "Jun", value: 78 },
+  ],
+  revenue: [
+    { label: "Jan", value: 24 },
+    { label: "Feb", value: 41 },
+    { label: "Mar", value: 55 },
+    { label: "Apr", value: 68 },
+    { label: "May", value: 79 },
+    { label: "Jun", value: 89 },
+  ],
+}
+
 export function getTargetAchievementPercent(actual: number, target: number) {
   if (target <= 0) return 0
   return Math.min(100, Math.round((actual / target) * 100))

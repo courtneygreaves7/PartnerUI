@@ -1,3 +1,4 @@
+import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -59,7 +60,7 @@ export function CompareFilterPanel({
 
       <div className="space-y-3 px-5 py-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label>Partner</Label>
             <Select
               value={filters.partner}
@@ -82,9 +83,9 @@ export function CompareFilterPanel({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
 
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label>Brand</Label>
             <Select
               value={filters.brand}
@@ -103,10 +104,10 @@ export function CompareFilterPanel({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <Field>
           <Label>Period</Label>
           <Tabs
             value={filters.dateRange}
@@ -123,10 +124,10 @@ export function CompareFilterPanel({
               <TabsTrigger value="custom-range">Custom</TabsTrigger>
             </TabsList>
           </Tabs>
-        </div>
+        </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label>Year</Label>
             <Select
               value={filters.year}
@@ -141,9 +142,9 @@ export function CompareFilterPanel({
                 <SelectItem value="2026">2026</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Field>
 
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label>Month</Label>
             <Select
               value={filters.month}
@@ -160,7 +161,7 @@ export function CompareFilterPanel({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
         </div>
       </div>
     </div>

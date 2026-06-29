@@ -1,5 +1,6 @@
 import {
   BOOKING_ENGINE_PARTNERS,
+  applyPartnerFormUpdate,
   createPartnerFromForm,
   createPolicyFromForm,
   type AddPartnerFormValues,
@@ -85,6 +86,19 @@ export function addPasPartner(values: AddPartnerFormValues): Partner {
   const partner = createPartnerFromForm(values, existing)
   writeAddedPartners([...readAddedPartners(), partner])
   return partner
+}
+
+export function updatePasPartner(partnerId: string, values: AddPartnerFormValues): Partner | null {
+  if (!isUserAddedPartner(partnerId)) return null
+
+  const added = readAddedPartners()
+  const index = added.findIndex((partner) => partner.id === partnerId)
+  if (index < 0) return null
+
+  const updated = applyPartnerFormUpdate(added[index], values)
+  added[index] = updated
+  writeAddedPartners(added)
+  return updated
 }
 
 export function addPasPolicy(partnerId: string, values: AddPolicyFormValues): PolicyRate {

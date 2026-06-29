@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent, type ReactNode } from "react"
 import { ArrowLeft, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -120,7 +121,7 @@ function FormField({
   className?: string
 }) {
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <Field className={className}>
       <Label htmlFor={id} className="font-semibold normal-case tracking-normal text-foreground">
         {label}
       </Label>
@@ -132,7 +133,7 @@ function FormField({
       ) : hint ? (
         <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
-    </div>
+    </Field>
   )
 }
 

@@ -442,10 +442,10 @@ export const CHART_HEIGHT = 320`,
 "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm"
 
 // Pair with Label
-<div className="flex flex-col gap-2">
+<Field>
   <Label htmlFor="partner">Partner</Label>
   <Select>...</Select>
-</div>`,
+</Field>`,
     },
   ],
   "ui-table": [

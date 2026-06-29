@@ -1,9 +1,8 @@
-import { useState, type ReactNode } from "react"
+import { useId, useState, type ReactNode } from "react"
 import {
   ArrowLeft,
   Bath,
   BedDouble,
-  Calendar,
   ChevronRight,
   ExternalLink,
   Home,
@@ -11,17 +10,30 @@ import {
   PawPrint,
   Star,
   Users,
-  XCircle,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+} from "recharts"
 
 import { PropertyBookingsTable } from "@/components/booking-engine/property-bookings-table"
 import { PropertyDetailsPanel } from "@/components/booking-engine/property-details"
-import { PropertyInsights } from "@/components/booking-engine/property-insights"
+import {
+  PropertyInsights,
+} from "@/components/booking-engine/property-insights"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { formatBrandLabel } from "@/lib/booking-engine-data"
+import { metricCardGridClass } from "@/lib/card-layout"
+import { PROPERTY_BOOKINGS_INSIGHT, PROPERTY_OCCUPANCY, PROPERTY_AVG_NIGHTS } from "@/lib/property-insights-data"
+import type { InsightTrendPoint } from "@/lib/property-insights-data"
 import { type Property, type PropertyBooking } from "@/lib/property-data"
 import { WILLOWCROFT_HOUSE_DETAILS } from "@/lib/property-details-data"
 import { cn } from "@/lib/utils"
@@ -30,6 +42,13 @@ type PropertyPageProps = {
   property: Property
   onBack: () => void
 }
+
+const PROPERTY_TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "bookings", label: "Bookings" },
+  { id: "financials", label: "Financials" },
+  { id: "settings", label: "Settings" },
+] as const
 
 function overviewValue(label: string) {
   return WILLOWCROFT_HOUSE_DETAILS.overview.find((field) => field.label === label)?.value ?? "—"
@@ -100,61 +119,6 @@ function PropertyPanel({
   )
 }
 
-function PropertyStatCard({
-  title,
-  value,
-  subtitle,
-  trend,
-  trendTone = "neutral",
-  icon: Icon,
-  className,
-  embedded = false,
-}: {
-  title: string
-  value: string
-  subtitle: string
-  trend?: string
-  trendTone?: "positive" | "negative" | "neutral"
-  icon: LucideIcon
-  className?: string
-  embedded?: boolean
-}) {
-  return (
-    <article
-      className={cn(
-        "flex min-w-0 flex-col",
-        embedded
-          ? "p-4"
-          : "rounded-xl border border-border bg-card p-4 shadow-xs",
-        className
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-          {title}
-        </p>
-        <Icon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={2} />
-      </div>
-      <p className="mt-2 text-xl font-semibold tabular-nums tracking-tight text-foreground">
-        {value}
-      </p>
-      <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p>
-      {trend ? (
-        <p
-          className={cn(
-            "mt-1.5 text-[11px] font-medium",
-            trendTone === "positive" && "text-emerald-600 dark:text-emerald-400",
-            trendTone === "negative" && "text-red-600 dark:text-red-400",
-            trendTone === "neutral" && "text-muted-foreground"
-          )}
-        >
-          {trend}
-        </p>
-      ) : null}
-    </article>
-  )
-}
-
 function BookingStatusPill({ status }: { status: PropertyBooking["status"] }) {
   return (
     <span
@@ -170,26 +134,250 @@ function BookingStatusPill({ status }: { status: PropertyBooking["status"] }) {
   )
 }
 
-function PropertyOverviewTab({
+function SpecListRow({
+  icon: Icon,
+  label,
+  value,
+  highlight = false,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0">
+      <dt className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+        <Icon className="size-3.5 shrink-0" strokeWidth={2} />
+        <span>{label}</span>
+      </dt>
+      <dd className="shrink-0 text-right text-xs font-semibold text-foreground">
+        {highlight ? (
+          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-700 dark:text-emerald-400">
+            {value}
+          </span>
+        ) : (
+          value
+        )}
+      </dd>
+    </div>
+  )
+}
+
+function HeaderMetricChart({
+  variant,
+  data,
+}: {
+  variant: "area" | "line" | "bars"
+  data: InsightTrendPoint[]
+}) {
+  const gradientId = `header-metric-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`
+  const chartMargin = { top: 6, right: 2, left: 2, bottom: 2 }
+
+  if (variant === "bars") {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={chartMargin}>
+          <Bar
+            dataKey="value"
+            fill="var(--foreground)"
+            fillOpacity={0.32}
+            radius={[5, 5, 0, 0]}
+            maxBarSize={10}
+            isAnimationActive={false}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  if (variant === "line") {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={chartMargin}>
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="var(--foreground)"
+            strokeOpacity={0.55}
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart data={data} margin={chartMargin}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--foreground)" stopOpacity={0.12} />
+            <stop offset="100%" stopColor="var(--foreground)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke="var(--foreground)"
+          strokeWidth={1.75}
+          strokeOpacity={0.55}
+          fill={`url(#${gradientId})`}
+          dot={false}
+          activeDot={false}
+          isAnimationActive={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+}
+
+type HeaderMetricChartConfig = {
+  variant: "area" | "line" | "bars"
+  data: InsightTrendPoint[]
+}
+
+function HeaderMetricCell({
+  label,
+  value,
+  detail,
+  tone = "neutral",
+  chart,
+}: {
+  label: string
+  value: string
+  detail?: string
+  tone?: "positive" | "negative" | "neutral"
+  chart?: HeaderMetricChartConfig
+}) {
+  return (
+    <div className="relative min-h-[5.5rem] overflow-hidden bg-card px-4 py-3.5">
+      <div className="relative z-10 flex flex-col justify-center pr-[42%]">
+        <p className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
+          {label}
+        </p>
+        <p className="mt-1.5 text-2xl font-bold tabular-nums tracking-tight text-foreground">
+          {value}
+        </p>
+        {detail ? (
+          <p
+            className={cn(
+              "mt-1 text-[11px] font-medium",
+              tone === "positive" && "text-emerald-600 dark:text-emerald-400",
+              tone === "negative" && "text-red-600 dark:text-red-400",
+              tone === "neutral" && "text-muted-foreground"
+            )}
+          >
+            {detail}
+          </p>
+        ) : null}
+      </div>
+      {chart ? (
+        <div
+          className="pointer-events-none absolute right-0 bottom-0 h-[52%] w-[54%] min-w-[5.5rem]"
+          aria-hidden
+        >
+          <div className="absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-card to-transparent" />
+          <HeaderMetricChart variant={chart.variant} data={chart.data} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+const HEADER_CANCELLATIONS_TREND: InsightTrendPoint[] = [
+  { label: "J", value: 0 },
+  { label: "F", value: 0 },
+  { label: "M", value: 1 },
+  { label: "A", value: 0 },
+  { label: "M", value: 0 },
+  { label: "J", value: 0 },
+]
+
+const HEADER_AVG_STAY_BARS: InsightTrendPoint[] = PROPERTY_AVG_NIGHTS.distribution.map(
+  (item) => ({ label: item.label, value: item.count })
+)
+
+function PropertyPageHeading({
   property,
+  propertyType,
+  onBack,
+}: {
+  property: Property
+  propertyType: string
+  onBack: () => void
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="min-w-0">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
+            Active
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {propertyType} · {property.location}, {property.county}
+          </span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{property.name}</h1>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPin className="size-3.5 shrink-0" />
+          {property.postcode} · {property.county}, {property.country}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          className="h-9 gap-2 text-xs"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back
+        </Button>
+        <Button type="button" variant="outline" size="sm" className="h-9 text-xs">
+          Edit property
+        </Button>
+        <Button type="button" size="sm" className="h-9 gap-1.5 text-xs">
+          View listing
+          <ExternalLink className="size-3.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function PropertyHeroRow({
+  property,
+  propertyType,
+  grade,
+  bedrooms,
+  bathrooms,
+  pets,
   avgNightsBooked,
   cancellationCount,
   cancellationRate,
-  onViewAllBookings,
 }: {
   property: Property
+  propertyType: string
+  grade: string
+  bedrooms: string
+  bathrooms: string
+  pets: string
   avgNightsBooked: string
   cancellationCount: number
   cancellationRate: string
-  onViewAllBookings: () => void
 }) {
-  const propertyType = overviewValue("Type")
-  const grade = overviewValue("Grade")
-  const bedrooms = overviewValue("Bedrooms")
-  const bathrooms = overviewValue("Bathrooms")
-  const pets = overviewValue("Pets")
-  const recentBookings = property.bookings.slice(0, 5)
-  const specificationRows = [
+  const capacityRows = [
+    { icon: BedDouble, value: bedrooms, label: "Beds" },
+    { icon: Bath, value: bathrooms, label: "Baths" },
+    { icon: Users, value: property.maxOccupancy, label: "Guests" },
+  ]
+
+  const specRows = [
     { icon: Home, label: "Property type", value: propertyType },
     { icon: Star, label: "Grade", value: grade },
     { icon: MapPin, label: "Location", value: property.location },
@@ -202,126 +390,126 @@ function PropertyOverviewTab({
       highlight: pets.toLowerCase() === "allowed",
     },
   ]
-  const capacityRows = [
-    { icon: BedDouble, value: bedrooms, label: "Beds" },
-    { icon: Bath, value: bathrooms, label: "Baths" },
-    { icon: Users, value: property.maxOccupancy, label: "Guests" },
-  ]
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:items-stretch">
-        <section className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-[minmax(200px,240px)_minmax(0,1fr)] sm:items-stretch">
-            <div className="relative aspect-[5/4] min-h-[200px] overflow-hidden border-b border-border bg-muted/30 sm:aspect-auto sm:min-h-0 sm:border-r sm:border-b-0">
-              <img
-                src={property.imageUrl}
-                alt={`${property.name} exterior`}
-                className="absolute inset-0 h-full w-full object-cover object-[center_62%]"
+    <section className="rounded-xl border border-border bg-card p-4 shadow-xs">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,288px)_minmax(200px,240px)_minmax(0,1fr)] xl:items-stretch">
+        <div className="relative aspect-[21/9] min-h-[180px] overflow-hidden rounded-lg border border-border bg-muted/30 sm:aspect-[2.2/1] xl:aspect-auto xl:min-h-[220px]">
+          <img
+            src={property.imageUrl}
+            alt={`${property.name} exterior`}
+            className="absolute inset-0 h-full w-full object-cover object-[center_55%]"
+          />
+          <ul className="absolute top-3 right-3 flex items-center gap-2 rounded-lg border border-white/25 bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-md">
+            {capacityRows.map((item) => (
+              <li
+                key={item.label}
+                className="flex items-center gap-1"
+                aria-label={`${item.value} ${item.label.toLowerCase()}`}
+              >
+                <item.icon className="size-3.5 shrink-0 text-white/90" strokeWidth={2} />
+                <span className="text-xs font-semibold tabular-nums leading-none text-white">
+                  {item.value}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="absolute inset-x-0 bottom-0 flex justify-end bg-gradient-to-t from-black/55 to-transparent p-3 pt-10">
+            <button
+              type="button"
+              className="rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm"
+            >
+              12 photos
+            </button>
+          </div>
+        </div>
+
+        <div className="flex min-h-0 flex-col rounded-lg border border-border bg-card p-4">
+          <h2 className="mb-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+            Specification
+          </h2>
+          <dl className="flex min-h-0 flex-1 flex-col">
+            {specRows.map((row) => (
+              <SpecListRow
+                key={row.label}
+                icon={row.icon}
+                label={row.label}
+                value={row.value}
+                highlight={row.highlight}
               />
-              <ul className="absolute right-3 top-3 flex items-center gap-2.5 rounded-lg border border-white/25 bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-md">
-                {capacityRows.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center gap-1"
-                    aria-label={`${item.value} ${item.label.toLowerCase()}`}
-                  >
-                    <item.icon className="size-3.5 shrink-0 text-white/90" strokeWidth={2} />
-                    <span className="text-xs font-semibold tabular-nums leading-none text-white">
-                      {item.value}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="absolute inset-x-0 bottom-0 flex justify-end bg-gradient-to-t from-black/55 to-transparent p-3 pt-12">
-                <button
-                  type="button"
-                  className="rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm"
-                >
-                  12 photos
-                </button>
-              </div>
-            </div>
+            ))}
+          </dl>
+        </div>
 
-            <div className="flex min-h-0 flex-col p-4">
-              <h2 className="mb-3 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Specification
-              </h2>
-              <dl className="flex min-h-0 flex-1 flex-col">
-                {specificationRows.map((row) => (
-                  <div
-                    key={row.label}
-                    className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0"
-                  >
-                    <dt className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-                      <row.icon className="size-3.5 shrink-0" strokeWidth={2} />
-                      <span>{row.label}</span>
-                    </dt>
-                    <dd className="shrink-0 text-right text-xs font-semibold text-foreground">
-                      {"highlight" in row && row.highlight ? (
-                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-700 dark:text-emerald-400">
-                          {row.value}
-                        </span>
-                      ) : (
-                        row.value
-                      )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-          <div className="grid h-full grid-cols-2">
-            <PropertyStatCard
-              title="Total bookings"
+        <div className="overflow-hidden rounded-lg border border-border">
+          <div className="grid grid-cols-2 gap-px bg-border">
+            <HeaderMetricCell
+              label="Bookings"
               value={String(property.bookingCount)}
-              subtitle="All time"
-              trend="+2 this month"
-              trendTone="positive"
-              icon={Calendar}
-              embedded
-              className="border-r border-b border-border"
+              detail="+2 this month"
+              tone="positive"
+              chart={{
+                variant: "area",
+                data: PROPERTY_BOOKINGS_INSIGHT.monthlyTrend,
+              }}
             />
-            <PropertyStatCard
-              title="Avg. stay length"
+            <HeaderMetricCell
+              label="Avg stay"
               value={avgNightsBooked}
-              subtitle="Nights per booking"
-              trend="Above average"
-              trendTone="positive"
-              icon={BedDouble}
-              embedded
-              className="border-b border-border"
+              detail="Nights per booking"
+              tone="neutral"
+              chart={{
+                variant: "bars",
+                data: HEADER_AVG_STAY_BARS,
+              }}
             />
-            <PropertyStatCard
-              title="Cancellations"
+            <HeaderMetricCell
+              label="Cancellations"
               value={String(cancellationCount)}
-              subtitle="All time"
-              trend={`${cancellationRate}% rate`}
-              trendTone="negative"
-              icon={XCircle}
-              embedded
-              className="border-r border-border"
+              detail={`${cancellationRate}% rate`}
+              tone="negative"
+              chart={{
+                variant: "line",
+                data: HEADER_CANCELLATIONS_TREND,
+              }}
             />
-            <PropertyStatCard
-              title="Max occupancy"
-              value={property.maxOccupancy}
-              subtitle="Guests capacity"
-              trend={`${bedrooms} bedrooms`}
-              trendTone="neutral"
-              icon={Users}
-              embedded
+            <HeaderMetricCell
+              label="Occupancy"
+              value={PROPERTY_OCCUPANCY.rateLabel}
+              detail="12-month rolling"
+              tone="neutral"
+              chart={{
+                variant: "area",
+                data: PROPERTY_OCCUPANCY.occupancyTrend,
+              }}
             />
           </div>
-        </section>
+        </div>
       </div>
+    </section>
+  )
+}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] xl:items-stretch">
+function PropertyOverviewPanels({
+  property,
+  onViewAllBookings,
+}: {
+  property: Property
+  onViewAllBookings: () => void
+}) {
+  const recentBookings = property.bookings.slice(0, 5)
+
+  return (
+    <div className="space-y-6">
+      <div
+        className={cn(
+          metricCardGridClass,
+          "grid-cols-1 md:grid-cols-2 xl:grid-cols-4 xl:items-stretch"
+        )}
+      >
         <PropertyPanel
           title="Location"
-          className="xl:col-span-2"
+          className="md:col-span-2 xl:col-span-2"
           action={
             <button
               type="button"
@@ -332,7 +520,7 @@ function PropertyOverviewTab({
             </button>
           }
         >
-          <div className="relative min-h-[140px] overflow-hidden rounded-lg border border-border bg-muted/20">
+          <div className="relative min-h-[132px] overflow-hidden rounded-lg border border-border bg-muted/20">
             <div
               aria-hidden
               className="absolute inset-0 bg-[linear-gradient(to_right,rgb(0_0_0/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(0_0_0/0.05)_1px,transparent_1px)] bg-size-[20px_20px]"
@@ -348,17 +536,16 @@ function PropertyOverviewTab({
         </PropertyPanel>
 
         <PropertyPanel title="Relationships" className="min-w-0">
-          <div className="flex min-w-0 items-stretch pt-3">
+          <div className="flex min-w-0 items-stretch pt-1">
             <div className="min-w-0 flex-1 pr-3">
               <RelationshipLogo
                 initials={relationshipInitials(property.partner)}
                 variant="partner"
               />
               <p className="text-[10px] text-muted-foreground">Booking partner</p>
-              <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+              <p className="mt-1 text-base font-semibold tracking-tight text-foreground">
                 {formatPartnerLabel(property.partner)}
               </p>
-              <p className="mt-0.5 text-[10px] italic text-muted-foreground">Connected partner</p>
             </div>
             <div aria-hidden className="w-px shrink-0 self-stretch bg-border" />
             <div className="min-w-0 flex-1 pl-3">
@@ -367,10 +554,9 @@ function PropertyOverviewTab({
                 variant="brand"
               />
               <p className="text-[10px] text-muted-foreground">Property brand</p>
-              <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+              <p className="mt-1 text-base font-semibold tracking-tight text-foreground">
                 {formatBrandLabel(property.brand)}
               </p>
-              <p className="mt-0.5 text-[10px] italic text-muted-foreground">Active brand policy</p>
             </div>
           </div>
         </PropertyPanel>
@@ -453,74 +639,47 @@ export function PropertyPage({ property, onBack }: PropertyPageProps) {
   ).toFixed(1)
   const cancellationRate = ((cancellationCount / property.bookings.length) * 100).toFixed(1)
   const propertyType = overviewValue("Type")
+  const grade = overviewValue("Grade")
+  const bedrooms = overviewValue("Bedrooms")
+  const bathrooms = overviewValue("Bathrooms")
+  const pets = overviewValue("Pets")
 
   return (
     <TooltipProvider>
       <div className="space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
-                Active
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {propertyType} · {property.location}, {property.county}
-              </span>
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {property.name}
-            </h1>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="size-3.5 shrink-0" />
-              {property.postcode} · {property.county}, {property.country}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onBack}
-              className="h-9 gap-2 text-xs"
-            >
-              <ArrowLeft className="size-3.5" />
-              Back
-            </Button>
-            <Button type="button" variant="outline" size="sm" className="h-9 text-xs">
-              Edit property
-            </Button>
-            <Button type="button" size="sm" className="h-9 gap-1.5 text-xs">
-              View listing
-              <ExternalLink className="size-3.5" />
-            </Button>
-          </div>
-        </div>
+        <PropertyPageHeading
+          property={property}
+          propertyType={propertyType}
+          onBack={onBack}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-5">
           <TabsList className="h-auto w-full justify-start rounded-lg bg-muted p-1">
-            {[
-              { id: "overview", label: "Overview" },
-              { id: "bookings", label: `Bookings (${property.bookingCount})` },
-              { id: "insights", label: "Insights" },
-              { id: "details", label: "Details" },
-            ].map((tab) => (
+            {PROPERTY_TABS.map((tab) => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
                 className="rounded-md px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                {tab.label}
+                {tab.id === "bookings" ? `${tab.label} (${property.bookingCount})` : tab.label}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          <TabsContent value="overview" className="mt-0">
-            <PropertyOverviewTab
+          <TabsContent value="overview" className="mt-0 space-y-5">
+            <PropertyHeroRow
               property={property}
+              propertyType={propertyType}
+              grade={grade}
+              bedrooms={bedrooms}
+              bathrooms={bathrooms}
+              pets={pets}
               avgNightsBooked={avgNightsBooked}
               cancellationCount={cancellationCount}
               cancellationRate={cancellationRate}
+            />
+            <PropertyOverviewPanels
+              property={property}
               onViewAllBookings={() => setActiveTab("bookings")}
             />
           </TabsContent>
@@ -573,11 +732,11 @@ export function PropertyPage({ property, onBack }: PropertyPageProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="insights" className="mt-0">
+          <TabsContent value="financials" className="mt-0">
             <PropertyInsights />
           </TabsContent>
 
-          <TabsContent value="details" className="mt-0">
+          <TabsContent value="settings" className="mt-0">
             <PropertyDetailsPanel details={WILLOWCROFT_HOUSE_DETAILS} />
           </TabsContent>
         </Tabs>

@@ -823,6 +823,95 @@ export function createPartnerFromForm(
   }
 }
 
+export function partnerToFormValues(partner: Partner): AddPartnerFormValues {
+  const onboarding = partner.onboarding
+
+  return {
+    companyRegistrationNumber: onboarding?.companyRegistrationNumber ?? "",
+    name: partner.name,
+    initials: partner.initials,
+    partnerGroup: onboarding?.partnerGroup ?? "",
+    notes: onboarding?.notes ?? "",
+    brands: partner.brands.map((brand) => ({
+      name: brand.name,
+      policyGroup: brand.policyGroup,
+    })),
+    addressLine1: onboarding?.addressLine1 ?? "",
+    addressLine2: onboarding?.addressLine2 ?? "",
+    city: onboarding?.city ?? "",
+    postcode: onboarding?.postcode ?? "",
+    contactName: onboarding?.contactName ?? "",
+    contactEmail: onboarding?.contactEmail ?? "",
+    contactPhone: onboarding?.contactPhone ?? "",
+    propertyManagementSystem: onboarding?.propertyManagementSystem ?? "",
+    propertyCount: onboarding?.propertyCount ?? String(partner.activity.properties),
+    bookingCount: onboarding?.bookingCount ?? String(partner.activity.bookings),
+    connectionType: onboarding?.connectionType ?? partner.connectionType,
+    currencies: onboarding?.currencies ?? [...partner.currencies],
+    products: onboarding?.products ?? [...partner.products],
+    accountManager: onboarding?.accountManager ?? "",
+    goLiveDate: onboarding?.goLiveDate ?? "",
+    status: onboarding?.status ?? "active",
+    fileNames: onboarding?.fileNames ?? [],
+  }
+}
+
+export function applyPartnerFormUpdate(
+  partner: Partner,
+  values: AddPartnerFormValues
+): Partner {
+  const propertyCount = Number.parseInt(values.propertyCount, 10) || 0
+  const bookingCount = Number.parseInt(values.bookingCount, 10) || 0
+
+  const brands = values.brands
+    .map((brand, index) => ({
+      id: partner.brands[index]?.id ?? `${partner.id}-brand-${index + 1}`,
+      name: brand.name.trim(),
+      policyGroup: brand.policyGroup.trim() || brand.name.trim(),
+    }))
+    .filter((brand) => brand.name.length > 0)
+
+  return {
+    ...partner,
+    name: values.name.trim(),
+    initials: values.initials.trim().toUpperCase(),
+    dataRoute: buildPartnerDataRoute(values.connectionType, values.currencies),
+    connectionType: values.connectionType,
+    products: [...values.products],
+    currencies: [...values.currencies],
+    brands: brands.length > 0 ? brands : partner.brands,
+    activity: {
+      ...partner.activity,
+      bookings: bookingCount,
+      properties: propertyCount,
+      withCal: values.products.includes("CAL") ? propertyCount : partner.activity.withCal,
+      withDdl: values.products.includes("DDL") ? propertyCount : partner.activity.withDdl,
+    },
+    onboarding: {
+      companyRegistrationNumber: values.companyRegistrationNumber.trim(),
+      partnerGroup: values.partnerGroup,
+      addressLine1: values.addressLine1.trim(),
+      addressLine2: values.addressLine2.trim(),
+      city: values.city.trim(),
+      postcode: values.postcode.trim(),
+      contactName: values.contactName.trim(),
+      contactEmail: values.contactEmail.trim(),
+      contactPhone: values.contactPhone.trim(),
+      propertyManagementSystem: values.propertyManagementSystem.trim(),
+      propertyCount: values.propertyCount.trim(),
+      bookingCount: values.bookingCount.trim(),
+      accountManager: values.accountManager.trim(),
+      goLiveDate: values.goLiveDate,
+      notes: values.notes.trim(),
+      status: values.status,
+      fileNames: [...values.fileNames],
+      connectionType: values.connectionType,
+      currencies: [...values.currencies],
+      products: [...values.products],
+    },
+  }
+}
+
 export function getBookingsForPartner(partnerId: string): PartnerBooking[] {
   if (partnerId === "partner-a") return PARTNER_A_BOOKINGS
   if (!PARTNER_BOOKING_TRENDS[partnerId]) return []
@@ -835,4 +924,75 @@ export function getBookingsForPartner(partnerId: string): PartnerBooking[] {
 
 export function getPartnerBookingTrend(partnerId: string) {
   return PARTNER_BOOKING_TRENDS[partnerId] ?? EMPTY_PARTNER_TREND
+}
+
+export type PasProduct = {
+  id: string
+  code: string
+  name: string
+  description: string
+  status: "active" | "draft"
+}
+
+export type PasCapacityProvider = {
+  id: string
+  name: string
+  policyReference: string
+  contactName: string
+  contactEmail: string
+  product: PartnerProduct
+  notes: string
+}
+
+export type AddProductFormValues = {
+  code: string
+  name: string
+  description: string
+  status: "active" | "draft"
+}
+
+export type AddCapacityFormValues = {
+  name: string
+  policyReference: string
+  contactName: string
+  contactEmail: string
+  product: PartnerProduct | ""
+  notes: string
+}
+
+export function createProductFromForm(values: AddProductFormValues): PasProduct {
+  const code = values.code.trim().toUpperCase()
+  const slug = values.name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 24)
+
+  return {
+    id: `product-${slug || code.toLowerCase() || "new"}-${Date.now()}`,
+    code,
+    name: values.name.trim(),
+    description: values.description.trim(),
+    status: values.status,
+  }
+}
+
+export function createCapacityFromForm(values: AddCapacityFormValues): PasCapacityProvider {
+  const slug = values.name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 24)
+
+  return {
+    id: `capacity-${slug || "new"}-${Date.now()}`,
+    name: values.name.trim(),
+    policyReference: values.policyReference.trim(),
+    contactName: values.contactName.trim(),
+    contactEmail: values.contactEmail.trim(),
+    product: (values.product || "CAL") as PartnerProduct,
+    notes: values.notes.trim(),
+  }
 }

@@ -12,7 +12,11 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { FilterContextPill } from "@/components/filter-context-pill"
+
 import { getProductSplit } from "@/components/bookings-snapshot"
+import { ManageTargetsPage } from "@/components/manage-targets-page"
+import { ScrollResetContainer } from "@/components/scroll-reset-container"
 import { TargetsSnapshot } from "@/components/targets-snapshot"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -26,10 +30,17 @@ import {
 } from "@/lib/chart-data"
 import { metricCardGridClass } from "@/lib/card-layout"
 import { INSIGHTS_WIDGET_HELP_TEXT } from "@/lib/insights-widget-labels"
+import { TEAM_MEMBERS, TEAM_STATUS_LABELS, type TeamMember } from "@/lib/team-data"
 import { cn } from "@/lib/utils"
 
+type HomeView = "dashboard" | "manage-targets"
+
 export type BookingEngineView = "partners" | "properties" | "bookings"
-export type BookingEngineAction = "add-partner" | "add-policy"
+export type BookingEngineAction =
+  | "add-partner"
+  | "add-policy"
+  | "add-product"
+  | "add-capacity"
 
 export type LandingDestination =
   | { section: "booking-engine"; view?: BookingEngineView; action?: BookingEngineAction }
@@ -215,122 +226,7 @@ function DraggableDashboardSlot({
   )
 }
 
-type TeamWorkStatus = "in_progress" | "completed" | "in_review" | "blocked"
-
-type TeamMember = {
-  id: string
-  name: string
-  initials: string
-  online: boolean
-  lastWorkedOn: string
-  status: TeamWorkStatus
-}
-
-const TEAM_MEMBERS: TeamMember[] = [
-  {
-    id: "courtney",
-    name: "Courtney Greaves",
-    initials: "CG",
-    online: true,
-    lastWorkedOn: "Partner Alpha rate review",
-    status: "in_progress",
-  },
-  {
-    id: "james",
-    name: "James O'Brien",
-    initials: "JO",
-    online: true,
-    lastWorkedOn: "Q2 insights export",
-    status: "completed",
-  },
-  {
-    id: "sarah",
-    name: "Sarah Chen",
-    initials: "SC",
-    online: false,
-    lastWorkedOn: "Brand Beta policy setup",
-    status: "in_progress",
-  },
-  {
-    id: "marcus",
-    name: "Marcus Webb",
-    initials: "MW",
-    online: false,
-    lastWorkedOn: "DDL take-up analysis",
-    status: "in_review",
-  },
-  {
-    id: "elena",
-    name: "Elena Vasquez",
-    initials: "EV",
-    online: true,
-    lastWorkedOn: "Partner Gamma onboarding",
-    status: "in_progress",
-  },
-  {
-    id: "tom",
-    name: "Tom Fletcher",
-    initials: "TF",
-    online: false,
-    lastWorkedOn: "API webhook configuration",
-    status: "completed",
-  },
-  {
-    id: "priya",
-    name: "Priya Nair",
-    initials: "PN",
-    online: true,
-    lastWorkedOn: "YTD target adjustments",
-    status: "blocked",
-  },
-  {
-    id: "liam",
-    name: "Liam Okonkwo",
-    initials: "LO",
-    online: true,
-    lastWorkedOn: "EUR rate card updates",
-    status: "in_progress",
-  },
-  {
-    id: "rachel",
-    name: "Rachel Kim",
-    initials: "RK",
-    online: false,
-    lastWorkedOn: "Cancellation trend report",
-    status: "completed",
-  },
-  {
-    id: "david",
-    name: "David Park",
-    initials: "DP",
-    online: true,
-    lastWorkedOn: "Property mapping QA",
-    status: "in_review",
-  },
-  {
-    id: "nina",
-    name: "Nina Hoffmann",
-    initials: "NH",
-    online: false,
-    lastWorkedOn: "Partner Delta compliance check",
-    status: "in_progress",
-  },
-  {
-    id: "alex",
-    name: "Alex Rivera",
-    initials: "AR",
-    online: true,
-    lastWorkedOn: "Weekly bookings summary",
-    status: "completed",
-  },
-]
-
-const TEAM_STATUS_LABELS: Record<TeamWorkStatus, string> = {
-  in_progress: "In progress",
-  completed: "Completed",
-  in_review: "In review",
-  blocked: "Blocked",
-}
+type TeamWorkStatus = TeamMember["status"]
 
 const ADMIN_ACTIVITIES = [
   {
@@ -408,23 +304,6 @@ function TeamMemberRow({ member }: { member: TeamMember }) {
       <TeamWorkStatusBadge status={member.status} />
     </li>
   )
-}
-
-function formatFilterContext(filters: ActiveFilters) {
-  const partner =
-    filters.partner === "all-partners"
-      ? "All partners"
-      : filters.partner.replace("partner-", "Partner ").replace(/\b\w/g, (c) => c.toUpperCase())
-  const brand =
-    filters.brand === "all-brands"
-      ? "all brands"
-      : filters.brand.replace("brand-", "Brand ").replace(/\b\w/g, (c) => c.toUpperCase())
-  const range =
-    filters.dateRange === "year-to-month-end"
-      ? `YTD to ${filters.month} ${filters.year}`
-      : `${filters.month} ${filters.year}`
-
-  return `${partner} · ${brand} · ${range}`
 }
 
 function QuickActionTile({
@@ -553,6 +432,9 @@ export function LandingDashboardPage({
   const bookingTrend = deriveBookingTrendMeta(booking.total)
   const bookingChart = buildBookingTrendChart(booking.total)
   const [cardOrder, setCardOrder] = useState<DashboardCardId[]>(getInitialCardOrder)
+  const [homeView, setHomeView] = useState<HomeView>("dashboard")
+  const [targetsTab, setTargetsTab] = useState("organisation")
+  const [targetsRefreshKey, setTargetsRefreshKey] = useState(0)
   const intelligenceRef = useRef<HTMLDivElement>(null)
   const targetsRef = useRef<HTMLDivElement>(null)
   const [intelligenceHeight, setIntelligenceHeight] = useState<number>()
@@ -660,13 +542,17 @@ export function LandingDashboardPage({
                 title="New Product"
                 description="Create a new product"
                 icon={Package}
-                onClick={() => onNavigate({ section: "booking-engine", view: "partners" })}
+                onClick={() =>
+                  onNavigate({ section: "booking-engine", view: "partners", action: "add-product" })
+                }
               />
               <QuickActionTile
                 title="New Capacity"
                 description="Add capacity provider"
                 icon={BarChart3}
-                onClick={() => onNavigate({ section: "booking-engine", view: "partners" })}
+                onClick={() =>
+                  onNavigate({ section: "booking-engine", view: "partners", action: "add-capacity" })
+                }
               />
             </div>
           </DashboardPanel>
@@ -729,10 +615,10 @@ export function LandingDashboardPage({
             subtitle="Progress against this period's goals"
             headerAccentColors={["bg-rose-500"]}
             linkLabel="Manage targets"
-            onLinkClick={() => onNavigate({ section: "insights" })}
+            onLinkClick={() => setHomeView("manage-targets")}
             dragHandleProps={dragHandleProps}
           >
-            <TargetsSnapshot />
+            <TargetsSnapshot key={targetsRefreshKey} />
           </DashboardPanel>
         )
 
@@ -774,10 +660,31 @@ export function LandingDashboardPage({
     }
   }
 
+  if (homeView === "manage-targets") {
+    return (
+      <ScrollResetContainer
+        resetKey="manage-targets"
+        className={cn(
+          "flex h-full min-h-0 flex-col",
+          targetsTab === "team" ? "overflow-hidden" : "overflow-y-auto"
+        )}
+      >
+        <ManageTargetsPage
+          onBack={() => {
+            setHomeView("dashboard")
+            setTargetsTab("organisation")
+            setTargetsRefreshKey((key) => key + 1)
+          }}
+          onTabChange={setTargetsTab}
+        />
+      </ScrollResetContainer>
+    )
+  }
+
   return (
     <TooltipProvider>
     <div className="relative flex min-h-full flex-col gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Welcome back, Courtney</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -785,10 +692,7 @@ export function LandingDashboardPage({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          <BarChart3 className="size-3.5 shrink-0" />
-          <span>{formatFilterContext(filters)}</span>
-        </div>
+        <FilterContextPill filters={filters} />
       </div>
 
       <div className="grid grid-cols-2 items-start gap-8">

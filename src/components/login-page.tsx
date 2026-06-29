@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react"
 import { LogIn, Mail, SquareChartGantt } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
@@ -94,7 +95,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-8 shadow-[0_1px_0_rgb(255_255_255_/_0.4)_inset] backdrop-blur-md dark:shadow-none">
           <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-            <div className="flex flex-col gap-2">
+            <Field>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -112,9 +113,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                   {errors.email}
                 </p>
               )}
-            </div>
+            </Field>
 
-            <div className="flex flex-col gap-2">
+            <Field>
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -132,7 +133,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                   {errors.password}
                 </p>
               )}
-            </div>
+            </Field>
 
             <Button type="submit" className="w-full">
               <LogIn className="size-4" />

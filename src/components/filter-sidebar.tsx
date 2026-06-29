@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { Ban, RefreshCw, TrendingUp } from "lucide-react"
+import { Ban, Play, RefreshCw, TrendingUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -36,10 +37,11 @@ const metricOptions = [
 
 type FilterSidebarProps = {
   filters: ActiveFilters
+  hasRun?: boolean
   onRun: (filters: ActiveFilters) => void
 }
 
-export function FilterSidebar({ filters, onRun }: FilterSidebarProps) {
+export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarProps) {
   const [partner, setPartner] = useState(filters.partner)
   const [brand, setBrand] = useState(filters.brand)
   const [dateRange, setDateRange] = useState(filters.dateRange)
@@ -85,96 +87,86 @@ export function FilterSidebar({ filters, onRun }: FilterSidebarProps) {
         <div>
           <h2 className="text-sm font-semibold">Filters</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Refine metrics by partner, brand, and period. Press Run to apply changes.
+            Refine metrics by partner, brand, and period, then update the report.
           </p>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <Field>
           <Label htmlFor="partner-filter">Partner</Label>
-          <div>
-            <Select value={partner} onValueChange={handlePartnerChange}>
-              <SelectTrigger id="partner-filter">
-                <SelectValue placeholder="Select partner" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-partners">All partners</SelectItem>
-                <SelectItem value="partner-a">Partner Alpha</SelectItem>
-                <SelectItem value="partner-b">Partner Beta</SelectItem>
-                <SelectItem value="partner-c">Partner Gamma</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+          <Select value={partner} onValueChange={handlePartnerChange}>
+            <SelectTrigger id="partner-filter">
+              <SelectValue placeholder="Select partner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-partners">All partners</SelectItem>
+              <SelectItem value="partner-a">Partner Alpha</SelectItem>
+              <SelectItem value="partner-b">Partner Beta</SelectItem>
+              <SelectItem value="partner-c">Partner Gamma</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
 
         {showBrand ? (
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label htmlFor="brand-filter">Brand</Label>
-            <div>
-              <Select value={brand} onValueChange={setBrand}>
-                <SelectTrigger id="brand-filter">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-brands">All brands</SelectItem>
-                  <SelectItem value="brand-a">Brand Alpha</SelectItem>
-                  <SelectItem value="brand-b">Brand Beta</SelectItem>
-                  <SelectItem value="brand-c">Brand Gamma</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="date-range-filter">Date range</Label>
-          <div>
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger id="date-range-filter">
-                <SelectValue placeholder="Select date range" />
+            <Select value={brand} onValueChange={setBrand}>
+              <SelectTrigger id="brand-filter">
+                <SelectValue placeholder="Select brand" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="calendar-month">Calendar month</SelectItem>
-                <SelectItem value="year-to-month-end">Year to month-end</SelectItem>
-                <SelectItem value="custom-range">Custom range</SelectItem>
+                <SelectItem value="all-brands">All brands</SelectItem>
+                <SelectItem value="brand-a">Brand Alpha</SelectItem>
+                <SelectItem value="brand-b">Brand Beta</SelectItem>
+                <SelectItem value="brand-c">Brand Gamma</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </div>
+          </Field>
+        ) : null}
+
+        <Field>
+          <Label htmlFor="date-range-filter">Date range</Label>
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger id="date-range-filter">
+              <SelectValue placeholder="Select date range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="calendar-month">Calendar month</SelectItem>
+              <SelectItem value="year-to-month-end">Year to month-end</SelectItem>
+              <SelectItem value="custom-range">Custom range</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label htmlFor="year-filter">Year</Label>
-            <div>
-              <Select value={year} onValueChange={setYear}>
-                <SelectTrigger id="year-filter">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2024">2024</SelectItem>
-                  <SelectItem value="2025">2025</SelectItem>
-                  <SelectItem value="2026">2026</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger id="year-filter">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2024">2024</SelectItem>
+                <SelectItem value="2025">2025</SelectItem>
+                <SelectItem value="2026">2026</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
 
-          <div className="flex flex-col gap-2">
+          <Field>
             <Label htmlFor="month-filter">Month</Label>
-            <div>
-              <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger id="month-filter">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((monthName) => (
-                    <SelectItem key={monthName} value={monthName}>
-                      {monthName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger id="month-filter">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((monthName) => (
+                  <SelectItem key={monthName} value={monthName}>
+                    {monthName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
         </div>
 
         <Separator />
@@ -202,8 +194,26 @@ export function FilterSidebar({ filters, onRun }: FilterSidebarProps) {
         <div className="relative px-6 pb-6">
           <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-border" />
           <div className="pt-4">
-            <Button className="w-full" onClick={handleRun}>
-              Run
+            <Button
+              className="w-full"
+              onClick={handleRun}
+              aria-label={
+                hasRun
+                  ? "Update report with selected filters"
+                  : "Generate report from selected filters"
+              }
+            >
+              {hasRun ? (
+                <>
+                  <RefreshCw className="size-3.5" />
+                  Update report
+                </>
+              ) : (
+                <>
+                  <Play className="size-3.5" />
+                  Generate report
+                </>
+              )}
             </Button>
           </div>
         </div>

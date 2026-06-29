@@ -7,11 +7,11 @@ import {
   getOverallTargetAchievement,
   getTargetAchievementPercent,
   LANDING_TARGET_PROGRESS_CHART,
-  LANDING_TARGETS,
   formatTargetGoal,
   formatTargetValue,
   type LandingTarget,
 } from "@/lib/landing-targets-data"
+import { getOrgTargets } from "@/lib/targets-store"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
 
@@ -97,8 +97,14 @@ function TargetBreakdownRow({ target }: { target: LandingTarget }) {
   )
 }
 
-function OverallProgressSlide({ gradientId }: { gradientId: string }) {
-  const overallPercent = getOverallTargetAchievement(LANDING_TARGETS)
+function OverallProgressSlide({
+  gradientId,
+  targets,
+}: {
+  gradientId: string
+  targets: LandingTarget[]
+}) {
+  const overallPercent = getOverallTargetAchievement(targets)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
@@ -143,10 +149,10 @@ function OverallProgressSlide({ gradientId }: { gradientId: string }) {
   )
 }
 
-function TargetBreakdownSlide() {
+function TargetBreakdownSlide({ targets }: { targets: LandingTarget[] }) {
   return (
     <ul className="divide-y divide-border px-4">
-      {LANDING_TARGETS.map((target) => (
+      {targets.map((target) => (
         <TargetBreakdownRow key={target.id} target={target} />
       ))}
     </ul>
@@ -155,6 +161,7 @@ function TargetBreakdownSlide() {
 
 export function TargetsSnapshot() {
   const gradientId = `target-progress-fill-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`
+  const targets = getOrgTargets()
   const [slideIndex, setSlideIndex] = useState(0)
   const currentSlide = TARGET_SLIDES[slideIndex]
 
@@ -199,9 +206,9 @@ export function TargetsSnapshot() {
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {currentSlide.id === "overall" ? (
-          <OverallProgressSlide gradientId={gradientId} />
+          <OverallProgressSlide gradientId={gradientId} targets={targets} />
         ) : (
-          <TargetBreakdownSlide />
+          <TargetBreakdownSlide targets={targets} />
         )}
       </div>
 

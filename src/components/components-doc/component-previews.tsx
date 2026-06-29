@@ -40,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -465,7 +466,7 @@ export function ComponentPreview({ id }: { id: string }) {
       )
     case "ui-select":
       return (
-        <div className="max-w-xs space-y-2">
+        <Field className="max-w-xs">
           <Label htmlFor="preview-select">Partner</Label>
           <Select defaultValue="all-partners">
             <SelectTrigger id="preview-select">
@@ -476,7 +477,7 @@ export function ComponentPreview({ id }: { id: string }) {
               <SelectItem value="partner-a">Partner Alpha</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       )
     case "ui-table":
       return (
@@ -514,17 +515,17 @@ export function ComponentPreview({ id }: { id: string }) {
       )
     case "ui-input":
       return (
-        <div className="max-w-xs space-y-2">
+        <Field className="max-w-xs">
           <Label htmlFor="preview-email">Email</Label>
           <Input id="preview-email" type="email" placeholder="you@company.com" />
-        </div>
+        </Field>
       )
     case "ui-label":
       return (
-        <div className="max-w-xs space-y-2">
+        <Field className="max-w-xs">
           <Label htmlFor="preview-label">Partner</Label>
           <Input id="preview-label" readOnly value="All partners" />
-        </div>
+        </Field>
       )
     case "ui-tooltip":
       return (

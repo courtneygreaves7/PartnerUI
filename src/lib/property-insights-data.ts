@@ -70,6 +70,35 @@ export const PROPERTY_BOOKINGS_INSIGHT = {
     { label: "May", value: 0 },
     { label: "Jun", value: 0 },
   ] satisfies InsightTrendPoint[],
+  bookingSources: [
+    { label: "Direct", count: 5 },
+    { label: "Airbnb", count: 4 },
+    { label: "Booking.com", count: 3 },
+  ],
+}
+
+export const PROPERTY_AVG_BOOKING_VALUE_INSIGHT = {
+  value: "£648.55",
+  trendLabel: "+4.2%",
+  comparisonLabel: "Portfolio avg £712",
+  chartData: [
+    { label: "Feb", value: 628 },
+    { label: "Mar", value: 641 },
+    { label: "Apr", value: 655 },
+    { label: "May", value: 638 },
+    { label: "Jun", value: 649 },
+  ] satisfies InsightTrendPoint[],
+  seasonBreakdown: [
+    { label: "Peak season", value: "£712", sharePercent: 52 },
+    { label: "Off-peak", value: "£585", sharePercent: 48 },
+  ],
+  monthlyBreakdown: [
+    { label: "Jun", bookings: 2, amount: "£648" },
+    { label: "May", bookings: 2, amount: "£648" },
+    { label: "Apr", bookings: 1, amount: "£650" },
+    { label: "Mar", bookings: 1, amount: "£650" },
+  ],
+  footerLabel: "Based on 12 confirmed bookings",
 }
 
 export const PROPERTY_BOOKING_VALUE_INSIGHT = {
@@ -154,10 +183,20 @@ export const PROPERTY_OCCUPANCY = {
   bookedNights: 122,
   availableDays: 365,
   priorYearRatePercent: 29.2,
+  priorYearDeltaPp: 4.2,
   periodLabel: "Jun 2025 – Jun 2026",
-  peakMonth: "Aug",
+  peakMonth: "August",
   peakNights: 32,
   peakOccupancyPercent: 72,
+  occupancyTrend: [
+    { label: "Feb", value: 28 },
+    { label: "Mar", value: 29 },
+    { label: "Apr", value: 30 },
+    { label: "May", value: 31 },
+    { label: "Jun", value: 32 },
+    { label: "Jul", value: 33 },
+    { label: "Aug", value: 72 },
+  ] satisfies InsightTrendPoint[],
   monthlyBreakdown: [
     { label: "J", nights: 8, phase: "past" },
     { label: "F", nights: 14, phase: "past" },

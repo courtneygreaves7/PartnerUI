@@ -2,12 +2,11 @@ import { Calendar, Home, TrendingUp } from "lucide-react"
 
 import {
   InsightBadge,
-  InsightCallout,
   InsightCardBody,
-  InsightDistributionBars,
   InsightFooter,
   InsightMetricGroup,
   InsightMiniSparkline,
+  InsightRankedBarList,
   InsightStatRow,
   InsightVisualGroup,
   InsightWidgetHeader,
@@ -26,10 +25,6 @@ export function PropertyBookingsWidget({ helpText, className }: PropertyBookings
   const peakIndex = PROPERTY_BOOKINGS_INSIGHT.monthlyTrend.findIndex(
     (point) => point.value === Math.max(...PROPERTY_BOOKINGS_INSIGHT.monthlyTrend.map((p) => p.value))
   )
-  const monthlyDistribution = PROPERTY_BOOKINGS_INSIGHT.monthlyTrend.map((point) => ({
-    label: point.label,
-    count: point.value,
-  }))
 
   return (
     <Card className={cn("@container flex h-full min-w-0 flex-col bg-card shadow-xs", className)}>
@@ -76,15 +71,13 @@ export function PropertyBookingsWidget({ helpText, className }: PropertyBookings
               />
             </InsightVisualGroup>
 
-            <InsightDistributionBars title="Bookings by month" items={monthlyDistribution} />
-
-            <InsightCallout>
-              <span className="font-medium text-foreground">
-                {PROPERTY_BOOKINGS_INSIGHT.peakMonth}
-              </span>{" "}
-              was peak — {PROPERTY_BOOKINGS_INSIGHT.peakCount} bookings (
-              {PROPERTY_BOOKINGS_INSIGHT.peakSharePercent}% of annual volume).
-            </InsightCallout>
+            <InsightRankedBarList
+              title="Booking sources"
+              items={PROPERTY_BOOKINGS_INSIGHT.bookingSources.map((source) => ({
+                label: source.label,
+                barValue: source.count,
+              }))}
+            />
           </div>
 
           <InsightFooter

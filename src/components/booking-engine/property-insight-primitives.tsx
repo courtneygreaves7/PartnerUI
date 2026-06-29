@@ -226,6 +226,58 @@ export function InsightDistributionBars({
   )
 }
 
+export function InsightRankedBarList({
+  title,
+  items,
+  variant = "count",
+}: {
+  title: string
+  items: Array<{ label: string; barValue: number; detail?: string; amount?: string }>
+  variant?: "count" | "monthly"
+}) {
+  const max = Math.max(...items.map((item) => item.barValue), 1)
+
+  return (
+    <div>
+      <p className="mb-2.5 text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
+        {title}
+      </p>
+      <ul className="space-y-2.5">
+        {items.map((item) => (
+          <li
+            key={item.label}
+            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5"
+          >
+            <span className="whitespace-nowrap text-xs text-muted-foreground">{item.label}</span>
+            <div className="h-1.5 min-w-0 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-foreground/70"
+                style={{ width: `${Math.max(8, (item.barValue / max) * 100)}%` }}
+              />
+            </div>
+            {variant === "monthly" ? (
+              <div className="flex shrink-0 items-center gap-2">
+                {item.detail ? (
+                  <span className="text-[10px] text-muted-foreground">{item.detail}</span>
+                ) : null}
+                {item.amount ? (
+                  <span className="w-10 text-right text-xs font-semibold tabular-nums text-foreground">
+                    {item.amount}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <span className="min-w-[1.25rem] shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
+                {item.barValue}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function InsightHighlightGrid({
   items,
 }: {

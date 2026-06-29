@@ -18,6 +18,23 @@ export const DEFAULT_FILTERS: ActiveFilters = {
   sortBy: "revenue-desc",
 }
 
+export function formatFilterContext(filters: ActiveFilters) {
+  const partner =
+    filters.partner === "all-partners"
+      ? "All partners"
+      : filters.partner.replace("partner-", "Partner ").replace(/\b\w/g, (c) => c.toUpperCase())
+  const brand =
+    filters.brand === "all-brands"
+      ? "all brands"
+      : filters.brand.replace("brand-", "Brand ").replace(/\b\w/g, (c) => c.toUpperCase())
+  const range =
+    filters.dateRange === "year-to-month-end"
+      ? `YTD to ${filters.month} ${filters.year}`
+      : `${filters.month} ${filters.year}`
+
+  return `${partner} · ${brand} · ${range}`
+}
+
 // Deterministic noise seeded by a string key
 function seededNoise(seed: string, index: number) {
   let h = 0
