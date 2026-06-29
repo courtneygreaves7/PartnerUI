@@ -177,3 +177,24 @@ button[data-snapshot-pill] {
   font-family: inherit;
   border: 1px solid transparent;
 }
+
+.date-time-input {
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+.date-time-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.5rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.date-time-input::-moz-calendar-picker-indicator {
+  opacity: 0;
+}

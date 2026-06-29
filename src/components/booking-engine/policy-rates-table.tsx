@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import {
   formatCurrency,
   formatRate,
@@ -20,6 +21,7 @@ type PolicyRatesTableProps = {
   compact?: boolean
   editable?: boolean
   onPolicyChange?: (policyId: string, updates: Partial<PolicyRate>) => void
+  onViewPolicy?: (policyId: string) => void
   /** Renders at natural height for a parent with overflow-hidden (no scroll wrappers). */
   clipped?: boolean
   /** Fixed column layout for scaled dashboard previews. */
@@ -32,6 +34,7 @@ export function PolicyRatesTable({
   compact = false,
   editable = false,
   onPolicyChange,
+  onViewPolicy,
   clipped = false,
   preview = false,
 }: PolicyRatesTableProps) {
@@ -63,6 +66,17 @@ export function PolicyRatesTable({
           <TableHead className={cn(compact ? "h-8 px-3 text-xs" : "px-5", preview && "h-7 px-2 text-[10px]")}>
             Currency
           </TableHead>
+          {onViewPolicy ? (
+            <TableHead
+              className={cn(
+                "text-right",
+                compact ? "h-8 px-3 text-xs" : "px-5",
+                preview && "h-7 px-2 text-[10px]"
+              )}
+            >
+              <span className="sr-only">Actions</span>
+            </TableHead>
+          ) : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -213,6 +227,25 @@ export function PolicyRatesTable({
               <TableCell className={cn(compact ? "px-3 py-2 text-xs" : "px-5 py-4 text-sm", preview && "px-2 py-1.5 text-[10px]")}>
                 {policy.currency}
               </TableCell>
+              {onViewPolicy ? (
+                <TableCell
+                  className={cn(
+                    "text-right",
+                    compact ? "px-3 py-2" : "px-5 py-4",
+                    preview && "px-2 py-1.5"
+                  )}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => onViewPolicy(policy.id)}
+                  >
+                    View
+                  </Button>
+                </TableCell>
+              ) : null}
             </TableRow>
           )
         })}

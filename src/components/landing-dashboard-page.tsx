@@ -29,7 +29,7 @@ import { INSIGHTS_WIDGET_HELP_TEXT } from "@/lib/insights-widget-labels"
 import { cn } from "@/lib/utils"
 
 export type BookingEngineView = "partners" | "properties" | "bookings"
-export type BookingEngineAction = "add-partner"
+export type BookingEngineAction = "add-partner" | "add-policy"
 
 export type LandingDestination =
   | { section: "booking-engine"; view?: BookingEngineView; action?: BookingEngineAction }
@@ -644,7 +644,9 @@ export function LandingDashboardPage({
                 title="New Policy"
                 description="Create a new policy"
                 icon={FileText}
-                onClick={() => onNavigate({ section: "booking-engine", view: "partners" })}
+                onClick={() =>
+                  onNavigate({ section: "booking-engine", view: "partners", action: "add-policy" })
+                }
               />
               <QuickActionTile
                 title="New Partner"
@@ -774,7 +776,7 @@ export function LandingDashboardPage({
 
   return (
     <TooltipProvider>
-    <div className="relative flex min-h-full flex-col gap-5">
+    <div className="relative flex min-h-full flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Welcome back, Courtney</h1>
@@ -789,7 +791,7 @@ export function LandingDashboardPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 items-start gap-3">
+      <div className="grid grid-cols-2 items-start gap-8">
         {cardOrder.map((cardId, index) => (
           <DraggableDashboardSlot
             key={cardId}

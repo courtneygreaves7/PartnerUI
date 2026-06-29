@@ -39,19 +39,66 @@ export type PartnerConnectionType = "API" | "S3" | "FTP"
 export type PartnerProduct = "CAL" | "DDL"
 export type PartnerCurrency = "GBP" | "EUR"
 
+export type AddPartnerBrandValues = {
+  name: string
+  policyGroup: string
+}
+
 export type AddPartnerFormValues = {
+  companyRegistrationNumber: string
   name: string
   initials: string
+  partnerGroup: string
+  notes: string
+  brands: AddPartnerBrandValues[]
+  addressLine1: string
+  addressLine2: string
+  city: string
+  postcode: string
+  contactName: string
+  contactEmail: string
+  contactPhone: string
+  propertyManagementSystem: string
+  propertyCount: string
+  bookingCount: string
   connectionType: PartnerConnectionType
   currencies: PartnerCurrency[]
   products: PartnerProduct[]
+  accountManager: string
+  goLiveDate: string
+  status: "draft" | "active"
+  fileNames: string[]
+}
+
+export type PartnerOnboarding = {
+  companyRegistrationNumber: string
+  partnerGroup: string
+  addressLine1: string
+  addressLine2: string
+  city: string
+  postcode: string
   contactName: string
   contactEmail: string
+  contactPhone: string
+  propertyManagementSystem: string
+  propertyCount: string
+  bookingCount: string
   accountManager: string
   goLiveDate: string
   notes: string
   status: "draft" | "active"
+  fileNames: string[]
+  connectionType: PartnerConnectionType
+  currencies: PartnerCurrency[]
+  products: PartnerProduct[]
 }
+
+export const PARTNER_GROUP_OPTIONS = [
+  "UK Holiday Lets",
+  "European Distributors",
+  "Managed Portfolio",
+  "Independent Agents",
+] as const
 
 export const PARTNER_CONNECTION_TYPES: PartnerConnectionType[] = ["API", "S3", "FTP"]
 
@@ -84,6 +131,7 @@ export type Partner = {
   currencies: ("GBP" | "EUR")[]
   brands: Brand[]
   policies: PolicyRate[]
+  onboarding?: PartnerOnboarding
 }
 
 export const BOOKING_ENGINE_PARTNERS: Partner[] = [
@@ -103,16 +151,16 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["EUR", "GBP"],
     brands: [
-      { id: "a-brand-1", name: "Brand Alpha", policyGroup: "Partner Alpha GB 4" },
-      { id: "a-brand-2", name: "Brand Beta", policyGroup: "Partner Alpha GB 4" },
-      { id: "a-brand-3", name: "Brand Gamma", policyGroup: "Partner Alpha DK 2" },
-      { id: "a-brand-4", name: "Brand Delta", policyGroup: "Partner Alpha EUR 3" },
+      { id: "a-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
+      { id: "a-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
+      { id: "a-brand-3", name: "Brand Gamma", policyGroup: "Brand Gamma" },
+      { id: "a-brand-4", name: "Brand Delta", policyGroup: "Brand Delta" },
     ],
     policies: [
       {
         id: "a-p1",
         brandId: "a-brand-1",
-        name: "Partner Alpha GB 4",
+        name: "Brand Alpha",
         validFrom: "1 Jun 2026",
         validTo: "ongoing",
         status: "active",
@@ -125,7 +173,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "a-p2",
         brandId: "a-brand-2",
-        name: "Partner Alpha GB 4",
+        name: "Brand Beta",
         validFrom: "26 Dec 2025",
         validTo: "7 Apr 2026",
         status: "active",
@@ -138,7 +186,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "a-p3",
         brandId: "a-brand-3",
-        name: "Partner Alpha DK 2",
+        name: "Brand Gamma",
         validFrom: "1 Jan 2026",
         validTo: "ongoing",
         status: "active",
@@ -151,7 +199,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "a-p4",
         brandId: "a-brand-4",
-        name: "Partner Alpha EUR 3",
+        name: "Brand Delta",
         validFrom: "15 Mar 2025",
         validTo: "30 Nov 2025",
         status: "ended",
@@ -179,14 +227,14 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["GBP"],
     brands: [
-      { id: "b-brand-1", name: "Brand Alpha", policyGroup: "Partner Beta GB 1" },
-      { id: "b-brand-2", name: "Brand Beta", policyGroup: "Partner Beta GB 1" },
+      { id: "b-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
+      { id: "b-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
     ],
     policies: [
       {
         id: "b-p1",
         brandId: "b-brand-1",
-        name: "Partner Beta GB 1",
+        name: "Brand Alpha",
         validFrom: "1 Apr 2026",
         validTo: "ongoing",
         status: "active",
@@ -199,7 +247,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "b-p2",
         brandId: "b-brand-2",
-        name: "Partner Beta GB 1",
+        name: "Brand Beta",
         validFrom: "10 Jan 2025",
         validTo: "31 Mar 2026",
         status: "ended",
@@ -226,12 +274,12 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       revenue: 38_060_000,
     },
     currencies: ["GBP"],
-    brands: [{ id: "c-brand-1", name: "Brand Alpha", policyGroup: "Partner Gamma GB 2" }],
+    brands: [{ id: "c-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" }],
     policies: [
       {
         id: "c-p1",
         brandId: "c-brand-1",
-        name: "Partner Gamma GB 2",
+        name: "Brand Alpha",
         validFrom: "1 Feb 2026",
         validTo: "ongoing",
         status: "active",
@@ -259,14 +307,14 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["EUR"],
     brands: [
-      { id: "d-brand-1", name: "Brand Alpha", policyGroup: "Partner Delta EUR 1" },
-      { id: "d-brand-2", name: "Brand Beta", policyGroup: "Partner Delta EUR 1" },
+      { id: "d-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
+      { id: "d-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
     ],
     policies: [
       {
         id: "d-p1",
         brandId: "d-brand-1",
-        name: "Partner Delta EUR 1",
+        name: "Brand Alpha",
         validFrom: "1 Mar 2026",
         validTo: "ongoing",
         status: "active",
@@ -279,7 +327,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "d-p2",
         brandId: "d-brand-2",
-        name: "Partner Delta EUR 1",
+        name: "Brand Beta",
         validFrom: "1 Sep 2025",
         validTo: "28 Feb 2026",
         status: "ended",
@@ -306,12 +354,12 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       revenue: 8_600_000,
     },
     currencies: ["GBP"],
-    brands: [{ id: "e-brand-1", name: "Brand Alpha", policyGroup: "Partner Epsilon GB 1" }],
+    brands: [{ id: "e-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" }],
     policies: [
       {
         id: "e-p1",
         brandId: "e-brand-1",
-        name: "Partner Epsilon GB 1",
+        name: "Brand Alpha",
         validFrom: "15 Apr 2026",
         validTo: "ongoing",
         status: "active",
@@ -339,14 +387,14 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["EUR", "GBP"],
     brands: [
-      { id: "f-brand-1", name: "Brand Alpha", policyGroup: "Partner Zeta DK 2" },
-      { id: "f-brand-2", name: "Brand Beta", policyGroup: "Partner Zeta EUR 2" },
+      { id: "f-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
+      { id: "f-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
     ],
     policies: [
       {
         id: "f-p1",
         brandId: "f-brand-1",
-        name: "Partner Zeta DK 2",
+        name: "Brand Alpha",
         validFrom: "1 Jan 2026",
         validTo: "ongoing",
         status: "active",
@@ -359,7 +407,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "f-p2",
         brandId: "f-brand-2",
-        name: "Partner Zeta EUR 2",
+        name: "Brand Beta",
         validFrom: "1 Jan 2026",
         validTo: "ongoing",
         status: "active",
@@ -386,12 +434,12 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       revenue: 4_100_000,
     },
     currencies: ["EUR"],
-    brands: [{ id: "g-brand-1", name: "Brand Alpha", policyGroup: "Partner Eta EUR 1" }],
+    brands: [{ id: "g-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" }],
     policies: [
       {
         id: "g-p1",
         brandId: "g-brand-1",
-        name: "Partner Eta EUR 1",
+        name: "Brand Alpha",
         validFrom: "1 May 2026",
         validTo: "ongoing",
         status: "active",
@@ -472,7 +520,7 @@ export function formatCompactCurrency(value: number, currency: "GBP" | "EUR" = "
 }
 
 export function formatBrandLabel(name: string) {
-  return name.replace(/^Brand\s+/i, "")
+  return name
 }
 
 export function getPartnerTags(partner: Partner) {
@@ -595,8 +643,189 @@ const PARTNER_BOOKING_TRENDS: Record<string, { label: string; value: number }[]>
   ],
 }
 
+const EMPTY_PARTNER_TREND = [
+  { label: "Jul", value: 0 },
+  { label: "Aug", value: 0 },
+  { label: "Sep", value: 0 },
+  { label: "Oct", value: 0 },
+  { label: "Nov", value: 0 },
+  { label: "Dec", value: 0 },
+  { label: "Jan", value: 0 },
+  { label: "Feb", value: 0 },
+  { label: "Mar", value: 0 },
+  { label: "Apr", value: 0 },
+  { label: "May", value: 0 },
+  { label: "Jun", value: 0 },
+]
+
+export function buildPartnerDataRoute(
+  connectionType: PartnerConnectionType,
+  currencies: PartnerCurrency[]
+) {
+  return `${connectionType} — ${currencies.join(", ")}`
+}
+
+export type PolicyFormType = "policy" | "quote"
+
+export type AddPolicyFormValues = {
+  policyType: PolicyFormType
+  inceptionDate: string
+  expiryDate: string
+  partnerId: string
+  product: PartnerProduct | ""
+  policyReference: string
+  distribution: string
+  partnerContributionPercent: string
+  notes: string
+  fileNames: string[]
+  capacityPolicyNumber: string
+  lineslipReference: string
+  umr: string
+  policyDocumentIssueDate: string
+  ratingBasis: string
+  settlementBasis: string
+  clipBasisType: string
+  daysBeforeStayDate: string
+  clipBasisNotes: string
+  insuredLimit: string
+  netRateExIpt: string
+  grossRateIncIpt: string
+  commissionPercent: string
+  grossPremiumEstimate: string
+  netPremiumEstimate: string
+  conductRiskRating: string
+  incomeRelatedToConsumers: string
+  policyCountRelatedToConsumers: string
+  cancellationDaysBeforeBooking: string
+  cancellationTimeOfDay: string
+}
+
+export const POLICY_DISTRIBUTION_OPTIONS = ["Direct", "Wholesale", "Aggregator"] as const
+export const POLICY_RATING_BASIS_OPTIONS = ["Per booking", "Per night", "Flat rate"] as const
+export const POLICY_SETTLEMENT_BASIS_OPTIONS = ["Inception", "Risk attaching"] as const
+export const POLICY_CLIP_BASIS_OPTIONS = ["Fixed", "Rolling", "Custom"] as const
+export const POLICY_CONDUCT_RISK_OPTIONS = ["Low", "Medium", "High"] as const
+
+function formatPolicyDate(value: string) {
+  if (!value.trim()) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+export function createPolicyFromForm(
+  values: AddPolicyFormValues,
+  partner: Partner
+): PolicyRate {
+  const brand = partner.brands[0]
+  const reference = values.policyReference.trim()
+
+  return {
+    id: `policy-${partner.id}-${Date.now()}`,
+    brandId: brand?.id ?? `${partner.id}-brand-1`,
+    name: reference || `${values.product || "Policy"} — ${partner.name}`,
+    validFrom: formatPolicyDate(values.inceptionDate),
+    validTo: values.expiryDate.trim() ? formatPolicyDate(values.expiryDate) : "ongoing",
+    status: "active",
+    netRate: Number.parseFloat(values.netRateExIpt) || 0,
+    grossRate: Number.parseFloat(values.grossRateIncIpt) || 0,
+    calCommission: Number.parseFloat(values.commissionPercent) || 0,
+    maxLiability: Number.parseFloat(values.insuredLimit) || 0,
+    currency: partner.currencies[0] ?? "GBP",
+  }
+}
+
+export function createPartnerFromForm(
+  values: AddPartnerFormValues,
+  existingPartners: Partner[]
+): Partner {
+  const slug = values.name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 24)
+  const id = `partner-${slug || "new"}-${Date.now()}`
+
+  const existingInitials = new Set(
+    existingPartners.map((partner) => partner.initials.toUpperCase())
+  )
+  let initials = values.initials.trim().toUpperCase().replace(/[OI]/g, "")
+  if (existingInitials.has(initials)) {
+    let suffix = 2
+    while (existingInitials.has(`${initials}${suffix}`)) {
+      suffix += 1
+    }
+    initials = `${initials}${suffix}`.slice(0, 4)
+  }
+
+  const propertyCount = Number.parseInt(values.propertyCount, 10) || 0
+  const bookingCount = Number.parseInt(values.bookingCount, 10) || 0
+
+  const brands = values.brands
+    .map((brand) => ({
+      name: brand.name.trim(),
+      policyGroup: brand.policyGroup.trim() || brand.name.trim(),
+    }))
+    .filter((brand) => brand.name.length > 0)
+    .map((brand, index) => ({
+      id: `${id}-brand-${index + 1}`,
+      name: brand.name,
+      policyGroup: brand.policyGroup,
+    }))
+
+  return {
+    id,
+    name: values.name.trim(),
+    initials,
+    dataRoute: buildPartnerDataRoute(values.connectionType, values.currencies),
+    connectionType: values.connectionType,
+    products: [...values.products],
+    currencies: [...values.currencies],
+    brands:
+      brands.length > 0
+        ? brands
+        : [{ id: `${id}-brand-1`, name: "Brand Alpha", policyGroup: "Brand Alpha" }],
+    policies: [],
+    activity: {
+      bookings: bookingCount,
+      properties: propertyCount,
+      withCal: values.products.includes("CAL") ? propertyCount : 0,
+      withDdl: values.products.includes("DDL") ? propertyCount : 0,
+      revenue: 0,
+    },
+    onboarding: {
+      companyRegistrationNumber: values.companyRegistrationNumber.trim(),
+      partnerGroup: values.partnerGroup,
+      addressLine1: values.addressLine1.trim(),
+      addressLine2: values.addressLine2.trim(),
+      city: values.city.trim(),
+      postcode: values.postcode.trim(),
+      contactName: values.contactName.trim(),
+      contactEmail: values.contactEmail.trim(),
+      contactPhone: values.contactPhone.trim(),
+      propertyManagementSystem: values.propertyManagementSystem.trim(),
+      propertyCount: values.propertyCount.trim(),
+      bookingCount: values.bookingCount.trim(),
+      accountManager: values.accountManager.trim(),
+      goLiveDate: values.goLiveDate,
+      notes: values.notes.trim(),
+      status: values.status,
+      fileNames: [...values.fileNames],
+      connectionType: values.connectionType,
+      currencies: [...values.currencies],
+      products: [...values.products],
+    },
+  }
+}
+
 export function getBookingsForPartner(partnerId: string): PartnerBooking[] {
   if (partnerId === "partner-a") return PARTNER_A_BOOKINGS
+  if (!PARTNER_BOOKING_TRENDS[partnerId]) return []
   return PARTNER_A_BOOKINGS.slice(0, 4).map((booking, index) => ({
     ...booking,
     id: `BK-${partnerId.slice(-1)}00${index + 1}`,
@@ -605,5 +834,5 @@ export function getBookingsForPartner(partnerId: string): PartnerBooking[] {
 }
 
 export function getPartnerBookingTrend(partnerId: string) {
-  return PARTNER_BOOKING_TRENDS[partnerId] ?? PARTNER_BOOKING_TRENDS["partner-a"]
+  return PARTNER_BOOKING_TRENDS[partnerId] ?? EMPTY_PARTNER_TREND
 }

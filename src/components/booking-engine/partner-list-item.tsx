@@ -33,6 +33,11 @@ export function PartnerListItem({
       )}
     >
       <p className="text-sm font-semibold text-foreground">{partner.name}</p>
+      {partner.onboarding?.status === "draft" ? (
+        <span className="mt-1 inline-flex rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+          Draft
+        </span>
+      ) : null}
       <div className="mt-1.5 flex items-center gap-2 text-[11px]">
         <span className="font-semibold tabular-nums text-foreground">
           {partner.brands.length} brands

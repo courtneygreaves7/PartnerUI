@@ -1,8 +1,16 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react"
-import { PencilLine, Search, Tag } from "lucide-react"
+import { Eye, PencilLine, Search, Tag, Zap } from "lucide-react"
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 
 import { PartnerBookingsTable } from "@/components/booking-engine/partner-bookings-table"
+import {
+  BrandEditContent,
+  BrandInfoContent,
+  PartnerInfoContent,
+  PasDeleteButton,
+  PasInfoDrawer,
+  PolicyInfoContent,
+} from "@/components/booking-engine/pas-info-panel"
 import { PolicyRatesTable } from "@/components/booking-engine/policy-rates-table"
 import { PropertiesTable } from "@/components/booking-engine/properties-table"
 import { Button } from "@/components/ui/button"
@@ -14,6 +22,7 @@ import {
   formatCount,
   getBookingsForPartner,
   getPartnerBookingTrend,
+  type AddPolicyFormValues,
   type Partner,
   type PolicyRate,
 } from "@/lib/booking-engine-data"
@@ -22,11 +31,24 @@ import { cn } from "@/lib/utils"
 
 export type PartnerDetailTab = "overview" | "brands" | "bookings" | "properties"
 
+type InfoView =
+  | { type: "partner" }
+  | { type: "brand"; brandId: string }
+  | { type: "brand-edit"; brandId: string }
+  | { type: "policy"; policyId: string }
+
 type PartnerDetailPanelProps = {
   partner: Partner
   onViewProperty: (propertyId: string) => void
   activeTab: PartnerDetailTab
   onTabChange: (tab: PartnerDetailTab) => void
+  canDeletePartner?: boolean
+  canEditBrand?: boolean
+  canDeletePolicy?: (policyId: string) => boolean
+  getPolicyDetails?: (policyId: string) => AddPolicyFormValues | undefined
+  onDeletePartner?: () => void
+  onDeletePolicy?: (policyId: string) => void
+  onBrandUpdate?: (brandId: string, updates: { name: string; policyGroup: string }) => void
 }
 
 const TAB_ITEMS: { id: PartnerDetailTab; label: string }[] = [
@@ -205,7 +227,19 @@ function OverviewTab({ partner }: { partner: Partner }) {
   )
 }
 
-function BrandsTab({ partner }: { partner: Partner }) {
+function BrandsTab({
+  partner,
+  onViewBrand,
+  onEditBrand,
+  onViewPolicy,
+  canEditBrand,
+}: {
+  partner: Partner
+  onViewBrand: (brandId: string) => void
+  onEditBrand: (brandId: string) => void
+  onViewPolicy: (policyId: string) => void
+  canEditBrand?: boolean
+}) {
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(
     partner.brands[0]?.id ?? null
   )
@@ -240,23 +274,7 @@ function BrandsTab({ partner }: { partner: Partner }) {
 
   return (
     <div className="grid min-h-[420px] gap-0 overflow-hidden rounded-lg border border-border lg:grid-cols-[180px_minmax(0,1fr)]">
-      <aside className="flex flex-col gap-4 border-b border-border bg-muted/20 p-4 lg:border-r lg:border-b-0">
-        <div>
-          <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-            Currencies
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {partner.currencies.map((currency) => (
-              <span
-                key={currency}
-                className="rounded-md border border-border bg-background px-2 py-0.5 text-xs font-medium"
-              >
-                {currency}
-              </span>
-            ))}
-          </div>
-        </div>
-
+      <aside className="flex flex-col border-b border-border bg-muted/20 p-4 lg:border-r lg:border-b-0">
         <div className="min-h-0 flex-1">
           <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
             Brands
@@ -308,6 +326,32 @@ function BrandsTab({ partner }: { partner: Partner }) {
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {selectedBrand ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => onViewBrand(selectedBrand.id)}
+                >
+                  <Eye className="size-3.5" />
+                  View brand
+                </Button>
+                {canEditBrand ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => onEditBrand(selectedBrand.id)}
+                  >
+                    <PencilLine className="size-3.5" />
+                    Edit brand
+                  </Button>
+                ) : null}
+              </>
+            ) : null}
             {isEditingRates ? (
               <>
                 <Button
@@ -336,8 +380,8 @@ function BrandsTab({ partner }: { partner: Partner }) {
                 className="h-8 gap-1.5 text-xs"
                 onClick={() => setIsEditingRates(true)}
               >
-                <PencilLine className="size-3.5" />
-                Edit rates
+                <Zap className="size-3.5" />
+                Quick edit rates
               </Button>
             )}
           </div>
@@ -347,6 +391,7 @@ function BrandsTab({ partner }: { partner: Partner }) {
           selectedBrandId={selectedBrandId}
           editable={isEditingRates}
           onPolicyChange={handlePolicyChange}
+          onViewPolicy={!isEditingRates ? onViewPolicy : undefined}
         />
       </div>
     </div>
@@ -434,9 +479,67 @@ export function PartnerDetailPanel({
   onViewProperty,
   activeTab,
   onTabChange,
+  canDeletePartner,
+  canEditBrand,
+  canDeletePolicy,
+  getPolicyDetails,
+  onDeletePartner,
+  onDeletePolicy,
+  onBrandUpdate,
 }: PartnerDetailPanelProps) {
   const properties = getPropertiesForPartner(partner.id)
   const bookings = getBookingsForPartner(partner.id)
+  const [infoView, setInfoView] = useState<InfoView | null>(null)
+
+  useEffect(() => {
+    setInfoView(null)
+  }, [partner.id])
+
+  const viewedBrand =
+    infoView?.type === "brand" || infoView?.type === "brand-edit"
+      ? partner.brands.find((brand) => brand.id === infoView.brandId)
+      : undefined
+
+  const editingBrand =
+    infoView?.type === "brand-edit"
+      ? partner.brands.find((brand) => brand.id === infoView.brandId)
+      : undefined
+
+  const viewedPolicy =
+    infoView?.type === "policy"
+      ? partner.policies.find((policy) => policy.id === infoView.policyId)
+      : undefined
+
+  const viewedPolicyBrand = viewedPolicy
+    ? partner.brands.find((brand) => brand.id === viewedPolicy.brandId)
+    : undefined
+
+  function handleDeletePartner() {
+    if (!canDeletePartner || !onDeletePartner) return
+    if (
+      window.confirm(
+        `Delete ${partner.name}? This removes the partner and any policies you added for them.`
+      )
+    ) {
+      onDeletePartner()
+      setInfoView(null)
+    }
+  }
+
+  function handleDeletePolicy(policyId: string) {
+    if (!canDeletePolicy?.(policyId) || !onDeletePolicy) return
+    const policy = partner.policies.find((item) => item.id === policyId)
+    if (
+      window.confirm(`Delete policy ${policy?.name ?? "record"}? This cannot be undone.`)
+    ) {
+      onDeletePolicy(policyId)
+      setInfoView(null)
+    }
+  }
+
+  function openPolicyView(policyId: string) {
+    setInfoView({ type: "policy", policyId })
+  }
 
   const tabCounts: Record<PartnerDetailTab, number | null> = {
     overview: null,
@@ -456,6 +559,16 @@ export function PartnerDetailPanel({
             <div className="min-w-0">
               <h2 className="text-base font-semibold text-foreground">{partner.name}</h2>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => setInfoView({ type: "partner" })}
+            >
+              <Eye className="size-3.5" />
+              View details
+            </Button>
           </div>
           <div className="flex flex-wrap items-stretch gap-2">
             <PartnerStat label="Bookings" value={formatCompactCount(partner.activity.bookings)} />
@@ -513,7 +626,15 @@ export function PartnerDetailPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         {activeTab === "overview" ? <OverviewTab partner={partner} /> : null}
-        {activeTab === "brands" ? <BrandsTab partner={partner} /> : null}
+        {activeTab === "brands" ? (
+          <BrandsTab
+            partner={partner}
+            canEditBrand={canEditBrand}
+            onViewBrand={(brandId) => setInfoView({ type: "brand", brandId })}
+            onEditBrand={(brandId) => setInfoView({ type: "brand-edit", brandId })}
+            onViewPolicy={openPolicyView}
+          />
+        ) : null}
         {activeTab === "bookings" ? <BookingsTab partner={partner} /> : null}
         {activeTab === "properties" ? (
           <PropertiesTab
@@ -523,6 +644,80 @@ export function PartnerDetailPanel({
           />
         ) : null}
       </div>
+
+      <PasInfoDrawer
+        open={infoView?.type === "partner"}
+        title={partner.name}
+        subtitle="Partner profile and onboarding details"
+        onClose={() => setInfoView(null)}
+        footer={
+          canDeletePartner && onDeletePartner ? (
+            <PasDeleteButton label="Delete partner" onDelete={handleDeletePartner} />
+          ) : undefined
+        }
+      >
+        <PartnerInfoContent partner={partner} />
+      </PasInfoDrawer>
+
+      <PasInfoDrawer
+        open={infoView?.type === "brand" && Boolean(viewedBrand)}
+        title={viewedBrand ? formatBrandLabel(viewedBrand.name) : "Brand"}
+        subtitle={viewedBrand ? viewedBrand.policyGroup : undefined}
+        onClose={() => setInfoView(null)}
+      >
+        {viewedBrand ? (
+          <BrandInfoContent
+            partner={partner}
+            brand={viewedBrand}
+            policies={partner.policies.filter((policy) => policy.brandId === viewedBrand.id)}
+            onViewPolicy={openPolicyView}
+          />
+        ) : null}
+      </PasInfoDrawer>
+
+      <PasInfoDrawer
+        open={infoView?.type === "brand-edit" && Boolean(editingBrand)}
+        title={editingBrand ? formatBrandLabel(editingBrand.name) : "Edit brand"}
+        subtitle="Update brand name and policy group"
+        onClose={() => setInfoView(null)}
+      >
+        {editingBrand && onBrandUpdate ? (
+          <BrandEditContent
+            brand={editingBrand}
+            onCancel={() => setInfoView(null)}
+            onSave={(updates) => {
+              onBrandUpdate(editingBrand.id, updates)
+              setInfoView(null)
+            }}
+          />
+        ) : null}
+      </PasInfoDrawer>
+
+      <PasInfoDrawer
+        open={infoView?.type === "policy" && Boolean(viewedPolicy)}
+        title={viewedPolicy?.name ?? "Policy"}
+        subtitle={viewedPolicyBrand ? formatBrandLabel(viewedPolicyBrand.name) : undefined}
+        onClose={() => setInfoView(null)}
+        footer={
+          viewedPolicy && canDeletePolicy?.(viewedPolicy.id) && onDeletePolicy ? (
+            <PasDeleteButton
+              label="Delete policy"
+              onDelete={() => handleDeletePolicy(viewedPolicy.id)}
+            />
+          ) : undefined
+        }
+      >
+        {viewedPolicy ? (
+          <PolicyInfoContent
+            policy={viewedPolicy}
+            details={getPolicyDetails?.(viewedPolicy.id)}
+            partnerName={partner.name}
+            brandName={
+              viewedPolicyBrand ? formatBrandLabel(viewedPolicyBrand.name) : undefined
+            }
+          />
+        ) : null}
+      </PasInfoDrawer>
     </div>
   )
 }
