@@ -110,9 +110,9 @@ export function DashboardFilterBar({ filters, hasRun = false, onRun }: Dashboard
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-brands">All brands</SelectItem>
-              <SelectItem value="brand-a">Brand Alpha</SelectItem>
-              <SelectItem value="brand-b">Brand Beta</SelectItem>
-              <SelectItem value="brand-c">Brand Gamma</SelectItem>
+              <SelectItem value="brand-a">Alpha</SelectItem>
+              <SelectItem value="brand-b">Beta</SelectItem>
+              <SelectItem value="brand-c">Gamma</SelectItem>
             </SelectContent>
           </Select>
         </Field>

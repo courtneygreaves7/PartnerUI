@@ -67,6 +67,52 @@ export const DEFAULT_TARGETS_COMPARE_COMPARISON: TargetsCompareSide = {
   scope: "organisation",
 }
 
+export type TargetsComparisonPreset = {
+  id: string
+  label: string
+  description: string
+  primary: TargetsCompareSide
+  comparison: TargetsCompareSide
+}
+
+export const TARGETS_COMPARISON_PRESETS: TargetsComparisonPreset[] = [
+  {
+    id: "org-period",
+    label: "Organisation · period vs period",
+    description: "Compare organisation achievement across two reporting periods.",
+    primary: { scope: "organisation", period: "ytd-jun-2026" },
+    comparison: { scope: "organisation", period: "ytd-jun-2025" },
+  },
+  {
+    id: "team-period",
+    label: "Team · month vs month",
+    description: "Compare average team achievement between two periods.",
+    primary: { scope: "team", period: "ytd-jun-2026" },
+    comparison: { scope: "team", period: "ytd-jun-2025" },
+  },
+  {
+    id: "employee-period",
+    label: "Employee · month vs month",
+    description: "Track one team member across two periods.",
+    primary: { scope: "member-courtney", period: "ytd-jun-2026" },
+    comparison: { scope: "member-courtney", period: "ytd-jun-2025" },
+  },
+  {
+    id: "employee-vs-employee",
+    label: "Employee vs employee",
+    description: "Compare two team members for the same period.",
+    primary: { scope: "member-courtney", period: "ytd-jun-2026" },
+    comparison: { scope: "member-james", period: "ytd-jun-2026" },
+  },
+  {
+    id: "team-h1",
+    label: "Team · H1 comparison",
+    description: "Compare team achievement for H1 2026 against H1 2025.",
+    primary: { scope: "team", period: "h1-2026" },
+    comparison: { scope: "team", period: "h1-2025" },
+  },
+]
+
 const PERIOD_ACTUAL_SCALE: Record<TargetsComparePeriodId, number> = {
   "ytd-jun-2026": 1,
   "ytd-jun-2025": 0.84,

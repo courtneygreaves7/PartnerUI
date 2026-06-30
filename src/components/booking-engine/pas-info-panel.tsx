@@ -625,7 +625,7 @@ export function BrandEditContent({ brand, onSave, onCancel }: BrandEditContentPr
           id="edit-brand-name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="e.g. Brand Alpha"
+          placeholder="e.g. Alpha"
         />
       </Field>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}

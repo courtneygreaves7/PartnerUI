@@ -1,14 +1,9 @@
-import { useId, useMemo, useState, type ReactNode } from "react"
+import { useId, useMemo, useState } from "react"
 import {
   ArrowLeft,
   CalendarCheck,
-  Check,
-  Download,
-  FileBarChart,
-  FileText,
   Handshake,
   Percent,
-  Play,
   Plus,
   PoundSterling,
   Search,
@@ -24,20 +19,14 @@ import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/toast"
 import {
   memberMatchesSearch,
+  TeamMemberAvatar,
   TeamMemberListItem,
 } from "@/components/team-member-list-item"
-import { TargetsAnalyticsPanel } from "@/components/targets-analytics-panel"
+import { TargetsReportPanel } from "@/components/targets-report-panel"
 import {
   getTargetAchievementPercent,
   getOverallTargetAchievement,
@@ -67,7 +56,6 @@ const SHOW_TARGETS_HEADER_SUMMARY = false
 const TARGET_TABS = [
   { id: "organisation", label: "Organisation targets" },
   { id: "team", label: "Team targets" },
-  { id: "analytics", label: "Analytics" },
   { id: "report", label: "Report" },
 ] as const
 
@@ -454,330 +442,6 @@ function HeaderSummaryWidget({
   )
 }
 
-function ReportScopeOption({
-  selected,
-  onToggle,
-  children,
-}: {
-  selected: boolean
-  onToggle: () => void
-  children: ReactNode
-}) {
-  return (
-    <div
-      role="checkbox"
-      aria-checked={selected}
-      tabIndex={0}
-      onClick={onToggle}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault()
-          onToggle()
-        }
-      }}
-      className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
-        selected
-          ? "border-foreground/20 bg-muted/20 ring-1 ring-foreground/10"
-          : "border-border bg-muted/10 hover:bg-muted/25"
-      )}
-    >
-      <div
-        className={cn(
-          "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
-          selected
-            ? "border-foreground bg-foreground text-background"
-            : "border-muted-foreground/35 bg-background"
-        )}
-        aria-hidden
-      >
-        {selected ? <Check className="size-2.5" strokeWidth={3} /> : null}
-      </div>
-      <div className="min-w-0 text-xs font-medium text-foreground">{children}</div>
-    </div>
-  )
-}
-
-function ReportPreviewVisual({
-  orgAchievement,
-  teamSummary,
-  reportFormat,
-  includeOrganisation,
-  includeTeam,
-  orgTargets,
-}: {
-  orgAchievement: number
-  teamSummary: number
-  reportFormat: "pdf" | "xlsx"
-  includeOrganisation: boolean
-  includeTeam: boolean
-  orgTargets: LandingTarget[]
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-muted/40 via-card to-muted/25 p-5">
-      <div className="pointer-events-none absolute -top-8 -right-8 size-28 rounded-full bg-foreground/[0.03]" />
-      <div className="pointer-events-none absolute -bottom-10 -left-6 size-24 rounded-full bg-foreground/[0.04]" />
-
-      <div className="relative mx-auto w-full max-w-[15rem]">
-        <div className="rounded-lg border border-border bg-background shadow-md">
-          <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50">
-              <FileBarChart className="size-4 text-foreground" strokeWidth={2} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-semibold text-foreground">Targets report</p>
-              <p className="text-[9px] text-muted-foreground">YTD to June 2026</p>
-            </div>
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-muted-foreground">
-              {reportFormat}
-            </span>
-          </div>
-
-          <div className="space-y-2.5 p-3">
-            {includeOrganisation ? (
-              <div className="rounded-md border border-border/60 bg-muted/20 p-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] font-medium text-foreground">Organisation</span>
-                  <span className="text-[9px] font-bold tabular-nums text-foreground">
-                    {orgAchievement}%
-                  </span>
-                </div>
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-foreground/70"
-                    style={{ width: `${orgAchievement}%` }}
-                  />
-                </div>
-                <div className="mt-2 space-y-1">
-                  {orgTargets.slice(0, 3).map((target) => (
-                    <div key={target.id} className="flex items-center gap-1.5">
-                      <div className="h-1 flex-1 rounded-full bg-muted" />
-                      <span className="w-6 shrink-0 text-right text-[7px] tabular-nums text-muted-foreground">
-                        {getTargetAchievementPercent(target.actual, target.target)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {includeTeam ? (
-              <div className="rounded-md border border-border/60 bg-muted/20 p-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] font-medium text-foreground">Team targets</span>
-                  <span className="text-[9px] font-bold tabular-nums text-foreground">
-                    {teamSummary}%
-                  </span>
-                </div>
-                <div className="mt-2 flex items-end justify-center gap-1">
-                  {[42, 68, 55, 80, 61].map((height, index) => (
-                    <div
-                      key={index}
-                      className="w-2.5 rounded-sm bg-foreground/25"
-                      style={{ height: `${height * 0.22}px` }}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {!includeOrganisation && !includeTeam ? (
-              <div className="rounded-md border border-dashed border-border px-2 py-4 text-center">
-                <p className="text-[9px] text-muted-foreground">Select sections to preview</p>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TargetsReportPanel({
-  orgTargets,
-  memberTargets,
-  teamSummary,
-}: {
-  orgTargets: LandingTarget[]
-  memberTargets: MemberTargets[]
-  teamSummary: number
-}) {
-  const { toast } = useToast()
-  const [reportFormat, setReportFormat] = useState<"pdf" | "xlsx">("pdf")
-  const [includeOrganisation, setIncludeOrganisation] = useState(true)
-  const [includeTeam, setIncludeTeam] = useState(true)
-  const [generated, setGenerated] = useState(false)
-
-  const orgAchievement = getOverallTargetAchievement(orgTargets)
-  const teamAssignmentCount = memberTargets.reduce(
-    (count, entry) => count + entry.assignments.length,
-    0
-  )
-  const canGenerate = includeOrganisation || includeTeam
-
-  function handleGenerate() {
-    if (!canGenerate) return
-    setGenerated(true)
-    toast({
-      title: "Targets report generated",
-      description: `Your ${reportFormat.toUpperCase()} report is ready to download.`,
-    })
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:items-start">
-        <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
-              <FileText className="size-4 text-foreground" strokeWidth={2} />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold text-foreground">Generate targets report</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Export organisation and team target progress for YTD to June 2026.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            <Field>
-              <Label className="text-[11px] text-muted-foreground">Report format</Label>
-              <Select
-                value={reportFormat}
-                onValueChange={(value) => setReportFormat(value as "pdf" | "xlsx")}
-              >
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">PDF summary</SelectItem>
-                  <SelectItem value="xlsx">Excel workbook</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <div>
-              <p className="mb-2 text-[11px] font-medium text-muted-foreground">Include sections</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <ReportScopeOption
-                  selected={includeOrganisation}
-                  onToggle={() => setIncludeOrganisation((current) => !current)}
-                >
-                  Organisation targets
-                  <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
-                    {orgTargets.length} metrics · {orgAchievement}% avg
-                  </span>
-                </ReportScopeOption>
-                <ReportScopeOption
-                  selected={includeTeam}
-                  onToggle={() => setIncludeTeam((current) => !current)}
-                >
-                  Team targets
-                  <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
-                    {TEAM_MEMBERS.length} members · {teamAssignmentCount} assignments
-                  </span>
-                </ReportScopeOption>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border/70 bg-muted/15 px-3 py-2.5 text-xs text-muted-foreground">
-              Period: YTD to June 2026 · Generated reports include achievement %, goals, and
-              progress visuals where available.
-            </div>
-          </div>
-        </section>
-
-        <section className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-          <div className="flex items-start gap-3 border-b border-border px-5 py-4">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
-              <FileBarChart className="size-4 text-foreground" strokeWidth={2} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground">Report preview</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Snapshot of what will be included in the export.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-5">
-            <ReportPreviewVisual
-              orgAchievement={orgAchievement}
-              teamSummary={teamSummary}
-              reportFormat={reportFormat}
-              includeOrganisation={includeOrganisation}
-              includeTeam={includeTeam}
-              orgTargets={orgTargets}
-            />
-
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              <div className="rounded-lg border border-border/70 bg-muted/10 px-3 py-2.5">
-                <p className="text-[10px] font-medium text-muted-foreground">Organisation</p>
-                <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">
-                  {includeOrganisation ? `${orgAchievement}%` : "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border/70 bg-muted/10 px-3 py-2.5">
-                <p className="text-[10px] font-medium text-muted-foreground">Team</p>
-                <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">
-                  {includeTeam ? `${teamSummary}%` : "—"}
-                </p>
-              </div>
-            </div>
-
-            {includeOrganisation ? (
-              <ul className="mt-4 space-y-2 border-t border-border pt-4">
-                {orgTargets.map((target) => (
-                  <li
-                    key={target.id}
-                    className="flex items-center justify-between gap-3 text-xs"
-                  >
-                    <span className="text-foreground">{target.label}</span>
-                    <span className="shrink-0 tabular-nums text-muted-foreground">
-                      {getTargetAchievementPercent(target.actual, target.target)}% of goal
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-
-          <div className="mt-auto border-t border-border bg-muted/10 p-5">
-            {generated ? (
-              <div className="mb-3 flex items-center gap-3 rounded-lg border border-dashed border-border bg-background/70 px-3 py-2.5">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40">
-                  <FileText className="size-3.5 text-foreground" strokeWidth={2} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-foreground">Report ready to download</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Targets report · YTD to June 2026 · {reportFormat.toUpperCase()}
-                  </p>
-                </div>
-                <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 text-xs">
-                  <Download className="size-3.5" />
-                  Download
-                </Button>
-              </div>
-            ) : null}
-
-            <Button
-              type="button"
-              className="h-9 w-full gap-2 text-xs"
-              onClick={handleGenerate}
-              disabled={!canGenerate}
-            >
-              <Play className="size-3.5" />
-              Generate report
-            </Button>
-          </div>
-        </section>
-      </div>
-    </div>
-  )
-}
-
 export function ManageTargetsPage({ onBack }: ManageTargetsPageProps) {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("organisation")
@@ -1061,17 +725,25 @@ export function ManageTargetsPage({ onBack }: ManageTargetsPageProps) {
               {selectedMember && selectedMemberTargets ? (
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-6">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-base font-semibold text-foreground">
-                          {selectedMember.name}
-                        </h2>
-                        <TeamStatusBadge status={selectedMember.status} />
+                    <div className="flex min-w-0 items-start gap-3">
+                      <TeamMemberAvatar
+                        initials={selectedMember.initials}
+                        online={selectedMember.online}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-base font-semibold text-foreground">
+                            {selectedMember.name}
+                          </h2>
+                          <TeamStatusBadge status={selectedMember.status} />
+                        </div>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          {selectedMember.role}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Last worked on: {selectedMember.lastWorkedOn}
+                        </p>
                       </div>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{selectedMember.role}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Last worked on: {selectedMember.lastWorkedOn}
-                      </p>
                     </div>
                     <Button
                       type="button"
@@ -1134,18 +806,10 @@ export function ManageTargetsPage({ onBack }: ManageTargetsPageProps) {
           </div>
         </TabsContent>
 
-        <TabsContent value="analytics" className="mt-0">
-          <TargetsAnalyticsPanel
-            orgTargets={orgTargets}
-            memberTargets={memberTargets}
-          />
-        </TabsContent>
-
         <TabsContent value="report" className="mt-0">
           <TargetsReportPanel
             orgTargets={orgTargets}
             memberTargets={memberTargets}
-            teamSummary={teamSummary}
           />
         </TabsContent>
       </Tabs>

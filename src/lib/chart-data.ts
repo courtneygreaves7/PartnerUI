@@ -23,10 +23,16 @@ export function formatFilterContext(filters: ActiveFilters) {
     filters.partner === "all-partners"
       ? "All partners"
       : filters.partner.replace("partner-", "Partner ").replace(/\b\w/g, (c) => c.toUpperCase())
+  const brandLabels: Record<string, string> = {
+    "brand-a": "Alpha",
+    "brand-b": "Beta",
+    "brand-c": "Gamma",
+  }
   const brand =
     filters.brand === "all-brands"
       ? "all brands"
-      : filters.brand.replace("brand-", "Brand ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : (brandLabels[filters.brand] ??
+        filters.brand.replace("brand-", "").replace(/\b\w/g, (c) => c.toUpperCase()))
   const range =
     filters.dateRange === "year-to-month-end"
       ? `YTD to ${filters.month} ${filters.year}`

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   BarChart3,
   ChevronsLeft,
@@ -162,7 +162,17 @@ function App() {
   const [bookingEngineView, setBookingEngineView] = useState<BookingEngineView>("partners")
   const [bookingEngineAction, setBookingEngineAction] = useState<BookingEngineAction | undefined>()
   const [bookingEngineNavigationKey, setBookingEngineNavigationKey] = useState(0)
+  const [partnersListVisible, setPartnersListVisible] = useState(false)
+  const [partnersSidebarMount, setPartnersSidebarMount] = useState<HTMLDivElement | null>(null)
   const mainScrollRef = useRef<HTMLElement>(null)
+
+  const handlePartnersListVisibleChange = useCallback((visible: boolean) => {
+    setPartnersListVisible(visible)
+  }, [])
+
+  const handlePartnersSidebarMount = useCallback((node: HTMLDivElement | null) => {
+    setPartnersSidebarMount(node)
+  }, [])
 
   function handleLogout() {
     setIsAuthenticated(false)
@@ -213,6 +223,9 @@ function App() {
 
   const showRightSidebar =
     activeSection === "insights" || activeSection === "components"
+
+  const showPartnersSidebar =
+    activeSection === "booking-engine" && partnersListVisible
 
   if (!isAuthenticated) {
     return (
@@ -443,13 +456,22 @@ function App() {
             />
           </header>
 
-          {/* ── Center + right sidebar ── */}
+          {/* ── Center + sidebars ── */}
           <div
             className={cn(
               "relative grid min-h-0 flex-1 overflow-hidden",
-              showRightSidebar ? "grid-cols-[1fr_300px]" : "grid-cols-1"
+              showPartnersSidebar && "grid-cols-[300px_1fr]",
+              showRightSidebar && "grid-cols-[1fr_300px]",
+              !showPartnersSidebar && !showRightSidebar && "grid-cols-1"
             )}
           >
+            {showPartnersSidebar ? (
+              <div
+                ref={handlePartnersSidebarMount}
+                className="relative min-h-0 overflow-hidden"
+              />
+            ) : null}
+
             {activeSection === "components" ? (
               <DesignSystemView />
             ) : (
@@ -475,6 +497,8 @@ function App() {
                         key={bookingEngineNavigationKey}
                         initialView={bookingEngineView}
                         initialAction={bookingEngineAction}
+                        sidebarMount={partnersSidebarMount}
+                        onPartnersListVisibleChange={handlePartnersListVisibleChange}
                       />
                     ) : activeSection === "admin" ? (
                       <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/10 py-14 text-center">

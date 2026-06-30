@@ -18,6 +18,7 @@ import { getProductSplit } from "@/components/bookings-snapshot"
 import { ManageTargetsPage } from "@/components/manage-targets-page"
 import { ScrollResetContainer } from "@/components/scroll-reset-container"
 import { TargetsSnapshot } from "@/components/targets-snapshot"
+import { TeamMemberAvatar } from "@/components/team-member-list-item"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { MetricTrendWidget } from "@/components/widgets/metric-trend-widget"
@@ -264,32 +265,6 @@ function TeamWorkStatusBadge({ status }: { status: TeamWorkStatus }) {
     >
       {TEAM_STATUS_LABELS[status]}
     </span>
-  )
-}
-
-function TeamMemberAvatar({
-  initials,
-  online,
-}: {
-  initials: string
-  online: boolean
-}) {
-  return (
-    <div className="relative shrink-0">
-      <div
-        className="flex size-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground"
-        aria-hidden
-      >
-        {initials}
-      </div>
-      <span
-        className={cn(
-          "absolute right-0 bottom-0 size-2.5 rounded-full border-2 border-card",
-          online ? "bg-emerald-500" : "bg-muted-foreground/35"
-        )}
-        aria-label={online ? "Online" : "Offline"}
-      />
-    </div>
   )
 }
 

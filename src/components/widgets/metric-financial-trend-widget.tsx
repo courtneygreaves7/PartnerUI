@@ -42,10 +42,16 @@ export type MetricFinancialTrendWidgetProps = {
 
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
 
-const SEGMENT_BAR_CLASSES = [
-  "bg-foreground",
-  "bg-muted-foreground/60",
-  "bg-muted-foreground/30",
+const MEDAL_DOT_CLASSES = [
+  "bg-amber-400",
+  "bg-slate-300 dark:bg-slate-400",
+  "bg-amber-700",
+] as const
+
+const MEDAL_BAR_CLASSES = [
+  "bg-amber-400",
+  "bg-slate-300 dark:bg-slate-400",
+  "bg-amber-700",
 ] as const
 
 function TrendBadge({
@@ -156,16 +162,22 @@ export function MetricFinancialTrendWidget({
                         key={row.label}
                         className={cn(
                           "h-full transition-[width]",
-                          SEGMENT_BAR_CLASSES[index] ?? "bg-muted-foreground/20"
+                          MEDAL_BAR_CLASSES[index] ?? "bg-muted-foreground/20"
                         )}
                         style={{ width: `${row.sharePercent}%` }}
                       />
                     ))}
                   </div>
-                  {breakdownRows.map((row) => (
+                  {breakdownRows.map((row, index) => (
                     <div key={row.label} className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
-                        <span className="size-2 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
+                        <span
+                          className={cn(
+                            "size-2 shrink-0 rounded-full",
+                            MEDAL_DOT_CLASSES[index] ?? "bg-muted-foreground"
+                          )}
+                          aria-hidden
+                        />
                         <span className="truncate text-xs text-muted-foreground">{row.label}</span>
                       </div>
                       <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
@@ -272,7 +284,7 @@ export function MetricFinancialTrendWidget({
                 key={row.label}
                 className={cn(
                   "h-full transition-[width]",
-                  SEGMENT_BAR_CLASSES[index] ?? "bg-muted-foreground/20"
+                  MEDAL_BAR_CLASSES[index] ?? "bg-muted-foreground/20"
                 )}
                 style={{ width: `${row.sharePercent}%` }}
               />
@@ -280,10 +292,16 @@ export function MetricFinancialTrendWidget({
           </div>
 
           <div className="flex flex-col gap-3">
-            {breakdownRows.map((row) => (
+            {breakdownRows.map((row, index) => (
               <div key={row.label} className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="size-2 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
+                  <span
+                    className={cn(
+                      "size-2 shrink-0 rounded-full",
+                      MEDAL_DOT_CLASSES[index] ?? "bg-muted-foreground"
+                    )}
+                    aria-hidden
+                  />
                   <span className="truncate text-xs text-muted-foreground @sm:text-sm">
                     {row.label}
                   </span>

@@ -151,16 +151,16 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["EUR", "GBP"],
     brands: [
-      { id: "a-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
-      { id: "a-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
-      { id: "a-brand-3", name: "Brand Gamma", policyGroup: "Brand Gamma" },
-      { id: "a-brand-4", name: "Brand Delta", policyGroup: "Brand Delta" },
+      { id: "a-brand-1", name: "Alpha", policyGroup: "Alpha" },
+      { id: "a-brand-2", name: "Beta", policyGroup: "Beta" },
+      { id: "a-brand-3", name: "Gamma", policyGroup: "Gamma" },
+      { id: "a-brand-4", name: "Delta", policyGroup: "Delta" },
     ],
     policies: [
       {
         id: "a-p1",
         brandId: "a-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "1 Jun 2026",
         validTo: "ongoing",
         status: "active",
@@ -173,7 +173,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "a-p2",
         brandId: "a-brand-2",
-        name: "Brand Beta",
+        name: "Beta",
         validFrom: "26 Dec 2025",
         validTo: "7 Apr 2026",
         status: "active",
@@ -186,7 +186,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "a-p3",
         brandId: "a-brand-3",
-        name: "Brand Gamma",
+        name: "Gamma",
         validFrom: "1 Jan 2026",
         validTo: "ongoing",
         status: "active",
@@ -199,7 +199,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "a-p4",
         brandId: "a-brand-4",
-        name: "Brand Delta",
+        name: "Delta",
         validFrom: "15 Mar 2025",
         validTo: "30 Nov 2025",
         status: "ended",
@@ -227,14 +227,14 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["GBP"],
     brands: [
-      { id: "b-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
-      { id: "b-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
+      { id: "b-brand-1", name: "Alpha", policyGroup: "Alpha" },
+      { id: "b-brand-2", name: "Beta", policyGroup: "Beta" },
     ],
     policies: [
       {
         id: "b-p1",
         brandId: "b-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "1 Apr 2026",
         validTo: "ongoing",
         status: "active",
@@ -247,7 +247,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "b-p2",
         brandId: "b-brand-2",
-        name: "Brand Beta",
+        name: "Beta",
         validFrom: "10 Jan 2025",
         validTo: "31 Mar 2026",
         status: "ended",
@@ -274,12 +274,12 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       revenue: 38_060_000,
     },
     currencies: ["GBP"],
-    brands: [{ id: "c-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" }],
+    brands: [{ id: "c-brand-1", name: "Alpha", policyGroup: "Alpha" }],
     policies: [
       {
         id: "c-p1",
         brandId: "c-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "1 Feb 2026",
         validTo: "ongoing",
         status: "active",
@@ -307,14 +307,14 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["EUR"],
     brands: [
-      { id: "d-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
-      { id: "d-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
+      { id: "d-brand-1", name: "Alpha", policyGroup: "Alpha" },
+      { id: "d-brand-2", name: "Beta", policyGroup: "Beta" },
     ],
     policies: [
       {
         id: "d-p1",
         brandId: "d-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "1 Mar 2026",
         validTo: "ongoing",
         status: "active",
@@ -327,7 +327,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "d-p2",
         brandId: "d-brand-2",
-        name: "Brand Beta",
+        name: "Beta",
         validFrom: "1 Sep 2025",
         validTo: "28 Feb 2026",
         status: "ended",
@@ -354,12 +354,12 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       revenue: 8_600_000,
     },
     currencies: ["GBP"],
-    brands: [{ id: "e-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" }],
+    brands: [{ id: "e-brand-1", name: "Alpha", policyGroup: "Alpha" }],
     policies: [
       {
         id: "e-p1",
         brandId: "e-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "15 Apr 2026",
         validTo: "ongoing",
         status: "active",
@@ -387,14 +387,14 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     },
     currencies: ["EUR", "GBP"],
     brands: [
-      { id: "f-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" },
-      { id: "f-brand-2", name: "Brand Beta", policyGroup: "Brand Beta" },
+      { id: "f-brand-1", name: "Alpha", policyGroup: "Alpha" },
+      { id: "f-brand-2", name: "Beta", policyGroup: "Beta" },
     ],
     policies: [
       {
         id: "f-p1",
         brandId: "f-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "1 Jan 2026",
         validTo: "ongoing",
         status: "active",
@@ -407,7 +407,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       {
         id: "f-p2",
         brandId: "f-brand-2",
-        name: "Brand Beta",
+        name: "Beta",
         validFrom: "1 Jan 2026",
         validTo: "ongoing",
         status: "active",
@@ -434,12 +434,12 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
       revenue: 4_100_000,
     },
     currencies: ["EUR"],
-    brands: [{ id: "g-brand-1", name: "Brand Alpha", policyGroup: "Brand Alpha" }],
+    brands: [{ id: "g-brand-1", name: "Alpha", policyGroup: "Alpha" }],
     policies: [
       {
         id: "g-p1",
         brandId: "g-brand-1",
-        name: "Brand Alpha",
+        name: "Alpha",
         validFrom: "1 May 2026",
         validTo: "ongoing",
         status: "active",
@@ -520,7 +520,7 @@ export function formatCompactCurrency(value: number, currency: "GBP" | "EUR" = "
 }
 
 export function formatBrandLabel(name: string) {
-  return name
+  return name.replace(/^Brand\s+/i, "").trim() || name
 }
 
 export function getPartnerTags(partner: Partner) {
@@ -586,16 +586,16 @@ export function getBrandsTrendContext() {
 }
 
 const PARTNER_A_BOOKINGS: PartnerBooking[] = [
-  { id: "BK-10042", property: "Willowcroft House", brand: "Brand Alpha", checkIn: "12 Jul 2026", nights: 7, guests: 4, value: 1820, currency: "GBP", hasCal: true, status: "confirmed" },
-  { id: "BK-10038", property: "The Old Mill", brand: "Brand Beta", checkIn: "5 Aug 2026", nights: 5, guests: 2, value: 1240, currency: "GBP", hasCal: true, status: "confirmed" },
-  { id: "BK-10031", property: "Hillcrest Lodge", brand: "Brand Gamma", checkIn: "18 Jun 2026", nights: 3, guests: 6, value: 980, currency: "GBP", hasCal: false, status: "completed" },
-  { id: "BK-10029", property: "Riverside Cottage", brand: "Brand Alpha", checkIn: "22 Sep 2026", nights: 4, guests: 3, value: 1100, currency: "GBP", hasCal: true, status: "confirmed" },
-  { id: "BK-10024", property: "Stone Barn", brand: "Brand Delta", checkIn: "1 May 2026", nights: 2, guests: 2, value: 640, currency: "EUR", hasCal: true, status: "cancelled" },
-  { id: "BK-10019", property: "Meadow View", brand: "Brand Beta", checkIn: "14 Oct 2026", nights: 6, guests: 5, value: 1560, currency: "GBP", hasCal: true, status: "confirmed" },
-  { id: "BK-10015", property: "Oak Tree Farm", brand: "Brand Gamma", checkIn: "3 Jul 2026", nights: 7, guests: 4, value: 1720, currency: "GBP", hasCal: false, status: "completed" },
-  { id: "BK-10011", property: "Lakeside Retreat", brand: "Brand Alpha", checkIn: "28 Aug 2026", nights: 5, guests: 2, value: 1380, currency: "GBP", hasCal: true, status: "confirmed" },
-  { id: "BK-10008", property: "Harbour House", brand: "Brand Delta", checkIn: "9 Nov 2026", nights: 4, guests: 3, value: 1050, currency: "EUR", hasCal: true, status: "confirmed" },
-  { id: "BK-10003", property: "Garden Cottage", brand: "Brand Beta", checkIn: "16 Dec 2026", nights: 3, guests: 2, value: 720, currency: "GBP", hasCal: false, status: "cancelled" },
+  { id: "BK-10042", property: "Willowcroft House", brand: "Alpha", checkIn: "12 Jul 2026", nights: 7, guests: 4, value: 1820, currency: "GBP", hasCal: true, status: "confirmed" },
+  { id: "BK-10038", property: "The Old Mill", brand: "Beta", checkIn: "5 Aug 2026", nights: 5, guests: 2, value: 1240, currency: "GBP", hasCal: true, status: "confirmed" },
+  { id: "BK-10031", property: "Hillcrest Lodge", brand: "Gamma", checkIn: "18 Jun 2026", nights: 3, guests: 6, value: 980, currency: "GBP", hasCal: false, status: "completed" },
+  { id: "BK-10029", property: "Riverside Cottage", brand: "Alpha", checkIn: "22 Sep 2026", nights: 4, guests: 3, value: 1100, currency: "GBP", hasCal: true, status: "confirmed" },
+  { id: "BK-10024", property: "Stone Barn", brand: "Delta", checkIn: "1 May 2026", nights: 2, guests: 2, value: 640, currency: "EUR", hasCal: true, status: "cancelled" },
+  { id: "BK-10019", property: "Meadow View", brand: "Beta", checkIn: "14 Oct 2026", nights: 6, guests: 5, value: 1560, currency: "GBP", hasCal: true, status: "confirmed" },
+  { id: "BK-10015", property: "Oak Tree Farm", brand: "Gamma", checkIn: "3 Jul 2026", nights: 7, guests: 4, value: 1720, currency: "GBP", hasCal: false, status: "completed" },
+  { id: "BK-10011", property: "Lakeside Retreat", brand: "Alpha", checkIn: "28 Aug 2026", nights: 5, guests: 2, value: 1380, currency: "GBP", hasCal: true, status: "confirmed" },
+  { id: "BK-10008", property: "Harbour House", brand: "Delta", checkIn: "9 Nov 2026", nights: 4, guests: 3, value: 1050, currency: "EUR", hasCal: true, status: "confirmed" },
+  { id: "BK-10003", property: "Garden Cottage", brand: "Beta", checkIn: "16 Dec 2026", nights: 3, guests: 2, value: 720, currency: "GBP", hasCal: false, status: "cancelled" },
 ]
 
 const PARTNER_BOOKING_TRENDS: Record<string, { label: string; value: number }[]> = {
@@ -789,7 +789,7 @@ export function createPartnerFromForm(
     brands:
       brands.length > 0
         ? brands
-        : [{ id: `${id}-brand-1`, name: "Brand Alpha", policyGroup: "Brand Alpha" }],
+        : [{ id: `${id}-brand-1`, name: "Alpha", policyGroup: "Alpha" }],
     policies: [],
     activity: {
       bookings: bookingCount,
@@ -918,7 +918,7 @@ export function getBookingsForPartner(partnerId: string): PartnerBooking[] {
   return PARTNER_A_BOOKINGS.slice(0, 4).map((booking, index) => ({
     ...booking,
     id: `BK-${partnerId.slice(-1)}00${index + 1}`,
-    brand: index % 2 === 0 ? "Brand Alpha" : "Brand Beta",
+    brand: index % 2 === 0 ? "Alpha" : "Beta",
   }))
 }
 
@@ -926,73 +926,130 @@ export function getPartnerBookingTrend(partnerId: string) {
   return PARTNER_BOOKING_TRENDS[partnerId] ?? EMPTY_PARTNER_TREND
 }
 
+export const PRODUCT_TYPE_OPTIONS = [
+  "Cancellation",
+  "Damage deposit",
+  "Travel insurance",
+  "Liability",
+] as const
+
+export const CAPACITY_TYPE_OPTIONS = [
+  "Syndicate",
+  "MGA",
+  "Reinsurer",
+  "Binder",
+] as const
+
+export type ProductCapacityAllocation = {
+  providerId: string
+  allocationPercent: string
+}
+
 export type PasProduct = {
   id: string
   code: string
+  productType: string
   name: string
-  description: string
+  capacityProviders: ProductCapacityAllocation[]
+  availableFrom: string
+  availableTo: string
+  maxCommissionPercent: string
+  notes: string
+  fileNames: string[]
   status: "active" | "draft"
 }
 
 export type PasCapacityProvider = {
   id: string
   name: string
-  policyReference: string
-  contactName: string
-  contactEmail: string
-  product: PartnerProduct
+  type: string
+  liveDate: string
+  endDate: string
   notes: string
+  fileNames: string[]
 }
 
 export type AddProductFormValues = {
-  code: string
+  productType: string
   name: string
-  description: string
-  status: "active" | "draft"
+  capacityProviders: ProductCapacityAllocation[]
+  availableFrom: string
+  availableTo: string
+  maxCommissionPercent: string
+  notes: string
+  fileNames: string[]
 }
 
 export type AddCapacityFormValues = {
   name: string
-  policyReference: string
-  contactName: string
-  contactEmail: string
-  product: PartnerProduct | ""
+  type: string
+  liveDate: string
+  endDate: string
   notes: string
+  fileNames: string[]
 }
 
-export function createProductFromForm(values: AddProductFormValues): PasProduct {
-  const code = values.code.trim().toUpperCase()
-  const slug = values.name
+function slugifyName(name: string) {
+  return name
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 24)
+}
+
+function deriveProductCode(name: string, productType: string) {
+  const fromName = name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 4)
+
+  if (fromName.length >= 2) return fromName
+
+  return productType
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 4) || "PRD"
+}
+
+export function createProductFromForm(values: AddProductFormValues): PasProduct {
+  const slug = slugifyName(values.name)
+  const code = deriveProductCode(values.name, values.productType)
 
   return {
     id: `product-${slug || code.toLowerCase() || "new"}-${Date.now()}`,
     code,
+    productType: values.productType.trim(),
     name: values.name.trim(),
-    description: values.description.trim(),
-    status: values.status,
+    capacityProviders: values.capacityProviders.map((provider) => ({
+      providerId: provider.providerId,
+      allocationPercent: provider.allocationPercent.trim(),
+    })),
+    availableFrom: values.availableFrom,
+    availableTo: values.availableTo,
+    maxCommissionPercent: values.maxCommissionPercent.trim(),
+    notes: values.notes.trim(),
+    fileNames: [...values.fileNames],
+    status: "draft",
   }
 }
 
 export function createCapacityFromForm(values: AddCapacityFormValues): PasCapacityProvider {
-  const slug = values.name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 24)
+  const slug = slugifyName(values.name)
 
   return {
     id: `capacity-${slug || "new"}-${Date.now()}`,
     name: values.name.trim(),
-    policyReference: values.policyReference.trim(),
-    contactName: values.contactName.trim(),
-    contactEmail: values.contactEmail.trim(),
-    product: (values.product || "CAL") as PartnerProduct,
+    type: values.type.trim(),
+    liveDate: values.liveDate,
+    endDate: values.endDate,
     notes: values.notes.trim(),
+    fileNames: [...values.fileNames],
   }
 }

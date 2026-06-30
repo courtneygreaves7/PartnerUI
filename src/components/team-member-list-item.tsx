@@ -23,6 +23,34 @@ const STATUS_TAG_CLASS: Record<TeamWorkStatus, string> = {
   blocked: "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
 }
 
+export function TeamMemberAvatar({
+  initials,
+  online,
+  className,
+}: {
+  initials: string
+  online: boolean
+  className?: string
+}) {
+  return (
+    <div className={cn("relative shrink-0", className)}>
+      <div
+        className="flex size-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground"
+        aria-hidden
+      >
+        {initials}
+      </div>
+      <span
+        className={cn(
+          "absolute right-0 bottom-0 size-2.5 rounded-full border-2 border-card",
+          online ? "bg-emerald-500" : "bg-muted-foreground/35"
+        )}
+        aria-label={online ? "Online" : "Offline"}
+      />
+    </div>
+  )
+}
+
 export function memberMatchesSearch(member: TeamMember, query: string) {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return true

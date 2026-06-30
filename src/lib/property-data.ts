@@ -31,7 +31,7 @@ export const MOCK_PROPERTY: Property = {
   postcode: "LA22 0EU",
   county: "Cumbria",
   partner: "Partner Alpha",
-  brand: "Brand Alpha",
+  brand: "Alpha",
   location: "Ambleside",
   country: "United Kingdom",
   maxOccupancy: "6",

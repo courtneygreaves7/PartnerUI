@@ -14,9 +14,9 @@ export const COMPARE_PARTNERS = [
 
 export const COMPARE_BRANDS = [
   { id: "all-brands", label: "All brands" },
-  { id: "brand-a", label: "Brand Alpha" },
-  { id: "brand-b", label: "Brand Beta" },
-  { id: "brand-c", label: "Brand Gamma" },
+  { id: "brand-a", label: "Alpha" },
+  { id: "brand-b", label: "Beta" },
+  { id: "brand-c", label: "Gamma" },
 ] as const
 
 export type ComparePartnerId = (typeof COMPARE_PARTNERS)[number]["id"]

@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import {
   BarChart3,
   FileText,
   Package,
   PencilLine,
-  Search,
   Users,
 } from "lucide-react"
 
@@ -17,11 +17,10 @@ import { PartnerProfilePage } from "@/components/booking-engine/partner-profile-
 import { AddPolicyPage } from "@/components/booking-engine/add-policy-page"
 import { AddProductPage } from "@/components/booking-engine/add-product-page"
 import { AddCapacityPage } from "@/components/booking-engine/add-capacity-page"
-import { PartnerListItem } from "@/components/booking-engine/partner-list-item"
+import { PartnersSidebar } from "@/components/booking-engine/partners-sidebar"
 import { PropertyPage } from "@/components/booking-engine/property-page"
 import type { BookingEngineAction, BookingEngineView } from "@/components/landing-dashboard-page"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/toast"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import {
@@ -106,11 +105,15 @@ function getInitialPasState(initialView: BookingEngineView, partners: Partner[])
 type BookingEnginePageProps = {
   initialView?: BookingEngineView
   initialAction?: BookingEngineAction
+  sidebarMount?: HTMLElement | null
+  onPartnersListVisibleChange?: (visible: boolean) => void
 }
 
 export function BookingEnginePage({
   initialView = "partners",
   initialAction,
+  sidebarMount = null,
+  onPartnersListVisibleChange,
 }: BookingEnginePageProps) {
   const { toast } = useToast()
   const [partners, setPartners] = useState<Partner[]>(() => getPasPartners())
@@ -225,7 +228,7 @@ export function BookingEnginePage({
     setShowAddProduct(false)
     toast({
       title: "Product added",
-      description: `${product.name} (${product.code}) is ready to use.`,
+      description: `${product.name} is ready to use.`,
     })
   }
 
@@ -237,6 +240,51 @@ export function BookingEnginePage({
       description: `${provider.name} provider has been added.`,
     })
   }
+
+  const detailContentResetKey = [
+    selectedPartnerId,
+    selectedPropertyId,
+    partnerProfileId,
+    editingPartnerId,
+  ].join("|")
+
+  const isPartnersListView = !(
+    editingPartner ||
+    (profilePartner && partnerProfileId) ||
+    showAddCapacity ||
+    showAddProduct ||
+    showAddPolicy ||
+    showAddPartner ||
+    selectedPropertyId
+  )
+
+  useEffect(() => {
+    onPartnersListVisibleChange?.(isPartnersListView)
+    return () => onPartnersListVisibleChange?.(false)
+  }, [isPartnersListView, onPartnersListVisibleChange])
+
+  function handlePartnerSearchChange(query: string) {
+    setPartnerSearch(query)
+    const matches = partners.filter((partner) => partnerMatchesSearch(partner, query))
+    if (matches.length > 0 && !matches.some((partner) => partner.id === selectedPartnerId)) {
+      setSelectedPartnerId(matches[0].id)
+    }
+  }
+
+  const partnersSidebar =
+    isPartnersListView && sidebarMount
+      ? createPortal(
+          <PartnersSidebar
+            partnerSearch={partnerSearch}
+            onPartnerSearchChange={handlePartnerSearchChange}
+            filteredPartners={filteredPartners}
+            selectedPartnerId={selectedPartner?.id}
+            maxBookings={maxPartnerBookings}
+            onSelectPartner={setSelectedPartnerId}
+          />,
+          sidebarMount
+        )
+      : null
 
   if (editingPartner) {
     return (
@@ -339,15 +387,9 @@ export function BookingEnginePage({
     )
   }
 
-  const detailContentResetKey = [
-    selectedPartnerId,
-    selectedPropertyId,
-    partnerProfileId,
-    editingPartnerId,
-  ].join("|")
-
   return (
     <TooltipProvider>
+      {partnersSidebar}
       <div className="flex min-h-0 flex-1 flex-col gap-5">
         <div className="shrink-0 border-b border-border pb-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -402,69 +444,25 @@ export function BookingEnginePage({
           </div>
         ) : null}
 
-        <div className="grid h-[min(40rem,calc(100dvh-16rem))] min-h-0 gap-4 lg:grid-cols-[232px_minmax(0,1fr)] lg:items-stretch">
-          <aside className="flex min-h-0 flex-col overflow-hidden">
-            <div className="relative mb-3 shrink-0">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={partnerSearch}
-                onChange={(event) => {
-                  const query = event.target.value
-                  setPartnerSearch(query)
-                  const matches = partners.filter((partner) =>
-                    partnerMatchesSearch(partner, query)
-                  )
-                  if (
-                    matches.length > 0 &&
-                    !matches.some((partner) => partner.id === selectedPartnerId)
-                  ) {
-                    setSelectedPartnerId(matches[0].id)
-                  }
-                }}
-                className="h-9 rounded-full pl-9 text-xs"
-                placeholder="Search partners…"
-                aria-label="Search partners"
-              />
-            </div>
-            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-              {filteredPartners.length > 0 ? (
-                filteredPartners.map((partner) => (
-                  <PartnerListItem
-                    key={partner.id}
-                    partner={partner}
-                    selected={partner.id === selectedPartner?.id}
-                    maxBookings={maxPartnerBookings}
-                    onSelect={() => setSelectedPartnerId(partner.id)}
-                  />
-                ))
-              ) : (
-                <p className="px-1 py-6 text-center text-xs text-muted-foreground">
-                  No partners match your search.
-                </p>
-              )}
-            </div>
-          </aside>
-
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {selectedPartner ? (
-              <PartnerDetailPanel
-                partner={selectedPartner}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                onViewProperty={setSelectedPropertyId}
-                onOpenPartnerProfile={() => setPartnerProfileId(selectedPartner.id)}
-                contentResetKey={detailContentResetKey}
-                canDeletePartner={isUserAddedPartner(selectedPartner.id)}
-                canEditBrand={isUserAddedPartner(selectedPartner.id)}
-                canDeletePolicy={isUserAddedPolicy}
-                getPolicyDetails={getPasPolicyDetails}
-                onDeletePartner={handleDeletePartner}
-                onDeletePolicy={handleDeletePolicy}
-                onBrandUpdate={handleBrandUpdate}
-              />
-            ) : null}
-          </main>
-        </div>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {selectedPartner ? (
+            <PartnerDetailPanel
+              partner={selectedPartner}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onViewProperty={setSelectedPropertyId}
+              onOpenPartnerProfile={() => setPartnerProfileId(selectedPartner.id)}
+              contentResetKey={detailContentResetKey}
+              canDeletePartner={isUserAddedPartner(selectedPartner.id)}
+              canEditBrand={isUserAddedPartner(selectedPartner.id)}
+              canDeletePolicy={isUserAddedPolicy}
+              getPolicyDetails={getPasPolicyDetails}
+              onDeletePartner={handleDeletePartner}
+              onDeletePolicy={handleDeletePolicy}
+              onBrandUpdate={handleBrandUpdate}
+            />
+          ) : null}
+        </main>
       </div>
     </TooltipProvider>
   )

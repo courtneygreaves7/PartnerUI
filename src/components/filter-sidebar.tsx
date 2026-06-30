@@ -115,9 +115,9 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-brands">All brands</SelectItem>
-                <SelectItem value="brand-a">Brand Alpha</SelectItem>
-                <SelectItem value="brand-b">Brand Beta</SelectItem>
-                <SelectItem value="brand-c">Brand Gamma</SelectItem>
+                <SelectItem value="brand-a">Alpha</SelectItem>
+                <SelectItem value="brand-b">Beta</SelectItem>
+                <SelectItem value="brand-c">Gamma</SelectItem>
               </SelectContent>
             </Select>
           </Field>

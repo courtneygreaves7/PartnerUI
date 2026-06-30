@@ -825,7 +825,7 @@ export function AddPartnerPage({
                       id={`brand-name-${index}`}
                       value={brand.name}
                       onChange={(event) => updateBrand(index, { name: event.target.value })}
-                      placeholder="e.g. Brand Alpha"
+                      placeholder="e.g. Alpha"
                     />
                   </FormField>
                 </div>
