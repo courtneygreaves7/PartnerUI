@@ -11,6 +11,7 @@ import {
 import { SortedChartTooltip } from "@/components/charts/sorted-chart-tooltip"
 import { ReportSection } from "@/components/report-section"
 import { type ActiveFilters, buildBookingsMadePerDayData } from "@/lib/chart-data"
+import { CHART_BAR } from "@/lib/chart-colors"
 import { CHART_HEIGHT } from "@/lib/chart-styles"
 
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
@@ -49,7 +50,7 @@ export function BookingsMadePerDayChart({ filters, compact }: BookingsMadePerDay
             tickFormatter={(v) => (v as number).toLocaleString()}
           />
           <Tooltip content={<SortedChartTooltip />} />
-          <Bar dataKey="bookings" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="bookings" fill={CHART_BAR} radius={[2, 2, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -14,6 +14,12 @@ import {
 } from "@/components/booking-engine/property-insight-primitives"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { WidgetHelpButton } from "@/components/widgets/widget-help-button"
+import {
+  CHART_BAR_FILL_CLASS,
+  CHART_BAR_FILL_SOFT_CLASS,
+  CHART_AREA_GRADIENT_FROM,
+  CHART_LINE,
+} from "@/lib/chart-colors"
 import { PROPERTY_AVG_BOOKING_VALUE_INSIGHT } from "@/lib/property-insights-data"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
@@ -21,8 +27,8 @@ import { cn } from "@/lib/utils"
 const TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)" }
 
 const SEGMENT_BAR_CLASSES = [
-  "bg-foreground",
-  "bg-muted-foreground/60",
+  CHART_BAR_FILL_CLASS,
+  CHART_BAR_FILL_SOFT_CLASS,
 ] as const
 
 type PropertyAvgBookingValueWidgetProps = {
@@ -73,8 +79,8 @@ export function PropertyAvgBookingValueWidget({
                   <AreaChart data={data.chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--foreground)" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="var(--foreground)" stopOpacity={0} />
+                        <stop offset="0%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0.1} />
+                        <stop offset="100%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis
@@ -88,7 +94,7 @@ export function PropertyAvgBookingValueWidget({
                     <Area
                       type="monotone"
                       dataKey="value"
-                      stroke="var(--foreground)"
+                      stroke={CHART_LINE}
                       strokeWidth={1.75}
                       strokeOpacity={0.55}
                       fill={`url(#${gradientId})`}

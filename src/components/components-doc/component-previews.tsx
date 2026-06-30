@@ -1,5 +1,7 @@
 import { useRef, useState } from "react"
 
+import { chartSeriesColor, CHART_NEGATIVE } from "@/lib/chart-colors"
+
 import { AverageBookingValueBreakdown } from "@/components/average-booking-value-breakdown"
 import { AverageBookingValueSnapshot } from "@/components/average-booking-value-snapshot"
 import { BookingsSnapshot } from "@/components/bookings-snapshot"
@@ -134,8 +136,8 @@ function ChartLegendPreview() {
   return (
     <InteractiveChartLegend
       payload={[
-        { dataKey: "made", value: "Made", color: "#3b82f6", type: "line" },
-        { dataKey: "starting", value: "Starting", color: "#a855f7", type: "line" },
+        { dataKey: "made", value: "Made", color: chartSeriesColor(0), type: "line" },
+        { dataKey: "starting", value: "Starting", color: chartSeriesColor(2), type: "line" },
       ]}
       hiddenKeys={hiddenKeys}
       onToggleSeries={toggleSeries}
@@ -317,8 +319,8 @@ export function ComponentPreview({ id }: { id: string }) {
           explanation="Multi-series line chart with toggleable layers"
           xAxisKey="label"
           layers={[
-            { id: "l1", label: "Series A", color: "#2563eb", dataKey: "layer1" },
-            { id: "l2", label: "Series B", color: "#dc2626", dataKey: "layer2" },
+            { id: "l1", label: "Series A", color: chartSeriesColor(0), dataKey: "layer1" },
+            { id: "l2", label: "Series B", color: CHART_NEGATIVE, dataKey: "layer2" },
           ]}
           data={graphSampleData}
         />

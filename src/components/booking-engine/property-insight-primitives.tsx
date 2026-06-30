@@ -3,6 +3,7 @@ import { useId } from "react"
 import { Area, AreaChart, ResponsiveContainer, XAxis } from "recharts"
 
 import { WidgetHelpButton } from "@/components/widgets/widget-help-button"
+import { CHART_AREA_GRADIENT_FROM, CHART_BAR_FILL_CLASS, CHART_BAR_FILL_SOFT_CLASS, CHART_LINE } from "@/lib/chart-colors"
 import type { InsightTrendPoint } from "@/lib/property-insights-data"
 import { cn } from "@/lib/utils"
 
@@ -128,7 +129,7 @@ export function InsightBenchmarkBar({
   return (
     <div className="space-y-1.5">
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-foreground" style={{ width: `${clamped}%` }} />
+        <div className={cn("h-full rounded-full", CHART_BAR_FILL_CLASS)} style={{ width: `${clamped}%` }} />
       </div>
       <p className="text-[10px] text-muted-foreground">{label}</p>
     </div>
@@ -156,8 +157,8 @@ export function InsightMiniSparkline({
         <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--foreground)" stopOpacity={0.1} />
-              <stop offset="100%" stopColor="var(--foreground)" stopOpacity={0} />
+              <stop offset="0%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0.1} />
+              <stop offset="100%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0} />
             </linearGradient>
           </defs>
           <XAxis
@@ -171,7 +172,7 @@ export function InsightMiniSparkline({
           <Area
             type="monotone"
             dataKey="value"
-            stroke="var(--foreground)"
+            stroke={CHART_LINE}
             strokeWidth={1.75}
             strokeOpacity={0.55}
             fill={`url(#${gradientId})`}
@@ -185,7 +186,7 @@ export function InsightMiniSparkline({
               dataKey="highlight"
               stroke="transparent"
               fill="transparent"
-              dot={{ r: 3, fill: "var(--foreground)", strokeWidth: 0 }}
+              dot={{ r: 3, fill: CHART_LINE, strokeWidth: 0 }}
               isAnimationActive={false}
             />
           ) : null}
@@ -251,7 +252,7 @@ export function InsightRankedBarList({
             <span className="whitespace-nowrap text-xs text-muted-foreground">{item.label}</span>
             <div className="h-1.5 min-w-0 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-foreground/70"
+                className={cn("h-full rounded-full", CHART_BAR_FILL_SOFT_CLASS)}
                 style={{ width: `${Math.max(8, (item.barValue / max) * 100)}%` }}
               />
             </div>

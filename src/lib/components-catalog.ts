@@ -462,7 +462,7 @@ const breakdownRows = [
   explanation="Bookings made per day"
   xAxisKey="date"
   layers={[
-    { id: "bookings", label: "Bookings", color: "#3b82f6", dataKey: "bookings" },
+    { id: "bookings", label: "Bookings", color: "var(--chart-1)", dataKey: "bookings" },
   ]}
   data={[{ date: "1 Jan", bookings: 420 }]}
 />`,

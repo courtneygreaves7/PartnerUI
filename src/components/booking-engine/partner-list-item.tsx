@@ -5,6 +5,7 @@ import {
   getPartnerTags,
   type Partner,
 } from "@/lib/booking-engine-data"
+import { CHART_BAR_FILL_LIGHT_CLASS } from "@/lib/chart-colors"
 import { cn } from "@/lib/utils"
 
 type PartnerListItemProps = {
@@ -77,7 +78,7 @@ export function PartnerListItem({
         </div>
         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-foreground/35"
+            className={cn("h-full rounded-full", CHART_BAR_FILL_LIGHT_CLASS)}
             style={{ width: `${volumePct}%` }}
           />
         </div>

@@ -14,13 +14,14 @@ import { SortedChartTooltip } from "@/components/charts/sorted-chart-tooltip"
 import { useHiddenChartSeries } from "@/components/charts/use-hidden-chart-series"
 import { ReportSection } from "@/components/report-section"
 import { type ActiveFilters, buildAbvPerDayData } from "@/lib/chart-data"
+import { chartSeriesColor } from "@/lib/chart-colors"
 import { CHART_HEIGHT } from "@/lib/chart-styles"
 
 const SERIES = [
-  { key: "Total", color: "#3b82f6" },
-  { key: "Partner Alpha", color: "#f97316" },
-  { key: "Partner Beta", color: "#06b6d4" },
-  { key: "Partner Gamma", color: "#eab308" },
+  { key: "Total", color: chartSeriesColor(0) },
+  { key: "Partner Alpha", color: chartSeriesColor(1) },
+  { key: "Partner Beta", color: chartSeriesColor(2) },
+  { key: "Partner Gamma", color: chartSeriesColor(3) },
 ]
 
 const SERIES_KEYS = SERIES.map(({ key }) => key)

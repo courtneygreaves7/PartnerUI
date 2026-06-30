@@ -162,6 +162,27 @@ export const colorPaletteTokens: ColorToken[] = [
     usage: "Secondary series in Compare views.",
     group: "Semantic",
   },
+  {
+    name: "Chart primary",
+    variable: "--chart-1",
+    hex: "#4a8fad",
+    usage: "Primary bars, lines, and sparklines.",
+    group: "Semantic",
+  },
+  {
+    name: "Chart secondary",
+    variable: "--chart-2",
+    hex: "#6b8fd4",
+    usage: "Second series in multi-line charts.",
+    group: "Semantic",
+  },
+  {
+    name: "Chart positive",
+    variable: "--chart-4",
+    hex: "#2d9f7a",
+    usage: "Positive metrics and CAL take-up series.",
+    group: "Semantic",
+  },
 ]
 
 export const typographyTokens = {

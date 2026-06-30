@@ -3,7 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Brand palette (dark mode + accents) */
+  /* Brand palette */
   --brand-pink: #ee2a7b;
   --brand-dark-blue: #243748;
   --brand-light-blue: #f1fdfe;
@@ -46,10 +46,25 @@
   --tooltip: #27272a;
   --tooltip-foreground: #fafafa;
 
-  /* Compare accents (unchanged in neutral light mode) */
+  /* Compare accents */
   --compare-primary: var(--brand-dark-blue);
   --compare-comparison: #2563eb;
   --compare-comparison-bar: #1d4ed8;
+
+  /* Charts & data viz */
+  --chart-1: #4a8fad;
+  --chart-2: #6b8fd4;
+  --chart-3: #8b72b8;
+  --chart-4: #2d9f7a;
+  --chart-accent: #ee2a7b;
+  --chart-negative: #d96363;
+  --chart-bar: #4a8fad;
+  --chart-bar-muted: #c5dce8;
+  --chart-bar-goal: #c5d0db;
+  --chart-line: #4a8fad;
+  --chart-rank-1: #c9a227;
+  --chart-rank-2: #8fa8be;
+  --chart-rank-3: #b87d5c;
 }
 
 .dark {
@@ -88,6 +103,20 @@
   --compare-primary: #fafafa;
   --compare-comparison: #71717a;
   --compare-comparison-bar: #52525b;
+
+  --chart-1: #6eb3d1;
+  --chart-2: #8aa8e8;
+  --chart-3: #b09ad4;
+  --chart-4: #4cc39a;
+  --chart-accent: #f04d92;
+  --chart-negative: #f87171;
+  --chart-bar: #6eb3d1;
+  --chart-bar-muted: rgb(110 179 209 / 0.22);
+  --chart-bar-goal: rgb(161 161 170 / 0.32);
+  --chart-line: #6eb3d1;
+  --chart-rank-1: #e4bd4a;
+  --chart-rank-2: #a8bbc9;
+  --chart-rank-3: #d49a72;
 }
 
 @theme inline {
@@ -114,6 +143,11 @@
   --color-compare-primary: var(--compare-primary);
   --color-compare-comparison: var(--compare-comparison);
   --color-compare-comparison-bar: var(--compare-comparison-bar);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-bar: var(--chart-bar);
 }
 
 * {

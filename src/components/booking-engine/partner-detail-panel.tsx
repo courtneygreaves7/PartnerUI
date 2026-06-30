@@ -29,6 +29,7 @@ import {
   type Partner,
   type PolicyRate,
 } from "@/lib/booking-engine-data"
+import { CHART_AREA_GRADIENT_FROM, CHART_LINE } from "@/lib/chart-colors"
 import { getPropertiesForPartner, type PropertyListItem } from "@/lib/properties-list-data"
 import { useScrollToTopOnChange } from "@/lib/scroll-to-top"
 import { cn } from "@/lib/utils"
@@ -176,8 +177,8 @@ function OverviewTab({
             <AreaChart data={trend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--foreground)" stopOpacity={0.1} />
-                  <stop offset="100%" stopColor="var(--foreground)" stopOpacity={0} />
+                  <stop offset="0%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0.1} />
+                  <stop offset="100%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -196,7 +197,7 @@ function OverviewTab({
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="var(--foreground)"
+                stroke={CHART_LINE}
                 strokeWidth={1.5}
                 fill={`url(#${gradientId})`}
                 dot={false}

@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { WidgetHelpButton } from "@/components/widgets/widget-help-button"
+import { CHART_BAR_FILL_CLASS } from "@/lib/chart-colors"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
 
@@ -126,7 +127,7 @@ export function ProductSplitWidget({
             aria-label={`${segmentA.sharePercent}% ${segmentA.label}, ${segmentB.sharePercent}% ${segmentB.label}`}
           >
             <div
-              className="h-full bg-foreground transition-[width]"
+              className={cn("h-full transition-[width]", CHART_BAR_FILL_CLASS)}
               style={{ width: `${segmentA.sharePercent}%` }}
             />
             <div

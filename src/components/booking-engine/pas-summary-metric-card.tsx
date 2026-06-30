@@ -4,6 +4,7 @@ import { useId } from "react"
 import { TrendingUp } from "lucide-react"
 import { Area, AreaChart, ResponsiveContainer } from "recharts"
 
+import { CHART_AREA_GRADIENT_FROM, CHART_BAR_FILL_SOFT_CLASS, CHART_BAR_MUTED_CLASS, CHART_LINE } from "@/lib/chart-colors"
 import { cn } from "@/lib/utils"
 
 type PasSummaryMetricCardProps = {
@@ -32,14 +33,14 @@ function MiniSparkline({ values, compact = false }: { values: number[]; compact?
         <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--foreground)" stopOpacity={0.14} />
-              <stop offset="100%" stopColor="var(--foreground)" stopOpacity={0} />
+              <stop offset="0%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0.14} />
+              <stop offset="100%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0} />
             </linearGradient>
           </defs>
           <Area
             type="monotone"
             dataKey="value"
-            stroke="var(--foreground)"
+            stroke={CHART_LINE}
             strokeWidth={compact ? 1.25 : 1.5}
             strokeOpacity={0.55}
             fill={`url(#${gradientId})`}
@@ -76,7 +77,7 @@ function MiniBarChart({
               className={cn(
                 "flex w-full flex-col justify-end rounded-sm",
                 showLabels && "items-center",
-                isLast ? "bg-foreground/65" : "bg-muted",
+                isLast ? CHART_BAR_FILL_SOFT_CLASS : CHART_BAR_MUTED_CLASS,
                 showLabels && (compact ? "min-h-[22px]" : "min-h-[28px]")
               )}
               style={{ height: `${heightPct}%` }}

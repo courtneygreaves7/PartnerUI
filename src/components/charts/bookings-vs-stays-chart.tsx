@@ -14,11 +14,12 @@ import { SortedChartTooltip } from "@/components/charts/sorted-chart-tooltip"
 import { useHiddenChartSeries } from "@/components/charts/use-hidden-chart-series"
 import { ReportSection } from "@/components/report-section"
 import { type ActiveFilters, buildDailyBookingsData } from "@/lib/chart-data"
+import { chartSeriesColor } from "@/lib/chart-colors"
 import { CHART_HEIGHT } from "@/lib/chart-styles"
 
 const SERIES = [
-  { key: "made", label: "Made", color: "#3b82f6" },
-  { key: "starting", label: "Starting", color: "#a855f7" },
+  { key: "made", label: "Made", color: chartSeriesColor(0) },
+  { key: "starting", label: "Starting", color: chartSeriesColor(2) },
 ]
 
 const SERIES_KEYS = SERIES.map(({ key }) => key)

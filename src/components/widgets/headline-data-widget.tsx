@@ -3,6 +3,7 @@ import { Area, AreaChart, ResponsiveContainer } from "recharts"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import type { MetricTrendPoint } from "@/components/widgets/metric-trend-widget"
+import { CHART_AREA_GRADIENT_FROM, CHART_LINE } from "@/lib/chart-colors"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
 import { WidgetHelpButton } from "@/components/widgets/widget-help-button"
@@ -50,14 +51,14 @@ export function HeadlineDataWidget({
               <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--foreground)" stopOpacity={0.12} />
-                    <stop offset="100%" stopColor="var(--foreground)" stopOpacity={0} />
+                    <stop offset="0%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0.12} />
+                    <stop offset="100%" stopColor={CHART_AREA_GRADIENT_FROM} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="var(--foreground)"
+                  stroke={CHART_LINE}
                   strokeWidth={1.5}
                   strokeOpacity={0.55}
                   fill={`url(#${gradientId})`}
