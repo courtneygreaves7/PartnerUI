@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { ActiveFilters } from "@/lib/chart-data"
+import { PARTNER_BRANDING } from "@/lib/partner-branding"
 
 const months = [
   "January",
@@ -42,17 +43,15 @@ type FilterSidebarProps = {
 }
 
 export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarProps) {
-  const [partner, setPartner] = useState(filters.partner)
   const [brand, setBrand] = useState(filters.brand)
   const [dateRange, setDateRange] = useState(filters.dateRange)
   const [year, setYear] = useState(filters.year)
   const [month, setMonth] = useState(filters.month)
   const [metric, setMetric] = useState(filters.metric)
 
-  const showBrand = partner !== "all-partners"
+  const showBrand = true
 
   useEffect(() => {
-    setPartner(filters.partner)
     setBrand(filters.brand)
     setDateRange(filters.dateRange)
     setYear(filters.year)
@@ -60,17 +59,10 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
     setMetric(filters.metric)
   }, [filters])
 
-  function handlePartnerChange(value: string) {
-    setPartner(value)
-    if (value === "all-partners") {
-      setBrand("all-brands")
-    }
-  }
-
   function handleRun() {
     onRun({
-      partner,
-      brand: partner === "all-partners" ? "all-brands" : brand,
+      partner: PARTNER_BRANDING.partnerId,
+      brand,
       dateRange,
       year,
       month,
@@ -80,31 +72,16 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
   }
 
   return (
-    <aside className="relative flex min-h-0 flex-col overflow-hidden">
+    <aside className="relative min-h-0 overflow-y-auto">
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-border" />
 
-      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+      <div className="space-y-6 px-6 py-6">
         <div>
           <h2 className="text-sm font-semibold">Filters</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Refine metrics by partner, brand, and period, then update the report.
+            Refine metrics by brand and period, then update the report.
           </p>
         </div>
-
-        <Field>
-          <Label htmlFor="partner-filter">Partner</Label>
-          <Select value={partner} onValueChange={handlePartnerChange}>
-            <SelectTrigger id="partner-filter">
-              <SelectValue placeholder="Select partner" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-partners">All partners</SelectItem>
-              <SelectItem value="partner-a">Partner Alpha</SelectItem>
-              <SelectItem value="partner-b">Partner Beta</SelectItem>
-              <SelectItem value="partner-c">Partner Gamma</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
 
         {showBrand ? (
           <Field>
@@ -188,34 +165,29 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="shrink-0">
-        <div className="relative px-6 pb-6">
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-border" />
-          <div className="pt-4">
-            <Button
-              className="w-full"
-              onClick={handleRun}
-              aria-label={
-                hasRun
-                  ? "Update report with selected filters"
-                  : "Generate report from selected filters"
-              }
-            >
-              {hasRun ? (
-                <>
-                  <RefreshCw className="size-3.5" />
-                  Update report
-                </>
-              ) : (
-                <>
-                  <Play className="size-3.5" />
-                  Generate report
-                </>
-              )}
-            </Button>
-          </div>
+        <div className="border-t border-border pt-4">
+          <Button
+            className="w-full"
+            onClick={handleRun}
+            aria-label={
+              hasRun
+                ? "Update report with selected filters"
+                : "Generate report from selected filters"
+            }
+          >
+            {hasRun ? (
+              <>
+                <RefreshCw className="size-3.5" />
+                Update report
+              </>
+            ) : (
+              <>
+                <Play className="size-3.5" />
+                Generate report
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </aside>

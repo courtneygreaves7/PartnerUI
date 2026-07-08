@@ -3,11 +3,15 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Brand palette */
-  --brand-pink: #ee2a7b;
-  --brand-dark-blue: #243748;
-  --brand-light-blue: #f1fdfe;
-  --brand-green: #a2ffe3;
+  /* Brand palette — Sykes Holiday Cottages */
+  --brand-primary: #006b6b;
+  --brand-primary-dark: #004d4d;
+  --brand-accent: #e87722;
+  --brand-surface: #f0f7f6;
+  --brand-pink: var(--brand-accent);
+  --brand-dark-blue: var(--brand-primary-dark);
+  --brand-light-blue: var(--brand-surface);
+  --brand-green: var(--brand-primary);
   --brand-grey-blue: #f7fafc;
 
   /* Surfaces */
@@ -47,7 +51,7 @@
   --tooltip-foreground: #fafafa;
 
   /* Compare accents */
-  --compare-primary: var(--brand-dark-blue);
+  --compare-primary: var(--brand-primary);
   --compare-comparison: #2563eb;
   --compare-comparison-bar: #1d4ed8;
 }

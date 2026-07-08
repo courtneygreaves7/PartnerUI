@@ -4,15 +4,14 @@ import { ArrowRight, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
-  { label: "Bookings", anchor: "section-bookings" },
-  { label: "Avg booking value", anchor: "section-abv" },
-  { label: "Cal financials", anchor: "section-cal" },
-  { label: "Timing", anchor: "section-timing" },
-  { label: "Bookings vs stays", anchor: "section-bookings-vs-stays" },
-  { label: "ABV (excl. fees) per day", anchor: "section-abv-per-day" },
-  { label: "Avg lead time per day", anchor: "section-lead-time" },
-  { label: "Bookings made per day", anchor: "section-bookings-per-day" },
-  { label: "CAL & DDL take-up % per day", anchor: "section-cal-ddl-takeup" },
+  { label: "Revenue overview", anchor: "section-revenue-overview" },
+  { label: "Total products", anchor: "section-total-products" },
+  { label: "Flexible cancellation", anchor: "section-flexible-cancellation" },
+  { label: "Damage deposit waiver", anchor: "section-damage-deposit-waiver" },
+  { label: "Contribution", anchor: "section-contribution" },
+  { label: "Performance metrics", anchor: "section-performance-metrics" },
+  { label: "Financials", anchor: "section-financials" },
+  { label: "Phasing & trends", anchor: "section-phasing" },
 ]
 
 type SectionNavProps = {

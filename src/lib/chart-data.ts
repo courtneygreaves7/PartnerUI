@@ -1,3 +1,5 @@
+import { PARTNER_BRANDING } from "@/lib/partner-branding"
+
 export type ActiveFilters = {
   partner: string
   brand: string
@@ -9,7 +11,7 @@ export type ActiveFilters = {
 }
 
 export const DEFAULT_FILTERS: ActiveFilters = {
-  partner: "all-partners",
+  partner: "partner-a",
   brand: "all-brands",
   dateRange: "year-to-month-end",
   year: "2026",
@@ -20,9 +22,11 @@ export const DEFAULT_FILTERS: ActiveFilters = {
 
 export function formatFilterContext(filters: ActiveFilters) {
   const partner =
-    filters.partner === "all-partners"
-      ? "All partners"
-      : filters.partner.replace("partner-", "Partner ").replace(/\b\w/g, (c) => c.toUpperCase())
+    filters.partner === PARTNER_BRANDING.partnerId
+      ? PARTNER_BRANDING.shortName
+      : filters.partner === "all-partners"
+        ? "All partners"
+        : filters.partner.replace("partner-", "Partner ").replace(/\b\w/g, (c) => c.toUpperCase())
   const brandLabels: Record<string, string> = {
     "brand-a": "Alpha",
     "brand-b": "Beta",

@@ -15,6 +15,7 @@ export type HeadlineDataWidgetProps = {
   valueClassName?: string
   chartData?: MetricTrendPoint[]
   className?: string
+  compact?: boolean
 }
 
 export function HeadlineDataWidget({
@@ -25,17 +26,29 @@ export function HeadlineDataWidget({
   valueClassName,
   chartData,
   className,
+  compact = false,
 }: HeadlineDataWidgetProps) {
   const gradientId = `headline-sparkline-fill-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`
 
   return (
-    <Card className={cn("@container flex h-full min-w-0 flex-col bg-card shadow-xs", className)}>
+    <Card
+      className={cn(
+        "@container min-w-0 bg-card shadow-xs",
+        compact ? "h-auto" : "flex h-full flex-col",
+        className
+      )}
+    >
       <CardHeader className="flex-row items-start justify-between space-y-0 pb-0">
         <h3 className="min-w-0 pr-2 text-sm font-semibold text-muted-foreground">{title}</h3>
         <WidgetHelpButton title={title} helpText={helpText} />
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-3 pb-5 pt-1">
+      <CardContent
+        className={cn(
+          "flex flex-col gap-2 pb-4 pt-1",
+          !compact && chartData && "flex-1"
+        )}
+      >
         <p
           className={cn(
             "font-bold tracking-tight tabular-nums text-foreground",

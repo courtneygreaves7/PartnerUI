@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from "react"
-import { LogIn, Mail, SquareChartGantt } from "lucide-react"
+import { LogIn, Mail } from "lucide-react"
 
+import { PartnerLogo } from "@/components/partner-logo"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { PARTNER_BRANDING } from "@/lib/partner-branding"
 
 type LoginPageProps = {
   onLogin: () => void
@@ -86,10 +88,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <SquareChartGantt className="size-8 text-foreground" />
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight">Keystone</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to access partner booking analytics
+          <PartnerLogo variant="hero" />
+          <p className="mt-4 text-sm text-muted-foreground">
+            Sign in to access {PARTNER_BRANDING.tagline.toLowerCase()}
           </p>
         </div>
 
@@ -144,7 +145,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           <div className="mt-6 border-t border-border pt-6 text-center">
             <p className="text-sm text-muted-foreground">Don&apos;t have an account?</p>
             <a
-              href="mailto:admin@keystone.internal?subject=Keystone%20account%20request"
+              href={`mailto:${PARTNER_BRANDING.contactEmail}?subject=${encodeURIComponent(`${PARTNER_BRANDING.name} partner portal access`)}`}
               className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-input bg-card px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Mail className="size-4" />
