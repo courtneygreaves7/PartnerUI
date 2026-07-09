@@ -29,7 +29,7 @@ type PasswordForm = {
 
 const INITIAL_PROFILE: ProfileForm = {
   firstName: "George",
-  lastName: "Nash",
+  lastName: "Nunn",
   email: "george.nash@sykescottages.co.uk",
   jobTitle: "Partner Manager",
   phone: "+44 7700 900123",

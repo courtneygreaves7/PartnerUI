@@ -71,7 +71,7 @@ export function ReportingFilterSidebar({
   }
 
   return (
-    <aside className="relative flex min-h-0 flex-col bg-[#f0f5fe] dark:bg-muted">
+    <aside className="relative flex min-h-0 flex-col bg-[#e8f0fc] dark:bg-muted">
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-border" />
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">

@@ -481,7 +481,7 @@ export function CollapsibleDataTable({
         "group rounded-xl border border-border bg-card shadow-xs",
         className
       )}
-      open={defaultOpen}
+      defaultOpen={defaultOpen}
     >
       <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
         <span className="inline-flex items-center gap-2">

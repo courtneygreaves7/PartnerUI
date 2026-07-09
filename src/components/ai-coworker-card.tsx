@@ -239,37 +239,58 @@ function AiCoworkerDialog({
   )
 }
 
+function AiCoworkerAvatarButton({
+  onClick,
+  label = "Ask AI Coworker",
+}: {
+  onClick: () => void
+  label?: string
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className="group relative flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105"
+    >
+      <span className="absolute inset-0 rounded-full bg-primary/30 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
+      <span className="relative flex size-7 items-center justify-center rounded-full bg-white/15 text-[10px] font-bold tracking-tight">
+        AI
+      </span>
+      <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-emerald-400 ring-2 ring-background" />
+    </button>
+  )
+}
+
 export function AiCoworkerCard({
   collapsed = false,
   partnerName = "George",
 }: AiCoworkerCardProps) {
-  const [dismissed, setDismissed] = useState(false)
+  const [minimized, setMinimized] = useState(false)
   const [open, setOpen] = useState(false)
-
-  if (dismissed) return null
 
   if (collapsed) {
     return (
       <>
-        <button
-          type="button"
-          title="Ask AI Coworker"
-          aria-label="Ask AI Coworker"
-          onClick={() => setOpen(true)}
-          className="group relative flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105"
-        >
-          <span className="absolute inset-0 rounded-full bg-primary/30 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
-          <span className="relative flex size-7 items-center justify-center rounded-full bg-white/15 text-[10px] font-bold tracking-tight">
-            AI
-          </span>
-          <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-emerald-400 ring-2 ring-background" />
-        </button>
+        <AiCoworkerAvatarButton onClick={() => setOpen(true)} />
         <AiCoworkerDialog
           open={open}
           partnerName={partnerName}
           onClose={() => setOpen(false)}
         />
       </>
+    )
+  }
+
+  if (minimized) {
+    return (
+      <div className="flex justify-center">
+        <AiCoworkerAvatarButton
+          label="Show AI Coworker"
+          onClick={() => setMinimized(false)}
+        />
+      </div>
     )
   }
 
@@ -287,9 +308,9 @@ export function AiCoworkerCard({
 
         <button
           type="button"
-          onClick={() => setDismissed(true)}
+          onClick={() => setMinimized(true)}
           className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Dismiss AI Coworker"
+          aria-label="Minimize AI Coworker"
         >
           <X className="size-3" />
         </button>

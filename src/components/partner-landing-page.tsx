@@ -1684,7 +1684,7 @@ export function InsightsContributionPanel({ filters }: { filters: ActiveFilters 
 
       <CollapsibleDataTable
         title="Cancellations, relets & lead times"
-        defaultOpen
+        defaultOpen={false}
       >
         <ChannelGridTable rows={contributionGrid} className="border-0 shadow-none" />
       </CollapsibleDataTable>
@@ -1699,7 +1699,7 @@ export function InsightsContributionPanel({ filters }: { filters: ActiveFilters 
 /** Top card row for the Insights page — same style as the Home tab cards. */
 export function InsightsTopCards() {
   return (
-    <div className="rounded-2xl bg-[#f0f5fe] p-4 dark:bg-muted">
+    <div className="rounded-2xl bg-[#e8f0fc] p-4 dark:bg-muted">
       <div className="@container overflow-x-auto">
         <div className="flex w-max gap-6">
           {TOTAL_PRODUCTS_SUMMARY.map((item) => (
