@@ -702,32 +702,70 @@ const STAYS_CARD_SUPPORT: Record<string, string> = {
 function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void }) {
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
-      {PARTNER_REVENUE.drivers.map((driver) => (
-        <div key={driver.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
-          <div className="flex items-start justify-between gap-2">
-            <TileIcon label={driver.label} />
-            {onOpenInsights ? (
-              <button
-                type="button"
-                onClick={onOpenInsights}
-                aria-label={`View ${driver.label} in insights`}
-                className="-m-1.5 grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      {PARTNER_REVENUE.drivers.map((driver) => {
+        const highlight = "highlight" in driver && driver.highlight
+
+        return (
+          <div
+            key={driver.label}
+            className={cn(
+              PANEL,
+              "flex flex-col gap-4 p-5",
+              highlight &&
+                "border-primary/80 bg-gradient-to-br from-primary to-[#0047b3] text-primary-foreground shadow-sm"
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              {highlight ? (
+                <Sigma className="size-4 shrink-0 text-primary-foreground" />
+              ) : (
+                <TileIcon label={driver.label} />
+              )}
+              {onOpenInsights ? (
+                <button
+                  type="button"
+                  onClick={onOpenInsights}
+                  aria-label={`View ${driver.label} in insights`}
+                  className={cn(
+                    "-m-1.5 grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
+                    highlight
+                      ? "text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <ArrowUpRight className="size-4" />
+                </button>
+              ) : null}
+            </div>
+            <div className="space-y-1">
+              <p
+                className={cn(
+                  "text-[13px] leading-snug",
+                  highlight ? "text-primary-foreground/80" : "text-muted-foreground"
+                )}
               >
-                <ArrowUpRight className="size-4" />
-              </button>
-            ) : null}
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] leading-snug text-muted-foreground">{driver.label}</p>
-            <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
-              {driver.label === "Total" ? PARTNER_REVENUE.headline : driver.value}
+                {driver.label}
+              </p>
+              <p
+                className={cn(
+                  "text-xl font-bold tracking-tight tabular-nums",
+                  highlight ? "text-primary-foreground" : "text-foreground"
+                )}
+              >
+                {driver.label === "Total" ? PARTNER_REVENUE.headline : driver.value}
+              </p>
+            </div>
+            <p
+              className={cn(
+                "mt-auto text-xs",
+                highlight ? "text-primary-foreground/75" : "text-muted-foreground"
+              )}
+            >
+              {STAYS_CARD_SUPPORT[driver.label]}
             </p>
           </div>
-          <p className="mt-auto text-xs text-muted-foreground">
-            {STAYS_CARD_SUPPORT[driver.label]}
-          </p>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
