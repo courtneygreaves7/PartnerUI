@@ -174,7 +174,7 @@ function NavItemButton({
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isDark, setIsDark] = useState(false)
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
   const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard")
