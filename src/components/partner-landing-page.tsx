@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   MousePointerClick,
   Package,
+  Percent,
   PiggyBank,
   Receipt,
   RefreshCcw,
@@ -22,14 +23,24 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import { MiniBarChart, Sparkline } from "@/components/sykes/sykes-visual-primitives"
+import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
+import {
+  ChannelBarGroup,
+  CollapsibleDataTable,
+  MiniBarChart,
+  Sparkline,
+  VisualCard,
+} from "@/components/sykes/sykes-visual-primitives"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   ADDITIONAL_PARTNER_REVENUE,
+  FLEXIBLE_CANCELLATION_GRID,
   GROSS_BOOKINGS_TREND,
   MARKET_COMPARISON_METRICS,
   PARTNER_REVENUE,
+  PROPOSITION_NOTES,
+  TOTAL_PRODUCTS_SUMMARY,
 } from "@/lib/sykes-dashboard-data"
 
 const MONO_LABEL =
@@ -86,6 +97,10 @@ const TILE_ICONS: Array<{ match: string; icon: LucideIcon }> = [
   { match: "Margin", icon: PiggyBank },
   { match: "Incremental Cancellations", icon: RefreshCcw },
   { match: "Website Conversion", icon: MousePointerClick },
+  { match: "% of Bookings that are offered", icon: Percent },
+  { match: "offered a Product", icon: Package },
+  { match: "Total Bookings", icon: CalendarCheck },
+  { match: "Income per Booking", icon: Receipt },
   { match: "Total", icon: Sigma },
   { match: "Gross Bookings", icon: CalendarCheck },
   { match: "Lead Time", icon: Clock },
@@ -908,6 +923,196 @@ function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
   )
 }
 
+const INSIGHTS_PRODUCT_TABS = [
+  { id: "cal", label: "CAL" },
+  { id: "ddl", label: "DDL" },
+] as const
+
+export type InsightsProductId = (typeof INSIGHTS_PRODUCT_TABS)[number]["id"]
+
+const CAL_CHANNEL_COLORS = ["#27272a", "#3f3f46", "#52525b", "#71717a"] as const
+
+const CAL_RATE_CARDS = [
+  { label: "FC Guest Price Avg", value: "10%", hint: "Works with dynamic pricing" },
+  { label: "Insurance Premium Rate Avg", value: "6.35%", hint: "Works with dynamic pricing" },
+  { label: "Out of Test Conversion", value: "1.0%", hint: "Website only · App / Offline / OTA N/A" },
+  { label: "Conversion Benefit", value: "1% = £900k", hint: "Out of test conversion value" },
+] as const
+
+const CAL_MARGIN_ROWS = [
+  {
+    label: "FC Partner Margin",
+    hint: "Partner margin from flexible cancellation",
+  },
+  {
+    label: "Commission & Booking Fee Benefit",
+    hint: "Benefit from incremental cancellations",
+  },
+] as const
+
+/** Full-width CAL / DDL product switcher for the Insights page, styled like the Home tabs. */
+export function InsightsProductTabs({
+  value,
+  onChange,
+}: {
+  value: InsightsProductId
+  onChange: (id: InsightsProductId) => void
+}) {
+  return (
+    <div className="flex w-full items-center gap-1 rounded-xl bg-muted p-1">
+      {INSIGHTS_PRODUCT_TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onChange(tab.id)}
+          className={cn(
+            "flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+            value === tab.id
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** CAL Flexible Cancellation analytics — channel volume, rates, margin, and full breakdown. */
+export function InsightsCalPanel() {
+  const bookingsRow = FLEXIBLE_CANCELLATION_GRID[0]
+  const channelBars = [
+    { label: "Website", value: bookingsRow.website.value, percent: 85 },
+    { label: "App", value: bookingsRow.app.value, percent: 62 },
+    { label: "Offline", value: bookingsRow.offline.value, percent: 48 },
+    { label: "OTA", value: bookingsRow.ota.value, percent: 35 },
+  ].map((channel, index) => ({
+    ...channel,
+    fill: CAL_CHANNEL_COLORS[index] ?? "#71717a",
+  }))
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className={MONO_LABEL}>Proposition</p>
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+          Flexible Cancellation
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{PROPOSITION_NOTES.flexibleCancellation}</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {CAL_RATE_CARDS.map((card) => (
+          <div key={card.label} className={cn(PANEL, "flex flex-col gap-2 p-5")}>
+            <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+            <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+              {card.value}
+            </p>
+            <p className="mt-auto text-xs text-muted-foreground">{card.hint}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
+        <VisualCard
+          title="FC Bookings by channel"
+          subtitle="Website · App · Offline · OTA · Direct = A+B+C · Total = A+B+C+D"
+        >
+          <ChannelBarGroup channels={channelBars} />
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
+              <p className="text-xs text-muted-foreground">Direct</p>
+              <p className="mt-1 text-lg font-bold tabular-nums">{bookingsRow.direct.value}</p>
+            </div>
+            <div className="rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="mt-1 text-lg font-bold tabular-nums">{bookingsRow.total.value}</p>
+            </div>
+          </div>
+        </VisualCard>
+
+        <VisualCard title="Attachment & margin" subtitle="Key commercial measures by channel">
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+              <p className="text-xs text-muted-foreground">FC Attachment</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">%</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Attachment rate across Website, App, Offline, OTA, Direct and Total
+              </p>
+            </div>
+            {CAL_MARGIN_ROWS.map((row) => (
+              <div
+                key={row.label}
+                className="rounded-xl border border-border/70 bg-muted/20 p-4"
+              >
+                <p className="text-xs font-medium text-foreground">{row.label}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{row.hint}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {["Website A", "App B", "Offline C", "OTA D"].map((chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-md bg-muted px-2 py-1 text-[11px] font-semibold tabular-nums text-foreground"
+                    >
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </VisualCard>
+      </div>
+
+      <CollapsibleDataTable title="View full channel breakdown" defaultOpen>
+        <ChannelGridTable rows={FLEXIBLE_CANCELLATION_GRID} className="border-0 shadow-none" />
+      </CollapsibleDataTable>
+    </div>
+  )
+}
+
+/** DDL placeholder until Damage Deposit Waiver analytics are wired the same way. */
+export function InsightsDdlPanel() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-24 text-center">
+      <span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">
+        <BarChart3 className="size-4" />
+      </span>
+      <p className="mt-4 text-sm font-semibold text-foreground">Damage Deposit Waiver</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        DDL channel performance will be available here soon.
+      </p>
+    </div>
+  )
+}
+
+/** Top card row for the Insights page — same style as the Home tab cards. */
+export function InsightsTopCards() {
+  return (
+    <div className="@container overflow-x-auto pb-1">
+      <div className="flex w-max gap-6">
+        {TOTAL_PRODUCTS_SUMMARY.map((item) => (
+          <div
+            key={item.label}
+            className={cn(PANEL, "flex w-[calc((100cqi-6rem)/4.25)] shrink-0 flex-col gap-4 p-5")}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <TileIcon label={item.label} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[13px] leading-snug text-muted-foreground">{item.label}</p>
+              <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+                {item.value}
+              </p>
+            </div>
+            <p className="mt-auto text-xs text-muted-foreground">Total Products</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Kept (exported) for reuse if a tab needs to revert to a placeholder.
 export function TabEmptyState({ tabId }: { tabId: TabId }) {
   const copy = TAB_EMPTY_COPY[tabId]
@@ -971,21 +1176,47 @@ export function PartnerLandingPage({ onOpenInsights }: { onOpenInsights?: () => 
           {activeTab === "pikl-effect" ? <PiklEffectTab /> : null}
           {activeTab === "pikl-market" ? <PiklMarketTab /> : null}
         </>
-      ) : activeTab === "pikl-stays" ? (
-        <>
-          <PiklStaysDriverCards onOpenInsights={onOpenInsights} />
-          <StaysSecondRow onOpenInsights={onOpenInsights} />
-        </>
-      ) : activeTab === "pikl-effect" ? (
-        <>
-          <PiklEffectDriverCards onOpenInsights={onOpenInsights} />
-          <EffectSecondRow onOpenInsights={onOpenInsights} />
-        </>
       ) : (
-        <>
-          <PiklMarketDriverCards onOpenInsights={onOpenInsights} />
-          <MarketSecondRow onOpenInsights={onOpenInsights} />
-        </>
+        /* All tab contents are stacked in the same grid cell so the row height
+           always matches the tallest tab, preventing layout shift on switch. */
+        <div className="grid">
+          {(
+            [
+              [
+                "pikl-stays",
+                <>
+                  <PiklStaysDriverCards onOpenInsights={onOpenInsights} />
+                  <StaysSecondRow onOpenInsights={onOpenInsights} />
+                </>,
+              ],
+              [
+                "pikl-effect",
+                <>
+                  <PiklEffectDriverCards onOpenInsights={onOpenInsights} />
+                  <EffectSecondRow onOpenInsights={onOpenInsights} />
+                </>,
+              ],
+              [
+                "pikl-market",
+                <>
+                  <PiklMarketDriverCards onOpenInsights={onOpenInsights} />
+                  <MarketSecondRow onOpenInsights={onOpenInsights} />
+                </>,
+              ],
+            ] as Array<[TabId, React.ReactNode]>
+          ).map(([tabId, content]) => (
+            <div
+              key={tabId}
+              aria-hidden={activeTab !== tabId}
+              className={cn(
+                "col-start-1 row-start-1 space-y-6",
+                activeTab !== tabId && "invisible"
+              )}
+            >
+              {content}
+            </div>
+          ))}
+        </div>
       )}
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-5">

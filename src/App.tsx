@@ -16,7 +16,14 @@ import {
 import { FilterContextPill } from "@/components/filter-context-pill"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { LoginPage } from "@/components/login-page"
-import { PartnerLandingPage } from "@/components/partner-landing-page"
+import {
+  InsightsCalPanel,
+  InsightsDdlPanel,
+  InsightsProductTabs,
+  InsightsTopCards,
+  PartnerLandingPage,
+  type InsightsProductId,
+} from "@/components/partner-landing-page"
 import { PartnerLogo } from "@/components/partner-logo"
 import { SykesPartnerDashboardPage } from "@/components/sykes-partner-dashboard-page"
 import { SectionNav } from "@/components/section-nav"
@@ -149,6 +156,7 @@ function App() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
   const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard")
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(DEFAULT_FILTERS)
+  const [insightsProduct, setInsightsProduct] = useState<InsightsProductId>("cal")
   const [insightsScrollTarget, setInsightsScrollTarget] = useState<string | null>(null)
   const mainScrollRef = useRef<HTMLElement>(null)
 
@@ -431,14 +439,10 @@ function App() {
                   ) : SHOW_INSIGHTS_CONTENT ? (
                     <SykesPartnerDashboardPage filters={activeFilters} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-24 text-center">
-                      <span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">
-                        <BarChart3 className="size-4" />
-                      </span>
-                      <p className="mt-4 text-sm font-semibold text-foreground">Insights</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Detailed Pikl&apos;d Stays performance will be available here soon.
-                      </p>
+                    <div className="space-y-6">
+                      <InsightsTopCards />
+                      <InsightsProductTabs value={insightsProduct} onChange={setInsightsProduct} />
+                      {insightsProduct === "cal" ? <InsightsCalPanel /> : <InsightsDdlPanel />}
                     </div>
                   )}
                 </section>

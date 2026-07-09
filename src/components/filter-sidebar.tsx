@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { Ban, Play, RefreshCw, TrendingUp } from "lucide-react"
+import { Ban, Check, Play, RefreshCw, TrendingUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -151,18 +152,26 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold">Metrics</h2>
           <div className="flex flex-col gap-2">
-            {metricOptions.map(({ label, value, icon: Icon }) => (
-              <Button
-                key={value}
-                type="button"
-                variant={metric === value ? "default" : "outline"}
-                className="w-full justify-start gap-2"
-                onClick={() => setMetric(value)}
-              >
-                <Icon className="size-3.5 shrink-0" />
-                {label}
-              </Button>
-            ))}
+            {metricOptions.map(({ label, value, icon: Icon }) => {
+              const isActive = metric === value
+              return (
+                <Button
+                  key={value}
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start gap-2",
+                    isActive &&
+                      "border-foreground/40 bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                  onClick={() => setMetric(value)}
+                >
+                  <Icon className="size-3.5 shrink-0" />
+                  <span className="flex-1 text-left">{label}</span>
+                  {isActive ? <Check className="size-3.5 shrink-0" /> : null}
+                </Button>
+              )
+            })}
           </div>
         </div>
 
