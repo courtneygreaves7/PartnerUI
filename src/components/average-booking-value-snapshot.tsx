@@ -21,7 +21,6 @@ import {
 import { metricCardGridClass } from "@/lib/card-layout"
 import {
   scaleCurrencyString,
-  scaleDaysString,
   scalePercentString,
 } from "@/lib/brand-metrics"
 import { type ActiveFilters, getAbvProfile } from "@/lib/chart-data"

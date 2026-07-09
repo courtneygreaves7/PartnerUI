@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react"
+import { useId, useState, type ReactNode } from "react"
 import { Info, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react"
 import {
   Area,
@@ -475,13 +475,16 @@ export function CollapsibleDataTable({
   defaultOpen?: boolean
   className?: string
 }) {
+  const [open, setOpen] = useState(defaultOpen)
+
   return (
     <details
       className={cn(
         "group rounded-xl border border-border bg-card shadow-xs",
         className
       )}
-      defaultOpen={defaultOpen}
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
         <span className="inline-flex items-center gap-2">
