@@ -61,15 +61,16 @@
   --foreground: #fafafa;
   --card: #1e1e22;
   --card-foreground: #fafafa;
-  --canvas: #2a2a30;
-  --field: #2a2a30;
+  --canvas: #22222a;
+  --field: #22222a;
 
   --primary: #3389ff;
   --primary-foreground: #ffffff;
 
-  --muted: #1a2433;
+  /* Darker chrome so sidebars / tabs separate from the panel */
+  --muted: #141b28;
   --muted-foreground: #9db0cc;
-  --accent: #1e2f4a;
+  --accent: #1c2a3e;
   --accent-foreground: #9ec5ff;
   --border: #2a3b55;
   --input: #2a3b55;
