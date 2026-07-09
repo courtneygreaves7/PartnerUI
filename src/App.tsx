@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import {
   BarChart3,
   ChevronsLeft,
-  ChevronsRight,
   FileText,
   LayoutGrid,
   LifeBuoy,
@@ -309,15 +308,14 @@ function App() {
                 <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-border/50">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-9"
+                      <button
+                        type="button"
                         onClick={() => setLeftSidebarOpen(true)}
                         aria-label="Show navigation"
+                        className="flex size-9 items-center justify-center rounded-md transition-colors hover:bg-accent/60"
                       >
-                        <ChevronsRight className="size-4" />
-                      </Button>
+                        <PartnerLogo compact />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent>Show navigation</TooltipContent>
                   </Tooltip>
