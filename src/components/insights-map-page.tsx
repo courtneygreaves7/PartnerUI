@@ -46,11 +46,158 @@ import {
 } from "@/lib/insights-map-data"
 import { cn } from "@/lib/utils"
 
-const MONO_LABEL =
-  "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
-
 const ALL_COUNTIES = "all-counties"
 const ALL_TOWNS = "all-towns"
+
+function BritishFlag({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 60 30"
+      preserveAspectRatio="xMidYMid meet"
+      className={cn("aspect-[2/1] h-4 w-auto shrink-0", className)}
+      aria-hidden
+      focusable="false"
+    >
+      <clipPath id="uk-flag-clip">
+        <rect width="60" height="30" rx="1.5" />
+      </clipPath>
+      <g clipPath="url(#uk-flag-clip)">
+        <rect width="60" height="30" fill="#012169" />
+        <path d="M0 0 L60 30 M60 0 L0 30" stroke="#fff" strokeWidth="6" />
+        <path d="M0 0 L60 30" stroke="#C8102E" strokeWidth="2" transform="translate(0 1.2)" />
+        <path d="M60 0 L0 30" stroke="#C8102E" strokeWidth="2" transform="translate(0 -1.2)" />
+        <path d="M30 0 V30 M0 15 H60" stroke="#fff" strokeWidth="10" />
+        <path d="M30 0 V30 M0 15 H60" stroke="#C8102E" strokeWidth="6" />
+      </g>
+    </svg>
+  )
+}
+
+const MAP_MID_X = 400
+const CALLOUT_BOX_W = 220
+const CALLOUT_BOX_H = 148
+
+/** Stepped callout into the white space left/right of the UK island. */
+function MapRegionCallout({
+  region,
+  metric,
+  metricLabel,
+  brand,
+}: {
+  region: MapRegion
+  metric: MapMetricId
+  metricLabel: string
+  brand: string
+}) {
+  const stats = getRegionDetailStats(region, brand)
+  const value = formatMapMetric(getMetricValue(region, metric), metric)
+  const cx = region.labelX
+  const cy = region.labelY
+  const side: "left" | "right" = cx < MAP_MID_X ? "left" : "right"
+
+  const boxX = side === "left" ? 18 : 800 - 18 - CALLOUT_BOX_W
+  const boxY = Math.min(Math.max(cy - CALLOUT_BOX_H / 2, 88), 1000 - CALLOUT_BOX_H - 28)
+  const boxMidY = boxY + CALLOUT_BOX_H / 2
+  const elbowX = side === "left" ? Math.max(cx - 48, boxX + CALLOUT_BOX_W + 18) : Math.min(cx + 48, boxX - 18)
+  const joinX = side === "left" ? boxX + CALLOUT_BOX_W : boxX
+
+  const linePath = [
+    `M ${cx} ${cy}`,
+    `L ${elbowX} ${cy}`,
+    `L ${elbowX} ${boxMidY}`,
+    `L ${joinX} ${boxMidY}`,
+  ].join(" ")
+
+  const detailRows = [
+    { label: "Bookings", value: stats.bookings.toLocaleString("en-GB") },
+    { label: "Revenue", value: formatCompactCurrency(stats.revenue) },
+    { label: "CAL take-up", value: formatMapMetric(stats.calTakeUp, "calTakeUp") },
+    { label: "Cancel rate", value: formatMapMetric(stats.cancellationRate, "cancellationRate") },
+  ]
+
+  return (
+    <g className="pointer-events-none" aria-hidden>
+      {/* Soft connector shadow */}
+      <path
+        d={linePath}
+        fill="none"
+        stroke="rgb(0 0 0 / 0.08)"
+        strokeWidth="4.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path
+        d={linePath}
+        fill="none"
+        stroke="#1e293b"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+
+      {/* Anchor on county */}
+      <circle cx={cx} cy={cy} r="8" fill="rgb(0 107 255 / 0.16)" />
+      <circle cx={cx} cy={cy} r="5.25" fill="#ffffff" stroke="#006BFF" strokeWidth="2" />
+      <circle cx={cx} cy={cy} r="2.4" fill="#006BFF" />
+
+      {/* Join node at card edge */}
+      <circle cx={joinX} cy={boxMidY} r="3.5" fill="#ffffff" stroke="#1e293b" strokeWidth="1.5" />
+
+      <g transform={`translate(${boxX} ${boxY})`}>
+        <rect
+          width={CALLOUT_BOX_W}
+          height={CALLOUT_BOX_H}
+          rx="14"
+          fill="#ffffff"
+          stroke="#d7e4f7"
+          strokeWidth="1.25"
+        />
+        <rect x="0" y="0" width="4" height={CALLOUT_BOX_H} rx="2" fill="#006BFF" />
+
+        <text x="16" y="22" fill="#5b6b85" fontSize="9" fontWeight="650" letterSpacing="0.14em">
+          COUNTY
+        </text>
+        <text x="16" y="42" fill="#0f172a" fontSize="15" fontWeight="700">
+          {region.name.length > 20 ? `${region.name.slice(0, 19)}…` : region.name}
+        </text>
+        <text x="16" y="58" fill="#64748b" fontSize="10.5">
+          {region.code} · United Kingdom
+        </text>
+
+        <rect x="16" y="68" width={CALLOUT_BOX_W - 32} height="24" rx="7" fill="#eef5ff" />
+        <text x="26" y="84" fill="#5b6b85" fontSize="10">
+          {metricLabel}
+        </text>
+        <text
+          x={CALLOUT_BOX_W - 26}
+          y="84"
+          fill="#006BFF"
+          fontSize="12"
+          fontWeight="700"
+          textAnchor="end"
+        >
+          {value}
+        </text>
+
+        {detailRows.map((row, index) => {
+          const col = index % 2
+          const x = col === 0 ? 16 : 118
+          const rowY = 108 + Math.floor(index / 2) * 18
+          return (
+            <g key={row.label}>
+              <text x={x} y={rowY} fill="#94a3b8" fontSize="9">
+                {row.label}
+              </text>
+              <text x={x} y={rowY + 12} fill="#0f172a" fontSize="11" fontWeight="650">
+                {row.value}
+              </text>
+            </g>
+          )
+        })}
+      </g>
+    </g>
+  )
+}
 
 type InsightsMapPageProps = {
   filters: ActiveFilters
@@ -172,7 +319,7 @@ function RegionStatsPanel({
         <div>
           <h2 className="text-sm font-semibold">Area</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Hover or click the map, or choose a county below.
+            Click a county on the map, or choose one below.
           </p>
         </div>
 
@@ -310,8 +457,6 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
     ? (scaledRegions.find((r) => r.id === hoveredCountyId) ?? null)
     : null
 
-  const activeCounty = selectedCounty ?? hoveredCounty
-
   const towns = useMemo(
     () => (selectedCounty ? getTownsForCounty(selectedCounty) : []),
     [selectedCounty]
@@ -323,12 +468,12 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
       : (towns.find((town) => town.id === selectedTownId) ?? null)
 
   const activeRegion = useMemo(() => {
-    if (!activeCounty) return null
-    if (selectedCounty && selectedTown) {
+    if (!selectedCounty) return null
+    if (selectedTown) {
       return scaleRegionByTownShare(selectedCounty, selectedTown.share)
     }
-    return activeCounty
-  }, [activeCounty, selectedCounty, selectedTown])
+    return selectedCounty
+  }, [selectedCounty, selectedTown])
 
   const range = useMemo(() => metricRange(scaledRegions, metric), [scaledRegions, metric])
   const metricLabel = MAP_METRICS.find((item) => item.id === metric)?.label.toLowerCase()
@@ -337,10 +482,10 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
     if (!activeRegion) return null
     const stats = getRegionDetailStats(activeRegion, filters.brand)
     if (selectedTown) {
-      return { ...stats, county: selectedTown.name, code: activeCounty?.code ?? stats.code }
+      return { ...stats, county: selectedTown.name, code: selectedCounty?.code ?? stats.code }
     }
     return stats
-  }, [activeRegion, filters.brand, selectedTown, activeCounty?.code])
+  }, [activeRegion, filters.brand, selectedTown, selectedCounty?.code])
 
   const overviewStats = useMemo(
     () => getAggregateDetailStats(scaledRegions, filters.brand),
@@ -383,14 +528,14 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-0.5">
+        <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
           {MAP_METRICS.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setMetric(item.id)}
               className={cn(
-                "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                 metric === item.id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -405,14 +550,19 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="relative min-h-0 bg-[#f4f7fb] dark:bg-muted/15">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-4">
-            <div className="rounded-lg border border-border/50 bg-background/90 px-3 py-2 shadow-sm backdrop-blur-sm">
-              <p className={MONO_LABEL}>United Kingdom</p>
-              <p className="text-xs text-muted-foreground">Shaded by {metricLabel}</p>
+            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/90 px-4 py-3 shadow-sm backdrop-blur-sm">
+              <BritishFlag className="rounded-[2px] shadow-xs ring-1 ring-black/10" />
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  United Kingdom
+                </p>
+                <p className="text-sm text-muted-foreground">Shaded by {metricLabel}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/90 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
-              <span className="text-[9px] text-muted-foreground">Low</span>
-              <div className="h-1.5 w-16 rounded-full bg-gradient-to-r from-primary/20 via-primary/50 to-primary" />
-              <span className="text-[9px] text-muted-foreground">High</span>
+            <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+              <span className="text-[10px] text-muted-foreground">Low</span>
+              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-primary/20 via-primary/50 to-primary" />
+              <span className="text-[10px] text-muted-foreground">High</span>
             </div>
           </div>
 
@@ -461,6 +611,15 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
                   />
                 )
               })}
+
+              {hoveredCounty && metricLabel ? (
+                <MapRegionCallout
+                  region={hoveredCounty}
+                  metric={metric}
+                  metricLabel={metricLabel}
+                  brand={filters.brand}
+                />
+              ) : null}
             </svg>
           )}
         </div>

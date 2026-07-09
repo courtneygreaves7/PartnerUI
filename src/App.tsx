@@ -16,6 +16,7 @@ import {
 
 import { FilterContextPill } from "@/components/filter-context-pill"
 import { FilterSidebar } from "@/components/filter-sidebar"
+import { AiCoworkerCard } from "@/components/ai-coworker-card"
 import { LoginPage } from "@/components/login-page"
 import {
   DEFAULT_REPORTING_FILTERS,
@@ -277,6 +278,7 @@ function App() {
 
                 <div className="relative z-30 mt-auto shrink-0 space-y-3 overflow-visible px-5 pb-6 pt-4">
                   {activeSection === "insights" && SHOW_INSIGHTS_CONTENT ? <SectionNav /> : null}
+                  <AiCoworkerCard partnerName={PARTNER_BRANDING.userDisplayName} />
                   <Button
                     variant="outline"
                     className="w-full justify-center gap-2 bg-card"
@@ -320,6 +322,7 @@ function App() {
 
                 <div className="relative z-30 mt-auto flex w-full shrink-0 flex-col items-center gap-2 overflow-visible px-2 pb-4 pt-4">
                   {activeSection === "insights" && SHOW_INSIGHTS_CONTENT ? <SectionNav collapsed /> : null}
+                  <AiCoworkerCard collapsed partnerName={PARTNER_BRANDING.userDisplayName} />
                   <button
                     type="button"
                     title="Log out"
@@ -369,10 +372,10 @@ function App() {
                       aria-label="User menu"
                     >
                       <span className="relative flex size-6 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold text-background">
-                        SH
+                        GN
                         <span className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-2 border-background bg-muted-foreground" />
                       </span>
-                      <span className="text-sm font-medium">Partner</span>
+                      <span className="text-sm font-medium">{PARTNER_BRANDING.userDisplayName}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
