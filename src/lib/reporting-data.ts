@@ -1,7 +1,7 @@
 import type { ReportingFilters } from "@/components/reporting-filter-sidebar"
 import type { CompareMetric, CompareSection } from "@/lib/compare-data"
 import {
-  CONTRIBUTION_TO_PERFORMANCE_GRID,
+  buildContributionToPerformanceGrid,
   DAMAGE_DEPOSIT_WAIVER_GRID,
   FLEXIBLE_CANCELLATION_GRID,
   TOTAL_PRODUCTS_SUMMARY,
@@ -9,11 +9,11 @@ import {
   type ChannelGridRow,
 } from "@/lib/sykes-dashboard-data"
 
-export const REPORTING_BRAND_LABELS: Record<string, string> = {
-  "brand-a": "Manor Cottages",
-  "brand-b": "Lake Lovers",
-  "brand-c": "Dream Cottages",
-}
+import {
+  BRAND_LABELS,
+  getBrandRateOffset,
+  getBrandVolumeMultiplier,
+} from "@/lib/brand-metrics"
 
 export const REPORTING_PERIOD_LABELS: Record<ReportingFilters["period"], string> = {
   day: "Day",
@@ -24,19 +24,7 @@ export const REPORTING_PERIOD_LABELS: Record<ReportingFilters["period"], string>
   custom: "Custom range",
 }
 
-/** Brand share of the Insights portfolio totals (sums ≈ 1). */
-const BRAND_VOLUME_SHARE: Record<string, number> = {
-  "brand-a": 0.42,
-  "brand-b": 0.26,
-  "brand-c": 0.32,
-}
-
-/** Small attachment / rate offsets vs Insights baseline (percentage points). */
-const BRAND_RATE_OFFSET: Record<string, number> = {
-  "brand-a": 0.4,
-  "brand-b": -0.8,
-  "brand-c": 0.2,
-}
+export const REPORTING_BRAND_LABELS: Record<string, string> = BRAND_LABELS
 
 const PERIOD_VOLUME_FACTOR: Record<ReportingFilters["period"], number> = {
   day: 1 / 30,
@@ -143,7 +131,7 @@ function scaleCell(
 }
 
 function brandVolumeFactor(brandId: string, period: ReportingFilters["period"]): number {
-  const share = BRAND_VOLUME_SHARE[brandId] ?? 0.33
+  const share = getBrandVolumeMultiplier(brandId)
   return share * PERIOD_VOLUME_FACTOR[period]
 }
 
@@ -153,7 +141,25 @@ export function scaleChannelGrid(
   period: ReportingFilters["period"]
 ): ChannelGridRow[] {
   const volumeFactor = brandVolumeFactor(brandId, period)
-  const rateOffset = BRAND_RATE_OFFSET[brandId] ?? 0
+  const rateOffset = getBrandRateOffset(brandId)
+  return scaleChannelGridWithFactors(rows, volumeFactor, rateOffset)
+}
+
+/** Scale channel grids for Insights filters (month-equivalent volumes). */
+export function scaleInsightsChannelGrid(
+  rows: ChannelGridRow[],
+  brand: string
+): ChannelGridRow[] {
+  const volumeFactor = getBrandVolumeMultiplier(brand)
+  const rateOffset = getBrandRateOffset(brand)
+  return scaleChannelGridWithFactors(rows, volumeFactor, rateOffset)
+}
+
+function scaleChannelGridWithFactors(
+  rows: ChannelGridRow[],
+  volumeFactor: number,
+  rateOffset: number
+): ChannelGridRow[] {
   const channels = ["website", "app", "offline", "ota", "direct", "total"] as const
 
   return rows.map((row) => {
@@ -264,13 +270,9 @@ export function getBrandInsightSnapshot(
 ): BrandInsightSnapshot {
   const calGrid = scaleChannelGrid(FLEXIBLE_CANCELLATION_GRID, brandId, period)
   const ddlGrid = scaleChannelGrid(DAMAGE_DEPOSIT_WAIVER_GRID, brandId, period)
-  const contributionGrid = scaleChannelGrid(
-    CONTRIBUTION_TO_PERFORMANCE_GRID,
-    brandId,
-    period
-  )
+  const contributionGrid = buildContributionToPerformanceGrid(calGrid, ddlGrid)
   const volumeFactor = brandVolumeFactor(brandId, period)
-  const rateOffset = BRAND_RATE_OFFSET[brandId] ?? 0
+  const rateOffset = getBrandRateOffset(brandId)
 
   const summary = TOTAL_PRODUCTS_SUMMARY.map((item) => {
     const raw = parseDisplayValue(item.value)

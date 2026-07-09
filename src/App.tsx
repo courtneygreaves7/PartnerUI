@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   LifeBuoy,
   LogOut,
+  Map,
   MoonStar,
   SlidersHorizontal,
   Sun,
@@ -22,8 +23,10 @@ import {
   type ReportingFilters,
 } from "@/components/reporting-filter-sidebar"
 import { ReportingPage } from "@/components/reporting-page"
+import { InsightsMapPage } from "@/components/insights-map-page"
 import {
   InsightsCalPanel,
+  InsightsContributionPanel,
   InsightsDdlPanel,
   InsightsProductTabs,
   InsightsTopCards,
@@ -63,6 +66,7 @@ import { type ActiveFilters, DEFAULT_FILTERS } from "@/lib/chart-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 
 type ActiveSection = "dashboard" | "insights" | "reporting" | "admin" | "support"
+type InsightsView = "detail" | "map"
 
 /** Set to true to restore the full Insights dashboard (kept intact). */
 const SHOW_INSIGHTS_CONTENT = false
@@ -166,6 +170,7 @@ function App() {
     useState<ReportingFilters>(DEFAULT_REPORTING_FILTERS)
   const [reportingHasRun, setReportingHasRun] = useState(false)
   const [insightsProduct, setInsightsProduct] = useState<InsightsProductId>("cal")
+  const [insightsView, setInsightsView] = useState<InsightsView>("detail")
   const [insightsScrollTarget, setInsightsScrollTarget] = useState<string | null>(null)
   const mainScrollRef = useRef<HTMLElement>(null)
 
@@ -175,8 +180,13 @@ function App() {
 
   function handleOpenInsights(anchor?: string) {
     setActiveSection("insights")
+    setInsightsView("detail")
     if (anchor) setInsightsScrollTarget(anchor)
   }
+
+  useEffect(() => {
+    if (activeSection !== "insights") setInsightsView("detail")
+  }, [activeSection])
 
   useEffect(() => {
     if (activeSection !== "insights" || !insightsScrollTarget) return
@@ -201,7 +211,8 @@ function App() {
   }, [isDark])
 
   const showFilterSidebar =
-    activeSection === "insights" || activeSection === "reporting"
+    activeSection === "reporting" ||
+    (activeSection === "insights" && insightsView === "detail")
 
   if (!isAuthenticated) {
     return (
@@ -396,9 +407,14 @@ function App() {
                 <section
                   id={APP_MAIN_SCROLL_ID}
                   ref={mainScrollRef}
-                  className="relative h-full min-h-0 overflow-y-auto px-10 py-10 xl:px-16 xl:py-14"
+                  className={cn(
+                    "relative h-full min-h-0",
+                    activeSection === "insights" && insightsView === "map"
+                      ? "overflow-hidden"
+                      : "overflow-y-auto px-10 py-10 xl:px-16 xl:py-14"
+                  )}
                 >
-                  {activeSection === "insights" ? (
+                  {activeSection === "insights" && insightsView === "detail" ? (
                     <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
                         <h1 className="text-[22px] font-semibold tracking-tight">Insights</h1>
@@ -406,9 +422,20 @@ function App() {
                           Detailed Pikl&apos;d Stays performance for {PARTNER_BRANDING.name}
                         </p>
                       </div>
-                      {SHOW_INSIGHTS_CONTENT ? (
-                        <FilterContextPill filters={activeFilters} />
-                      ) : null}
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 gap-1.5"
+                          onClick={() => setInsightsView("map")}
+                        >
+                          <Map className="size-3.5" />
+                          Map view
+                        </Button>
+                        {SHOW_INSIGHTS_CONTENT ? (
+                          <FilterContextPill filters={activeFilters} />
+                        ) : null}
+                      </div>
                     </div>
                   ) : null}
 
@@ -437,6 +464,15 @@ function App() {
                         Account, team, and configuration settings will be available here soon.
                       </p>
                     </div>
+                  ) : activeSection === "insights" && insightsView === "map" ? (
+                    <InsightsMapPage
+                      filters={activeFilters}
+                      onBack={() => setInsightsView("detail")}
+                      onFilterRegion={(id) => {
+                        setActiveFilters((prev) => ({ ...prev, county: id }))
+                        setInsightsView("detail")
+                      }}
+                    />
                   ) : SHOW_INSIGHTS_CONTENT ? (
                     <SykesPartnerDashboardPage filters={activeFilters} />
                   ) : (
@@ -444,6 +480,7 @@ function App() {
                       <InsightsTopCards />
                       <InsightsProductTabs value={insightsProduct} onChange={setInsightsProduct} />
                       {insightsProduct === "cal" ? <InsightsCalPanel /> : <InsightsDdlPanel />}
+                      <InsightsContributionPanel filters={activeFilters} />
                     </div>
                   )}
                 </section>
@@ -460,7 +497,11 @@ function App() {
                     }}
                   />
                 ) : (
-                  <FilterSidebar filters={activeFilters} onRun={setActiveFilters} />
+                  <FilterSidebar
+                    filters={activeFilters}
+                    onRun={setActiveFilters}
+                    showCounty={activeSection === "insights" && insightsView === "map"}
+                  />
                 )
               ) : null}
             </div>

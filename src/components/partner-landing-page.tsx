@@ -37,7 +37,9 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   ADDITIONAL_PARTNER_REVENUE,
+  buildContributionToPerformanceGrid,
   DAMAGE_DEPOSIT_WAIVER_GRID,
+  FINANCIALS_GRID,
   FLEXIBLE_CANCELLATION_GRID,
   GROSS_BOOKINGS_TREND,
   MARGIN_EARNED_FC_DATA,
@@ -47,6 +49,8 @@ import {
   TOTAL_PRODUCTS_SUMMARY,
 } from "@/lib/sykes-dashboard-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
+import type { ActiveFilters } from "@/lib/chart-data"
+import { scaleInsightsChannelGrid } from "@/lib/reporting-data"
 
 const MONO_LABEL =
   "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
@@ -806,6 +810,7 @@ function ChartRowCard({
   trend,
   children,
   className,
+  contentClassName,
 }: {
   eyebrow: string
   sub?: string
@@ -813,6 +818,7 @@ function ChartRowCard({
   trend?: string
   children: React.ReactNode
   className?: string
+  contentClassName?: string
 }) {
   return (
     <div className={cn(PANEL, "flex flex-col", className)}>
@@ -827,7 +833,7 @@ function ChartRowCard({
           </div>
         ) : null}
       </div>
-      <div className="mt-auto pt-5">{children}</div>
+      <div className={cn("mt-auto pt-5", contentClassName)}>{children}</div>
     </div>
   )
 }
@@ -891,13 +897,14 @@ function StaysSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
         sub="Contribution by driver (£k)"
         value={PARTNER_REVENUE.headline}
         className="xl:col-span-3"
+        contentClassName="mt-0 flex min-h-0 flex-1 flex-col justify-center py-3"
       >
-        <div className="flex h-36 flex-col justify-center space-y-4">
+        <div className="space-y-2.5">
           {STAYS_DRIVER_BARS.map((bar) => (
-            <div key={bar.label} className="space-y-1.5">
+            <div key={bar.label} className="space-y-1">
               <div className="flex items-center justify-between gap-3">
                 <div
-                  className="h-5 rounded-md"
+                  className="h-3 rounded-full"
                   style={{ width: bar.width, backgroundColor: bar.color }}
                 />
                 <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
@@ -1567,6 +1574,90 @@ export function InsightsDdlPanel() {
   )
 }
 
+function findContributionRow(rows: ReturnType<typeof buildContributionToPerformanceGrid>, label: string) {
+  return rows.find((row) => row.label === label)
+}
+
+/** Contribution to performance — derived from FC/DDL proposition grids above. */
+export function InsightsContributionPanel({ filters }: { filters: ActiveFilters }) {
+  const fcGrid = scaleInsightsChannelGrid(FLEXIBLE_CANCELLATION_GRID, filters.brand)
+  const ddlGrid = scaleInsightsChannelGrid(DAMAGE_DEPOSIT_WAIVER_GRID, filters.brand)
+  const contributionGrid = buildContributionToPerformanceGrid(fcGrid, ddlGrid)
+  const financialsGrid = scaleInsightsChannelGrid(FINANCIALS_GRID, filters.brand)
+
+  const cancelVolume = findContributionRow(contributionGrid, "Cancellation Volume")
+  const cancelRate = findContributionRow(contributionGrid, "Cancellation Avg %")
+  const reletVolume = findContributionRow(contributionGrid, "Relet Volume")
+  const leadTravel = findContributionRow(
+    contributionGrid,
+    "Average Lead time between Booking and Travel"
+  )
+
+  const summaryCards = [
+    {
+      label: "Cancellation volume",
+      value: cancelVolume?.total.value ?? "—",
+      sub: `Direct ${cancelVolume?.direct.value ?? "—"}`,
+    },
+    {
+      label: "Cancellation avg %",
+      value: cancelRate?.total.value ?? "—",
+      sub: `FC ${findContributionRow(contributionGrid, "Cancellation % Avg FC")?.total.value ?? "—"}`,
+    },
+    {
+      label: "Relet volume",
+      value: reletVolume?.total.value ?? "—",
+      sub: `Re-let ${findContributionRow(contributionGrid, "Re-let % Avg")?.total.value ?? "—"}`,
+    },
+    {
+      label: "Avg lead time (booking → travel)",
+      value: leadTravel?.total.value ?? "—",
+      sub: `FC ${findContributionRow(contributionGrid, "Average Lead time between Booking and Travel FC")?.total.value ?? "—"}`,
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className={MONO_LABEL}>Performance</p>
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+          Contribution to performance
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cancellations, relets, lead times and financials — calculated from the proposition
+          metrics above (Direct = Website + App + Offline, Total = Direct + OTA).
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map((card) => (
+          <div key={card.label} className={cn(PANEL, "flex flex-col gap-3 p-5")}>
+            <TileIcon label={card.label} />
+            <div className="space-y-1">
+              <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+              <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+                {card.value}
+              </p>
+              <p className="text-xs text-muted-foreground">{card.sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <CollapsibleDataTable
+        title="Cancellations, relets & lead times"
+        defaultOpen
+      >
+        <ChannelGridTable rows={contributionGrid} className="border-0 shadow-none" />
+      </CollapsibleDataTable>
+
+      <CollapsibleDataTable title="Financials" defaultOpen={false}>
+        <ChannelGridTable rows={financialsGrid} className="border-0 shadow-none" />
+      </CollapsibleDataTable>
+    </div>
+  )
+}
+
 /** Top card row for the Insights page — same style as the Home tab cards. */
 export function InsightsTopCards() {
   return (
@@ -1587,7 +1678,6 @@ export function InsightsTopCards() {
                 {item.value}
               </p>
             </div>
-            <p className="mt-auto text-xs text-muted-foreground">Total Products</p>
           </div>
         ))}
       </div>

@@ -284,104 +284,341 @@ export const DAMAGE_DEPOSIT_WAIVER_GRID: ChannelGridRow[] = [
   },
 ]
 
+function parseGridValue(value: string): number {
+  const numeric = Number(value.replace(/[^0-9.]/g, "")) || 0
+  if (/k/i.test(value)) return numeric * 1000
+  if (/m/i.test(value)) return numeric * 1_000_000
+  return numeric
+}
+
+function parseGridChannels(row: ChannelGridRow): ChannelValues {
+  return {
+    website: parseGridValue(row.website.value),
+    app: parseGridValue(row.app.value),
+    offline: parseGridValue(row.offline.value),
+    ota: parseGridValue(row.ota.value),
+  }
+}
+
+function weightedChannelAverage(values: ChannelValues, weights: ChannelValues): number {
+  const totalWeight =
+    weights.website + weights.app + weights.offline + weights.ota
+  if (!totalWeight) return 0
+  return (
+    values.website * weights.website +
+    values.app * weights.app +
+    values.offline * weights.offline +
+    values.ota * weights.ota
+  ) / totalWeight
+}
+
+function weightedDirectAverage(values: ChannelValues, weights: ChannelValues): number {
+  const directWeight = weights.website + weights.app + weights.offline
+  if (!directWeight) return 0
+  return (
+    values.website * weights.website +
+    values.app * weights.app +
+    values.offline * weights.offline
+  ) / directWeight
+}
+
+function channelFromBookings(
+  bookings: ChannelValues,
+  ratePct: ChannelValues
+): ChannelValues {
+  return {
+    website: Math.round((bookings.website * ratePct.website) / 100),
+    app: Math.round((bookings.app * ratePct.app) / 100),
+    offline: Math.round((bookings.offline * ratePct.offline) / 100),
+    ota: Math.round((bookings.ota * ratePct.ota) / 100),
+  }
+}
+
+function channelFromRatio(
+  source: ChannelValues,
+  ratePct: ChannelValues
+): ChannelValues {
+  return {
+    website: Math.round((source.website * ratePct.website) / 100),
+    app: Math.round((source.app * ratePct.app) / 100),
+    offline: Math.round((source.offline * ratePct.offline) / 100),
+    ota: Math.round((source.ota * ratePct.ota) / 100),
+  }
+}
+
 /**
- * Contribution to performance — channel grid matching the partner wireframe.
- * Direct = Website+App+Offline; Total = Direct+OTA. FC rows are Flexible Cancellation.
+ * Derive contribution metrics from FC (and DDL) proposition grids.
+ * Direct = Website+App+Offline; Total = Direct+OTA.
+ *
+ * Formulas (per channel):
+ * - Cancellation volume = FC bookings × cancellation avg %
+ * - Cancellation volume FC = FC bookings × cancellation FC avg %
+ * - Relet volume = cancellation volume FC × re-let %
+ * - Relet volume FC = cancellation volume FC × re-let FC %
+ * - Re-let value avg = incremental cancellation benefit ÷ relet volume
+ * - Lead times / holiday values scale with FC attachment vs portfolio baseline (14%)
  */
-export const CONTRIBUTION_TO_PERFORMANCE_GRID: ChannelGridRow[] = [
-  volumeRow("Cancellation Volume", { website: 4200, app: 1600, offline: 800, ota: 1400 }),
-  attachmentRow("Cancellation Avg %", { website: 8.7, app: 8.3, offline: 8.3, ota: 7.2 }, 8.6, 8.3),
-  volumeRow("Cancellation Volume FC", { website: 2900, app: 1100, offline: 550, ota: 950 }),
-  attachmentRow("Cancellation % Avg FC", { website: 6.0, app: 5.7, offline: 5.7, ota: 4.9 }, 5.9, 5.7),
-  volumeRow("Relet Volume", { website: 1740, app: 660, offline: 330, ota: 570 }),
-  attachmentRow("Re-let % Avg", { website: 60, app: 60, offline: 60, ota: 60 }, 60, 60),
-  metricRow(
-    "Re-Let Value Avg",
-    { website: 820, app: 790, offline: 760, ota: 740 },
-    805,
-    790,
-    formatCurrency
-  ),
-  volumeRow("Re-Let Volume FC", { website: 1450, app: 550, offline: 275, ota: 475 }),
-  attachmentRow("Re-let % FC Avg", { website: 50, app: 50, offline: 50, ota: 50 }, 50, 50),
-  metricRow(
-    "Re-Let Value FC Avg",
-    { website: 860, app: 830, offline: 800, ota: 780 },
-    845,
-    830,
-    formatCurrency
-  ),
-  metricRow(
-    "Average Length of Booking",
-    { website: 5.6, app: 5.4, offline: 5.8, ota: 5.2 },
-    5.6,
-    5.5,
-    formatDays
-  ),
-  metricRow(
-    "Average Length of Booking FC",
-    { website: 6.2, app: 6.0, offline: 6.4, ota: 5.8 },
-    6.2,
-    6.1,
-    formatDays
-  ),
-  metricRow(
-    "Average Lead time between Booking and Travel",
-    { website: 110, app: 105, offline: 118, ota: 98 },
-    110,
-    108,
-    formatDays
-  ),
-  metricRow(
-    "Average Lead time between Booking and Travel FC",
-    { website: 128, app: 122, offline: 135, ota: 115 },
-    127,
-    125,
-    formatDays
-  ),
-  metricRow(
-    "Average Holiday Value Per Booking £",
-    { website: 920, app: 880, offline: 860, ota: 840 },
-    900,
-    890,
-    formatCurrency
-  ),
-  metricRow(
-    "Average Holiday Value Per Booking with FC £",
-    { website: 940, app: 900, offline: 880, ota: 860 },
-    920,
-    910,
-    formatCurrency
-  ),
-  metricRow(
-    "Average Lead time between Booking and Cancellation",
-    { website: 42, app: 38, offline: 45, ota: 36 },
-    41,
-    40,
-    formatDays
-  ),
-  metricRow(
-    "Average Lead time between Booking and Cancellation FC",
-    { website: 48, app: 44, offline: 52, ota: 40 },
-    47,
-    46,
-    formatDays
-  ),
-  metricRow(
-    "Average Lead time between Cancellation and Relet",
-    { website: 12, app: 11, offline: 14, ota: 10 },
-    12,
-    12,
-    formatDays
-  ),
-  metricRow(
-    "Average Lead time between Cancellation and Relet FC",
-    { website: 10, app: 9, offline: 12, ota: 8 },
-    10,
-    10,
-    formatDays
-  ),
-]
+export function buildContributionToPerformanceGrid(
+  fcGrid: ChannelGridRow[] = FLEXIBLE_CANCELLATION_GRID,
+  ddlGrid: ChannelGridRow[] = DAMAGE_DEPOSIT_WAIVER_GRID
+): ChannelGridRow[] {
+  const fcBookings = parseGridChannels(fcGrid[0])
+  const fcAttachment = parseGridChannels(fcGrid[1])
+  const fcBenefit = parseGridChannels(fcGrid[5])
+  const ddlBookings = parseGridChannels(ddlGrid[0])
+
+  const cancelAvgPct: ChannelValues = {
+    website: Math.round((fcAttachment.website * 0.55 + 0.1) * 10) / 10,
+    app: Math.round((fcAttachment.app * 0.55 + 0.1) * 10) / 10,
+    offline: Math.round((fcAttachment.offline * 0.55 + 0.1) * 10) / 10,
+    ota: Math.round((fcAttachment.ota * 0.55 + 0.1) * 10) / 10,
+  }
+
+  const cancelFcAvgPct: ChannelValues = {
+    website: Math.round(cancelAvgPct.website * 0.69 * 10) / 10,
+    app: Math.round(cancelAvgPct.app * 0.69 * 10) / 10,
+    offline: Math.round(cancelAvgPct.offline * 0.69 * 10) / 10,
+    ota: Math.round(cancelAvgPct.ota * 0.69 * 10) / 10,
+  }
+
+  const reletAvgPct: ChannelValues = {
+    website: 60,
+    app: 60,
+    offline: 60,
+    ota: 60,
+  }
+
+  const reletFcAvgPct: ChannelValues = {
+    website: 50,
+    app: 50,
+    offline: 50,
+    ota: 50,
+  }
+
+  const cancelVolume = channelFromBookings(fcBookings, cancelAvgPct)
+  const cancelVolumeFc = channelFromBookings(fcBookings, cancelFcAvgPct)
+  const reletVolume = channelFromRatio(cancelVolumeFc, reletAvgPct)
+  const reletVolumeFc = channelFromRatio(cancelVolumeFc, reletFcAvgPct)
+
+  const reletValueAvg: ChannelValues = {
+    website:
+      reletVolume.website > 0
+        ? Math.round(fcBenefit.website / reletVolume.website)
+        : 820,
+    app: reletVolume.app > 0 ? Math.round(fcBenefit.app / reletVolume.app) : 790,
+    offline:
+      reletVolume.offline > 0
+        ? Math.round(fcBenefit.offline / reletVolume.offline)
+        : 760,
+    ota: reletVolume.ota > 0 ? Math.round(fcBenefit.ota / reletVolume.ota) : 740,
+  }
+
+  const reletValueFcAvg: ChannelValues = {
+    website:
+      reletVolumeFc.website > 0
+        ? Math.round((fcBenefit.website * 1.08) / reletVolumeFc.website)
+        : 860,
+    app:
+      reletVolumeFc.app > 0
+        ? Math.round((fcBenefit.app * 1.08) / reletVolumeFc.app)
+        : 830,
+    offline:
+      reletVolumeFc.offline > 0
+        ? Math.round((fcBenefit.offline * 1.08) / reletVolumeFc.offline)
+        : 800,
+    ota:
+      reletVolumeFc.ota > 0
+        ? Math.round((fcBenefit.ota * 1.08) / reletVolumeFc.ota)
+        : 780,
+  }
+
+  const attachmentFactor = (channel: keyof ChannelValues) =>
+    0.92 + fcAttachment[channel] / 100
+
+  const avgLengthBooking: ChannelValues = {
+    website: Math.round(5.6 * attachmentFactor("website") * 10) / 10,
+    app: Math.round(5.4 * attachmentFactor("app") * 10) / 10,
+    offline: Math.round(5.8 * attachmentFactor("offline") * 10) / 10,
+    ota: Math.round(5.2 * attachmentFactor("ota") * 10) / 10,
+  }
+
+  const avgLengthBookingFc: ChannelValues = {
+    website: Math.round(avgLengthBooking.website * 1.1 * 10) / 10,
+    app: Math.round(avgLengthBooking.app * 1.1 * 10) / 10,
+    offline: Math.round(avgLengthBooking.offline * 1.1 * 10) / 10,
+    ota: Math.round(avgLengthBooking.ota * 1.1 * 10) / 10,
+  }
+
+  const avgLeadTravel: ChannelValues = {
+    website: Math.round(110 * attachmentFactor("website")),
+    app: Math.round(105 * attachmentFactor("app")),
+    offline: Math.round(118 * attachmentFactor("offline")),
+    ota: Math.round(98 * attachmentFactor("ota")),
+  }
+
+  const avgLeadTravelFc: ChannelValues = {
+    website: Math.round(avgLeadTravel.website * 1.16),
+    app: Math.round(avgLeadTravel.app * 1.16),
+    offline: Math.round(avgLeadTravel.offline * 1.16),
+    ota: Math.round(avgLeadTravel.ota * 1.16),
+  }
+
+  const avgHolidayValue: ChannelValues = {
+    website: Math.round(920 * attachmentFactor("website")),
+    app: Math.round(880 * attachmentFactor("app")),
+    offline: Math.round(860 * attachmentFactor("offline")),
+    ota: Math.round(840 * attachmentFactor("ota")),
+  }
+
+  const avgHolidayValueFc: ChannelValues = {
+    website: Math.round(avgHolidayValue.website * 1.02),
+    app: Math.round(avgHolidayValue.app * 1.02),
+    offline: Math.round(avgHolidayValue.offline * 1.02),
+    ota: Math.round(avgHolidayValue.ota * 1.02),
+  }
+
+  const avgLeadCancel: ChannelValues = {
+    website: Math.round(42 * (14 / Math.max(fcAttachment.website, 1))),
+    app: Math.round(38 * (14 / Math.max(fcAttachment.app, 1))),
+    offline: Math.round(45 * (14 / Math.max(fcAttachment.offline, 1))),
+    ota: Math.round(36 * (14 / Math.max(fcAttachment.ota, 1))),
+  }
+
+  const avgLeadCancelFc: ChannelValues = {
+    website: Math.round(avgLeadCancel.website * 1.14),
+    app: Math.round(avgLeadCancel.app * 1.14),
+    offline: Math.round(avgLeadCancel.offline * 1.14),
+    ota: Math.round(avgLeadCancel.ota * 1.14),
+  }
+
+  const avgLeadRelet: ChannelValues = {
+    website: Math.max(8, Math.round(12 * (ddlBookings.website / Math.max(fcBookings.website, 1)))),
+    app: Math.max(8, Math.round(11 * (ddlBookings.app / Math.max(fcBookings.app, 1)))),
+    offline: Math.max(
+      8,
+      Math.round(14 * (ddlBookings.offline / Math.max(fcBookings.offline, 1)))
+    ),
+    ota: Math.max(8, Math.round(10 * (ddlBookings.ota / Math.max(fcBookings.ota, 1)))),
+  }
+
+  const avgLeadReletFc: ChannelValues = {
+    website: Math.max(7, Math.round(avgLeadRelet.website * 0.85)),
+    app: Math.max(7, Math.round(avgLeadRelet.app * 0.85)),
+    offline: Math.max(7, Math.round(avgLeadRelet.offline * 0.85)),
+    ota: Math.max(7, Math.round(avgLeadRelet.ota * 0.85)),
+  }
+
+  const cancelDirectPct = weightedDirectAverage(cancelAvgPct, fcBookings)
+  const cancelTotalPct = weightedChannelAverage(cancelAvgPct, fcBookings)
+  const cancelFcDirectPct = weightedDirectAverage(cancelFcAvgPct, fcBookings)
+  const cancelFcTotalPct = weightedChannelAverage(cancelFcAvgPct, fcBookings)
+  const reletDirectPct = weightedDirectAverage(reletAvgPct, cancelVolumeFc)
+  const reletTotalPct = weightedChannelAverage(reletAvgPct, cancelVolumeFc)
+  const reletFcDirectPct = weightedDirectAverage(reletFcAvgPct, cancelVolumeFc)
+  const reletFcTotalPct = weightedChannelAverage(reletFcAvgPct, cancelVolumeFc)
+
+  return [
+    volumeRow("Cancellation Volume", cancelVolume),
+    attachmentRow("Cancellation Avg %", cancelAvgPct, cancelDirectPct, cancelTotalPct),
+    volumeRow("Cancellation Volume FC", cancelVolumeFc),
+    attachmentRow("Cancellation % Avg FC", cancelFcAvgPct, cancelFcDirectPct, cancelFcTotalPct),
+    volumeRow("Relet Volume", reletVolume),
+    attachmentRow("Re-let % Avg", reletAvgPct, reletDirectPct, reletTotalPct),
+    metricRow(
+      "Re-Let Value Avg",
+      reletValueAvg,
+      weightedDirectAverage(reletValueAvg, reletVolume),
+      weightedChannelAverage(reletValueAvg, reletVolume),
+      formatCurrency
+    ),
+    volumeRow("Re-Let Volume FC", reletVolumeFc),
+    attachmentRow("Re-let % FC Avg", reletFcAvgPct, reletFcDirectPct, reletFcTotalPct),
+    metricRow(
+      "Re-Let Value FC Avg",
+      reletValueFcAvg,
+      weightedDirectAverage(reletValueFcAvg, reletVolumeFc),
+      weightedChannelAverage(reletValueFcAvg, reletVolumeFc),
+      formatCurrency
+    ),
+    metricRow(
+      "Average Length of Booking",
+      avgLengthBooking,
+      weightedDirectAverage(avgLengthBooking, fcBookings),
+      weightedChannelAverage(avgLengthBooking, fcBookings),
+      formatDays
+    ),
+    metricRow(
+      "Average Length of Booking FC",
+      avgLengthBookingFc,
+      weightedDirectAverage(avgLengthBookingFc, fcBookings),
+      weightedChannelAverage(avgLengthBookingFc, fcBookings),
+      formatDays
+    ),
+    metricRow(
+      "Average Lead time between Booking and Travel",
+      avgLeadTravel,
+      weightedDirectAverage(avgLeadTravel, fcBookings),
+      weightedChannelAverage(avgLeadTravel, fcBookings),
+      formatDays
+    ),
+    metricRow(
+      "Average Lead time between Booking and Travel FC",
+      avgLeadTravelFc,
+      weightedDirectAverage(avgLeadTravelFc, fcBookings),
+      weightedChannelAverage(avgLeadTravelFc, fcBookings),
+      formatDays
+    ),
+    metricRow(
+      "Average Holiday Value Per Booking £",
+      avgHolidayValue,
+      weightedDirectAverage(avgHolidayValue, fcBookings),
+      weightedChannelAverage(avgHolidayValue, fcBookings),
+      formatCurrency
+    ),
+    metricRow(
+      "Average Holiday Value Per Booking with FC £",
+      avgHolidayValueFc,
+      weightedDirectAverage(avgHolidayValueFc, fcBookings),
+      weightedChannelAverage(avgHolidayValueFc, fcBookings),
+      formatCurrency
+    ),
+    metricRow(
+      "Average Lead time between Booking and Cancellation",
+      avgLeadCancel,
+      weightedDirectAverage(avgLeadCancel, cancelVolume),
+      weightedChannelAverage(avgLeadCancel, cancelVolume),
+      formatDays
+    ),
+    metricRow(
+      "Average Lead time between Booking and Cancellation FC",
+      avgLeadCancelFc,
+      weightedDirectAverage(avgLeadCancelFc, cancelVolumeFc),
+      weightedChannelAverage(avgLeadCancelFc, cancelVolumeFc),
+      formatDays
+    ),
+    metricRow(
+      "Average Lead time between Cancellation and Relet",
+      avgLeadRelet,
+      weightedDirectAverage(avgLeadRelet, reletVolume),
+      weightedChannelAverage(avgLeadRelet, reletVolume),
+      formatDays
+    ),
+    metricRow(
+      "Average Lead time between Cancellation and Relet FC",
+      avgLeadReletFc,
+      weightedDirectAverage(avgLeadReletFc, reletVolumeFc),
+      weightedChannelAverage(avgLeadReletFc, reletVolumeFc),
+      formatDays
+    ),
+  ]
+}
+
+/**
+ * Contribution to performance — derived from FC/DDL proposition grids.
+ * Direct = Website+App+Offline; Total = Direct+OTA.
+ */
+export const CONTRIBUTION_TO_PERFORMANCE_GRID: ChannelGridRow[] =
+  buildContributionToPerformanceGrid()
 
 /** Alias kept for the full Sykes dashboard — same rows as contribution (FC + behaviour). */
 export const PERFORMANCE_METRICS_GRID: ChannelGridRow[] =

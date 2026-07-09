@@ -19,6 +19,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { metricCardGridClass } from "@/lib/card-layout"
+import {
+  scaleCurrencyString,
+  scaleDaysString,
+  scalePercentString,
+} from "@/lib/brand-metrics"
 import { type ActiveFilters, getAbvProfile } from "@/lib/chart-data"
 import {
   INSIGHTS_WIDGET_HELP_TEXT,
@@ -80,9 +85,18 @@ const ABV_ROW_DATA: Record<string, Array<{ abv: string; calAbv: string; abvIncFe
 }
 
 function getAbvRows(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  const rowData = ABV_ROW_DATA[key] ?? ABV_ROW_DATA["all-partners:all-brands"]
-  return BASE_ABV_ROWS.map((base, i) => ({ ...base, ...rowData[i] }))
+  const baselineKey = `${filters.partner}:all-brands`
+  const rowData = ABV_ROW_DATA[baselineKey] ?? ABV_ROW_DATA["all-partners:all-brands"]
+  return BASE_ABV_ROWS.map((base, i) => ({
+    ...base,
+    abv: scaleCurrencyString(rowData[i].abv, filters.brand),
+    calAbv: rowData[i].calAbv === "—" ? "—" : scaleCurrencyString(rowData[i].calAbv, filters.brand),
+    abvIncFee: scaleCurrencyString(rowData[i].abvIncFee, filters.brand),
+    calPricePct:
+      rowData[i].calPricePct === "—"
+        ? "—"
+        : scalePercentString(rowData[i].calPricePct, filters.brand),
+  }))
 }
 
 function getGaugePercent(value: string) {

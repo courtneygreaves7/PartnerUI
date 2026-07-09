@@ -72,6 +72,7 @@ export function toActiveFilters(side: CompareSideFilters): ActiveFilters {
   return {
     partner: side.partner,
     brand: side.brand,
+    county: "all-counties",
     year: side.year,
     month: side.month,
     dateRange: side.dateRange,

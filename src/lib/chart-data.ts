@@ -1,8 +1,22 @@
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
+import { BRAND_LABELS } from "@/lib/brand-metrics"
+import {
+  getBrandRateOffset,
+  getBrandVolumeMultiplier,
+  scaleAbvProfile,
+  scaleBookingProfile,
+  scaleCalFinProfile,
+  scaleTimingProfile,
+  type AbvProfile,
+  type BookingProfile,
+  type CalFinProfile,
+  type TimingProfile,
+} from "@/lib/brand-metrics"
 
 export type ActiveFilters = {
   partner: string
   brand: string
+  county: string
   dateRange: string
   year: string
   month: string
@@ -13,6 +27,7 @@ export type ActiveFilters = {
 export const DEFAULT_FILTERS: ActiveFilters = {
   partner: "partner-a",
   brand: "all-brands",
+  county: "all-counties",
   dateRange: "year-to-month-end",
   year: "2026",
   month: "June",
@@ -27,11 +42,7 @@ export function formatFilterContext(filters: ActiveFilters) {
       : filters.partner === "all-partners"
         ? "All partners"
         : filters.partner.replace("partner-", "Partner ").replace(/\b\w/g, (c) => c.toUpperCase())
-  const brandLabels: Record<string, string> = {
-    "brand-a": "Manor Cottages",
-    "brand-b": "Lake Lovers",
-    "brand-c": "Dream Cottages",
-  }
+  const brandLabels: Record<string, string> = BRAND_LABELS
   const brand =
     filters.brand === "all-brands"
       ? "all brands"
@@ -42,7 +53,14 @@ export function formatFilterContext(filters: ActiveFilters) {
       ? `YTD to ${filters.month} ${filters.year}`
       : `${filters.month} ${filters.year}`
 
-  return `${partner} · ${brand} · ${range}`
+  const county =
+    filters.county && filters.county !== "all-counties"
+      ? filters.county.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : null
+
+  return county
+    ? `${partner} · ${brand} · ${county} · ${range}`
+    : `${partner} · ${brand} · ${range}`
 }
 
 // Deterministic noise seeded by a string key
@@ -70,9 +88,6 @@ const PROFILE: Record<string, { base: number; amp: number; trend: number; period
   "partner-b":    { base: 0.7, amp: 1.4, trend: 1.2, period: 18 },
   "partner-c":    { base: 0.9, amp: 1.1, trend: 0.6, period: 7  },
   "all-brands":   { base: 1.0, amp: 1.0, trend: 1.0, period: 14 },
-  "brand-a":      { base: 1.2, amp: 0.9, trend: 1.1, period: 12 },
-  "brand-b":      { base: 0.6, amp: 1.6, trend: 0.9, period: 21 },
-  "brand-c":      { base: 1.1, amp: 0.8, trend: 1.4, period: 9  },
 }
 
 function profileSeed(filters: ActiveFilters) {
@@ -81,12 +96,13 @@ function profileSeed(filters: ActiveFilters) {
 
 function getProfile(filters: ActiveFilters) {
   const p = PROFILE[filters.partner] ?? PROFILE["all-partners"]
-  const b = PROFILE[filters.brand] ?? PROFILE["all-brands"]
+  const volume = getBrandVolumeMultiplier(filters.brand)
   return {
-    base: (p.base + b.base) / 2,
-    amp: (p.amp + b.amp) / 2,
-    trend: (p.trend + b.trend) / 2,
-    period: (p.period + b.period) / 2,
+    base: p.base * volume,
+    amp: p.amp * Math.sqrt(volume + 0.35),
+    trend: p.trend,
+    period: p.period,
+    rateOffset: getBrandRateOffset(filters.brand),
   }
 }
 
@@ -144,7 +160,7 @@ export function buildBookingsMadePerDayData(filters: ActiveFilters, days = 174) 
 
 export function buildCalDdlTakeupData(filters: ActiveFilters, days = 174) {
   const seed = profileSeed(filters)
-  const { base, amp, period } = getProfile(filters)
+  const { base, amp, period, rateOffset } = getProfile(filters)
   const series = [
     "CAL % (total)",
     "Partner Alpha CAL %",
@@ -155,7 +171,14 @@ export function buildCalDdlTakeupData(filters: ActiveFilters, days = 174) {
   return Array.from({ length: days }, (_, i) => {
     const row: Record<string, string | number> = { date: dateLabel(i) }
     series.forEach((s, si) => {
-      row[s] = parseFloat(((2 * base) + wave(i, 6 * amp, period * 2, si * 5) * 0.6 + seededNoise(seed + s, i + si * 13) * 2).toFixed(1))
+      row[s] = parseFloat(
+        (
+          (2 * base) +
+          rateOffset +
+          wave(i, 6 * amp, period * 2, si * 5) * 0.6 +
+          seededNoise(seed + s, i + si * 13) * 2
+        ).toFixed(1)
+      )
     })
     return row
   })
@@ -197,67 +220,45 @@ export function deriveBookingTrendMeta(total: string) {
   }
 }
 
-const BOOKING_PROFILES: Record<string, {
-  total: string; calSales: string; calPct: string; ddlSales: string; ddlPct: string
-}> = {
+const BOOKING_PROFILES: Record<string, BookingProfile> = {
   "all-partners:all-brands": { total: "124,500", calSales: "3,210", calPct: "3.8%", ddlSales: "48", ddlPct: "1.5%" },
   "partner-a:all-brands":    { total: "42,310",  calSales: "1,104", calPct: "2.6%", ddlSales: "12", ddlPct: "0.9%" },
   "partner-b:all-brands":    { total: "38,750",  calSales: "892",   calPct: "2.3%", ddlSales: "8",  ddlPct: "0.6%" },
   "partner-c:all-brands":    { total: "43,440",  calSales: "1,214", calPct: "4.7%", ddlSales: "28", ddlPct: "2.0%" },
-  "all-partners:brand-a":    { total: "51,200",  calSales: "1,380", calPct: "3.2%", ddlSales: "18", ddlPct: "1.1%" },
-  "all-partners:brand-b":    { total: "28,600",  calSales: "620",   calPct: "1.9%", ddlSales: "6",  ddlPct: "0.4%" },
-  "all-partners:brand-c":    { total: "44,700",  calSales: "1,210", calPct: "5.1%", ddlSales: "24", ddlPct: "2.2%" },
-  "partner-a:brand-a":       { total: "18,100",  calSales: "480",   calPct: "2.7%", ddlSales: "5",  ddlPct: "0.8%" },
-  "partner-a:brand-b":       { total: "11,200",  calSales: "220",   calPct: "1.8%", ddlSales: "3",  ddlPct: "0.5%" },
-  "partner-a:brand-c":       { total: "13,010",  calSales: "404",   calPct: "4.2%", ddlSales: "4",  ddlPct: "1.0%" },
-  "partner-b:brand-a":       { total: "15,600",  calSales: "390",   calPct: "3.5%", ddlSales: "4",  ddlPct: "0.7%" },
-  "partner-b:brand-b":       { total: "9,400",   calSales: "168",   calPct: "1.4%", ddlSales: "2",  ddlPct: "0.3%" },
-  "partner-b:brand-c":       { total: "13,750",  calSales: "334",   calPct: "4.8%", ddlSales: "2",  ddlPct: "0.6%" },
-  "partner-c:brand-a":       { total: "17,500",  calSales: "510",   calPct: "4.1%", ddlSales: "9",  ddlPct: "1.6%" },
-  "partner-c:brand-b":       { total: "8,000",   calSales: "232",   calPct: "2.2%", ddlSales: "1",  ddlPct: "0.3%" },
-  "partner-c:brand-c":       { total: "17,940",  calSales: "472",   calPct: "6.4%", ddlSales: "18", ddlPct: "3.1%" },
 }
 
 export function getBookingProfile(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  return BOOKING_PROFILES[key] ?? BOOKING_PROFILES["all-partners:all-brands"]
+  const baselineKey = `${filters.partner}:all-brands`
+  const baseline =
+    BOOKING_PROFILES[baselineKey] ?? BOOKING_PROFILES["all-partners:all-brands"]
+  return scaleBookingProfile(baseline, filters.brand)
 }
 
-const ABV_PROFILES: Record<string, {
-  gbpAbv: string; gbpCal: string; eurAbv: string; eurCal: string
-  gbpAbvFee: string; gbpCalFee: string; eurAbvFee: string; eurCalFee: string
-  calPct: string
-}> = {
+const ABV_PROFILES: Record<string, AbvProfile> = {
   "all-partners:all-brands": { gbpAbv: "£742", gbpCal: "CAL £890", eurAbv: "€1,340", eurCal: "CAL €1,210", gbpAbvFee: "£768", gbpCalFee: "CAL £920", eurAbvFee: "€1,385", eurCalFee: "CAL €1,255", calPct: "8.4%" },
   "partner-a:all-brands":    { gbpAbv: "£680", gbpCal: "CAL £810", eurAbv: "€1,180", eurCal: "CAL €1,050", gbpAbvFee: "£704", gbpCalFee: "CAL £840", eurAbvFee: "€1,220", eurCalFee: "CAL €1,090", calPct: "7.6%" },
   "partner-b:all-brands":    { gbpAbv: "£820", gbpCal: "CAL £980", eurAbv: "€1,520", eurCal: "CAL €1,380", gbpAbvFee: "£850", gbpCalFee: "CAL £1,020", eurAbvFee: "€1,575", eurCalFee: "CAL €1,430", calPct: "9.8%" },
   "partner-c:all-brands":    { gbpAbv: "£725", gbpCal: "CAL £870", eurAbv: "€1,290", eurCal: "CAL €1,150", gbpAbvFee: "£750", gbpCalFee: "CAL £900", eurAbvFee: "€1,335", eurCalFee: "CAL €1,200", calPct: "8.1%" },
-  "all-partners:brand-a":    { gbpAbv: "£760", gbpCal: "CAL £910", eurAbv: "€1,360", eurCal: "CAL €1,230", gbpAbvFee: "£786", gbpCalFee: "CAL £942", eurAbvFee: "€1,408", eurCalFee: "CAL €1,278", calPct: "8.8%" },
-  "all-partners:brand-b":    { gbpAbv: "£640", gbpCal: "CAL £760", eurAbv: "€1,140", eurCal: "CAL €1,020", gbpAbvFee: "£662", gbpCalFee: "CAL £788", eurAbvFee: "€1,180", eurCalFee: "CAL €1,060", calPct: "6.9%" },
-  "all-partners:brand-c":    { gbpAbv: "£810", gbpCal: "CAL £970", eurAbv: "€1,450", eurCal: "CAL €1,310", gbpAbvFee: "£838", gbpCalFee: "CAL £1,004", eurAbvFee: "€1,500", eurCalFee: "CAL €1,360", calPct: "10.2%" },
 }
 
 export function getAbvProfile(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  return ABV_PROFILES[key] ?? ABV_PROFILES["all-partners:all-brands"]
+  const baselineKey = `${filters.partner}:all-brands`
+  const baseline = ABV_PROFILES[baselineKey] ?? ABV_PROFILES["all-partners:all-brands"]
+  return scaleAbvProfile(baseline, filters.brand)
 }
 
-const CAL_FIN_PROFILES: Record<string, {
-  totalPayable: string; ipt: string; pislComm: string; capacityNet: string
-  pislPayable: string; premiumInc: string; gwp: string
-}> = {
+const CAL_FIN_PROFILES: Record<string, CalFinProfile> = {
   "all-partners:all-brands": { totalPayable: "£214,500", ipt: "£22,400", pislComm: "£61,800", capacityNet: "£130,200", pislPayable: "£154,600", premiumInc: "£328,400", gwp: "£306,000" },
   "partner-a:all-brands":    { totalPayable: "£74,200",  ipt: "£7,800",  pislComm: "£21,400", capacityNet: "£45,000",  pislPayable: "£53,500",  premiumInc: "£113,600", gwp: "£105,800" },
   "partner-b:all-brands":    { totalPayable: "£88,600",  ipt: "£9,200",  pislComm: "£25,500", capacityNet: "£53,900",  pislPayable: "£64,100",  premiumInc: "£136,200", gwp: "£127,000" },
   "partner-c:all-brands":    { totalPayable: "£51,700",  ipt: "£5,400",  pislComm: "£14,900", capacityNet: "£31,400",  pislPayable: "£37,000",  premiumInc: "£78,600",  gwp: "£73,200"  },
-  "all-partners:brand-a":    { totalPayable: "£92,300",  ipt: "£9,600",  pislComm: "£26,600", capacityNet: "£56,100",  pislPayable: "£66,500",  premiumInc: "£141,200", gwp: "£131,600" },
-  "all-partners:brand-b":    { totalPayable: "£58,400",  ipt: "£6,100",  pislComm: "£16,800", capacityNet: "£35,500",  pislPayable: "£42,100",  premiumInc: "£89,400",  gwp: "£83,300"  },
-  "all-partners:brand-c":    { totalPayable: "£63,800",  ipt: "£6,700",  pislComm: "£18,400", capacityNet: "£38,700",  pislPayable: "£46,000",  premiumInc: "£97,800",  gwp: "£91,100"  },
 }
 
 export function getCalFinProfile(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  return CAL_FIN_PROFILES[key] ?? CAL_FIN_PROFILES["all-partners:all-brands"]
+  const baselineKey = `${filters.partner}:all-brands`
+  const baseline =
+    CAL_FIN_PROFILES[baselineKey] ?? CAL_FIN_PROFILES["all-partners:all-brands"]
+  return scaleCalFinProfile(baseline, filters.brand)
 }
 
 const FINANCIAL_TREND_MONTHS = ["Jul", "Sep", "Nov", "Jan", "Mar", "May"] as const
@@ -315,19 +316,16 @@ export function buildCalFinBreakdown(
   }))
 }
 
-const TIMING_PROFILES: Record<string, {
-  gbpDays: string; gbpCal: string; eurDays: string; eurCal: string
-}> = {
+const TIMING_PROFILES: Record<string, TimingProfile> = {
   "all-partners:all-brands": { gbpDays: "94.2 days", gbpCal: "CAL 118.7 days", eurDays: "108.5 days", eurCal: "CAL 134.1 days" },
   "partner-a:all-brands":    { gbpDays: "88.4 days", gbpCal: "CAL 110.2 days", eurDays: "101.3 days", eurCal: "CAL 124.6 days" },
   "partner-b:all-brands":    { gbpDays: "102.1 days",gbpCal: "CAL 128.4 days", eurDays: "116.7 days", eurCal: "CAL 144.3 days" },
   "partner-c:all-brands":    { gbpDays: "91.6 days", gbpCal: "CAL 114.0 days", eurDays: "104.8 days", eurCal: "CAL 129.5 days" },
-  "all-partners:brand-a":    { gbpDays: "96.8 days", gbpCal: "CAL 121.4 days", eurDays: "111.2 days", eurCal: "CAL 137.8 days" },
-  "all-partners:brand-b":    { gbpDays: "86.3 days", gbpCal: "CAL 108.0 days", eurDays: "99.4 days",  eurCal: "CAL 122.5 days" },
-  "all-partners:brand-c":    { gbpDays: "99.5 days", gbpCal: "CAL 124.8 days", eurDays: "114.6 days", eurCal: "CAL 141.2 days" },
 }
 
 export function getTimingProfile(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  return TIMING_PROFILES[key] ?? TIMING_PROFILES["all-partners:all-brands"]
+  const baselineKey = `${filters.partner}:all-brands`
+  const baseline =
+    TIMING_PROFILES[baselineKey] ?? TIMING_PROFILES["all-partners:all-brands"]
+  return scaleTimingProfile(baseline, filters.brand)
 }

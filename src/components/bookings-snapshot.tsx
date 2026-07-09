@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/tooltip"
 import { metricCardGridClass } from "@/lib/card-layout"
 import {
+  scaleBookingCell,
+} from "@/lib/brand-metrics"
+import {
   buildBookingTrendChart,
   deriveBookingTrendMeta,
   type ActiveFilters,
@@ -106,9 +109,14 @@ export function getProductSplit(profile: ReturnType<typeof getBookingProfile>) {
 }
 
 export function getPartnerRows(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  const rowData = ROW_DATA[key] ?? ROW_DATA["all-partners:all-brands"]
-  return BASE_PARTNER_ROWS.map((base, i) => ({ ...base, ...rowData[i] }))
+  const baselineKey = `${filters.partner}:all-brands`
+  const rowData = ROW_DATA[baselineKey] ?? ROW_DATA["all-partners:all-brands"]
+  return BASE_PARTNER_ROWS.map((base, i) => ({
+    ...base,
+    bookings: scaleBookingCell(rowData[i].bookings, filters.brand),
+    cal: scaleBookingCell(rowData[i].cal, filters.brand),
+    ddl: scaleBookingCell(rowData[i].ddl, filters.brand),
+  }))
 }
 
 export function BookingsSnapshot({ filters }: { filters: ActiveFilters }) {

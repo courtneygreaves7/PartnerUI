@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Ban, Check, Play, RefreshCw, TrendingUp } from "lucide-react"
+import { Ban, Check, Download, Play, RefreshCw, TrendingUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { ActiveFilters } from "@/lib/chart-data"
+import { downloadInsightsPitchDeck } from "@/lib/insights-pitch-deck"
+import { loadMapRegions, type MapRegion } from "@/lib/insights-map-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 
 const months = [
@@ -40,36 +42,64 @@ const metricOptions = [
 type FilterSidebarProps = {
   filters: ActiveFilters
   hasRun?: boolean
+  showCounty?: boolean
   onRun: (filters: ActiveFilters) => void
 }
 
-export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarProps) {
+export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRun }: FilterSidebarProps) {
   const [brand, setBrand] = useState(filters.brand)
+  const [county, setCounty] = useState(filters.county)
   const [dateRange, setDateRange] = useState(filters.dateRange)
   const [year, setYear] = useState(filters.year)
   const [month, setMonth] = useState(filters.month)
   const [metric, setMetric] = useState(filters.metric)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [counties, setCounties] = useState<MapRegion[]>([])
 
   const showBrand = true
 
   useEffect(() => {
     setBrand(filters.brand)
+    setCounty(filters.county)
     setDateRange(filters.dateRange)
     setYear(filters.year)
     setMonth(filters.month)
     setMetric(filters.metric)
   }, [filters])
 
-  function handleRun() {
-    onRun({
+  useEffect(() => {
+    if (!showCounty) return
+    loadMapRegions()
+      .then((data) => setCounties([...data].sort((a, b) => a.name.localeCompare(b.name))))
+      .catch(() => setCounties([]))
+  }, [showCounty])
+
+  function currentFilters(): ActiveFilters {
+    return {
       partner: PARTNER_BRANDING.partnerId,
       brand,
+      county,
       dateRange,
       year,
       month,
       metric,
       sortBy: filters.sortBy,
-    })
+    }
+  }
+
+  function handleRun() {
+    onRun(currentFilters())
+  }
+
+  async function handleDownload() {
+    setIsDownloading(true)
+    try {
+      await downloadInsightsPitchDeck(currentFilters())
+    } catch (error) {
+      console.error("Failed to download insights report:", error)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -96,6 +126,25 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
                 <SelectItem value="brand-a">Manor Cottages</SelectItem>
                 <SelectItem value="brand-b">Lake Lovers</SelectItem>
                 <SelectItem value="brand-c">Dream Cottages</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        ) : null}
+
+        {showCounty ? (
+          <Field>
+            <Label htmlFor="county-filter">County</Label>
+            <Select value={county} onValueChange={setCounty}>
+              <SelectTrigger id="county-filter">
+                <SelectValue placeholder="All counties" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all-counties">All counties</SelectItem>
+                {counties.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Field>
@@ -178,7 +227,7 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
 
       </div>
 
-      <div className="shrink-0 border-t border-border px-6 pb-6 pt-4">
+      <div className="shrink-0 space-y-2 border-t border-border px-6 pb-6 pt-4">
         <Button
           className="w-full"
           onClick={handleRun}
@@ -199,6 +248,17 @@ export function FilterSidebar({ filters, hasRun = true, onRun }: FilterSidebarPr
               Generate report
             </>
           )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleDownload}
+          disabled={isDownloading}
+          aria-label="Download insights report as PowerPoint"
+        >
+          <Download className="size-3.5" />
+          {isDownloading ? "Preparing download…" : "Download report"}
         </Button>
       </div>
     </aside>

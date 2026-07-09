@@ -12,15 +12,15 @@
   --brand-dark-blue: var(--brand-primary-dark);
   --brand-light-blue: var(--brand-surface);
   --brand-green: var(--brand-primary);
-  --brand-grey-blue: #f5f9ff;
+  --brand-grey-blue: #fafcff;
 
   /* Surfaces */
   --background: #ffffff;
   --foreground: #18181b;
   --card: #ffffff;
   --card-foreground: #18181b;
-  --canvas: #f5f9ff;
-  --field: #f5f9ff;
+  --canvas: #fafcff;
+  --field: #fafcff;
 
   /* Actions */
   --primary: #006bff;
@@ -40,13 +40,13 @@
 
   /* Ambient */
   --gradient-from: #ffffff;
-  --gradient-mid: #f5f9ff;
+  --gradient-mid: #fafcff;
   --gradient-to: #ffffff;
   --glow-pink: transparent;
   --glow-green: transparent;
-  --glow-blue: rgb(0 107 255 / 0.08);
-  --panel-bg: #f8fbff;
-  --panel-border: rgb(0 107 255 / 0.08);
+  --glow-blue: rgb(0 107 255 / 0.06);
+  --panel-bg: #fcfdff;
+  --panel-border: rgb(0 107 255 / 0.06);
   --tooltip: #0054cc;
   --tooltip-foreground: #fafafa;
 

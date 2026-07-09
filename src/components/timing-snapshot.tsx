@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { metricCardGridClass } from "@/lib/card-layout"
+import { scaleDaysString } from "@/lib/brand-metrics"
 import { type ActiveFilters, getTimingProfile } from "@/lib/chart-data"
 import {
   INSIGHTS_WIDGET_HELP_TEXT,
@@ -80,9 +81,14 @@ const TIMING_ROW_DATA: Record<string, Array<{ avgLead: string; calAvgLead: strin
 }
 
 function getTimingRows(filters: ActiveFilters) {
-  const key = `${filters.partner}:${filters.brand}`
-  const rowData = TIMING_ROW_DATA[key] ?? TIMING_ROW_DATA["all-partners:all-brands"]
-  return BASE_TIMING_ROWS.map((base, i) => ({ ...base, ...rowData[i] }))
+  const baselineKey = `${filters.partner}:all-brands`
+  const rowData = TIMING_ROW_DATA[baselineKey] ?? TIMING_ROW_DATA["all-partners:all-brands"]
+  return BASE_TIMING_ROWS.map((base, i) => ({
+    ...base,
+    avgLead: scaleDaysString(rowData[i].avgLead, filters.brand),
+    calAvgLead:
+      rowData[i].calAvgLead === "—" ? "—" : scaleDaysString(rowData[i].calAvgLead, filters.brand),
+  }))
 }
 
 export function TimingSnapshot({ filters }: { filters: ActiveFilters }) {
