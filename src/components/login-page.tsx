@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { Eye, EyeOff, LogIn, Mail, SquareChartGantt } from "lucide-react"
+import { Eye, EyeOff, LogIn, Mail, SquareChartGantt, Zap } from "lucide-react"
 
 import { PartnerLogo } from "@/components/partner-logo"
 import { Button } from "@/components/ui/button"
@@ -121,6 +121,13 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
       <div className="absolute left-6 top-6 z-10 sm:left-8 sm:top-8">
         <PartnerLogo inverted className="[&_span]:h-7 [&_span]:max-w-[160px]" />
+      </div>
+
+      <div className="absolute right-6 top-6 z-10 sm:right-8 sm:top-8">
+        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80">
+          <Zap className="size-3.5 fill-white/80 text-white/80" aria-hidden />
+          Powered by Pikl
+        </p>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
