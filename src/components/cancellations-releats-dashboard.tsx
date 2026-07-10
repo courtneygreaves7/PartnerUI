@@ -629,8 +629,7 @@ export function CancellationsReletsDashboard() {
           Cancellations &amp; re-lets
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Channel breakdown for Jul 2026 — Website, App, Offline and OTA roll up to Direct
-          (A+B+C) and Total (A+B+C+D).
+          Channel breakdown for Jul 2026.
         </p>
       </div>
 
