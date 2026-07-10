@@ -131,9 +131,7 @@ function Composer({
         placeholder="Ask AI a question or make a request…"
         className={cn(
           "w-full resize-none bg-transparent px-5 text-[15px] leading-[1.4] outline-none placeholder:text-muted-foreground",
-          large
-            ? cn("min-h-[7.5rem] pb-14 pr-5", input.trim() ? "pt-5" : "pt-[2.65rem]")
-            : "h-14 py-[1.125rem] pr-14"
+          large ? "min-h-[7.5rem] pt-5 pb-14 pr-5" : "h-14 py-[1.125rem] pr-14"
         )}
       />
       <div

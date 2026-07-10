@@ -73,7 +73,7 @@ type ScreenshotAttachment = {
 const INITIAL_FORM: SupportForm = {
   requestType: "help",
   name: PARTNER_BRANDING.userDisplayName,
-  email: "george.nash@sykescottages.co.uk",
+  email: "george.nunn@sykescottages.co.uk",
   subject: "",
   message: "",
 }
@@ -177,7 +177,7 @@ export function SupportPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div>
             <p className="mb-2 text-sm font-medium text-foreground">What do you need?</p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex flex-wrap gap-2">
               {REQUEST_TYPES.map((option) => {
                 const Icon = option.icon
                 const isActive = form.requestType === option.value
@@ -185,30 +185,17 @@ export function SupportPage() {
                   <button
                     key={option.value}
                     type="button"
+                    title={option.description}
                     onClick={() => updateField("requestType", option.value)}
                     className={cn(
-                      "flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
                       isActive
-                        ? "border-primary/40 bg-primary/5 text-foreground"
-                        : "border-border bg-muted/40 text-foreground hover:bg-muted/70"
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg",
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "bg-background text-muted-foreground"
-                      )}
-                    >
-                      <Icon className="size-3.5" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium">{option.label}</span>
-                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
-                        {option.description}
-                      </span>
-                    </span>
+                    <Icon className="size-3.5 shrink-0" />
+                    {option.label}
                   </button>
                 )
               })}
