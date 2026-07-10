@@ -488,7 +488,7 @@ function App() {
                   ) : SHOW_INSIGHTS_CONTENT ? (
                     <SykesPartnerDashboardPage filters={activeFilters} />
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                       <InsightsTopCards />
                       <InsightsProductTabs value={insightsProduct} onChange={setInsightsProduct} />
                       {insightsProduct === "cal" ? <InsightsCalPanel /> : <InsightsDdlPanel />}

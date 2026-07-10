@@ -94,11 +94,41 @@ export const MARKET_COMPARISON_VALUES = [
 ] as const
 
 export const TOTAL_PRODUCTS_SUMMARY = [
-  { label: "Total bookings", value: "690k", trend: "+500", tone: "up" as const },
-  { label: "Bookings offered a product", value: "65%", trend: "+2.1pp", tone: "up" as const },
-  { label: "Total bookings offered a product", value: "448,500", trend: "+12.4k", tone: "up" as const },
-  { label: "Total margin earned", value: "800k", trend: "+£40k", tone: "up" as const },
-  { label: "Income per booking achieved", value: "4.01", trend: "+0.18", tone: "up" as const },
+  {
+    label: "Total bookings",
+    value: "690k",
+    detail: "All brands · current period",
+    trend: "+500",
+    tone: "up" as const,
+  },
+  {
+    label: "Bookings offered a product",
+    value: "65%",
+    detail: "Share of bookings shown a product",
+    trend: "+2.1pp",
+    tone: "up" as const,
+  },
+  {
+    label: "Bookings offered product",
+    value: "448,500",
+    detail: "Volume offered a Pikl product",
+    trend: "+12.4k",
+    tone: "up" as const,
+  },
+  {
+    label: "Total margin earned",
+    value: "800k",
+    detail: "Partner margin across products",
+    trend: "+£40k",
+    tone: "up" as const,
+  },
+  {
+    label: "Income per booking",
+    value: "4.01",
+    detail: "Average income per booking",
+    trend: "+0.18",
+    tone: "up" as const,
+  },
 ] as const
 
 export type ChannelCellVariant =

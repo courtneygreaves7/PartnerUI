@@ -258,7 +258,7 @@ export function TotalProductsVisual() {
           />
         </div>
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          {offeredPercent}% of bookings are offered a Pikl product · £4.01 income per booking achieved
+          {offeredPercent}% of bookings are offered a Pikl product · £4.01 income per booking
         </p>
       </VisualCard>
     </div>

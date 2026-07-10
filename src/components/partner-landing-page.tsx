@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 
 import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
+import { CancellationsReletsDashboard } from "@/components/cancellations-releats-dashboard"
 import {
   CollapsibleDataTable,
   MiniBarChart,
@@ -37,9 +38,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   ADDITIONAL_PARTNER_REVENUE,
-  buildContributionToPerformanceGrid,
   DAMAGE_DEPOSIT_WAIVER_GRID,
-  FINANCIALS_GRID,
   FLEXIBLE_CANCELLATION_GRID,
   GROSS_BOOKINGS_TREND,
   MARGIN_EARNED_FC_DATA,
@@ -50,7 +49,6 @@ import {
 } from "@/lib/sykes-dashboard-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 import type { ActiveFilters } from "@/lib/chart-data"
-import { scaleInsightsChannelGrid } from "@/lib/reporting-data"
 
 const MONO_LABEL =
   "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
@@ -107,9 +105,11 @@ const TILE_ICONS: Array<{ match: string; icon: LucideIcon }> = [
   { match: "Inc Cancellations & Relets", icon: RefreshCcw },
   { match: "Website Conversion", icon: MousePointerClick },
   { match: "Total bookings offered", icon: Package },
+  { match: "Bookings offered product", icon: Package },
   { match: "Bookings offered a product", icon: Percent },
   { match: "Total Bookings", icon: CalendarCheck },
   { match: "Income per Booking", icon: Receipt },
+  { match: "Income per booking", icon: Receipt },
   { match: "Total", icon: Sigma },
   { match: "Gross Bookings", icon: CalendarCheck },
   { match: "Lead Time", icon: Clock },
@@ -1055,10 +1055,34 @@ export function InsightsProductTabs({
 const CAL_CHANNEL_COLORS = ["#006BFF", "#3389FF", "#66A6FF", "#99C4FF"] as const
 
 const CAL_RATE_CARDS = [
-  { label: "FC guest price avg", value: "10%", trend: "+0.4pp", tone: "up" as const },
-  { label: "Insurance premium rate avg", value: "6.35%", trend: "-0.2pp", tone: "down" as const },
-  { label: "Out of test conversion", value: "1.0%", trend: "+0.3pp", tone: "up" as const },
-  { label: "Conversion benefit", value: "1% = £900k", trend: "+£50k", tone: "up" as const },
+  {
+    label: "FC guest price avg",
+    value: "10%",
+    detail: "Share of booking value charged to guest",
+    trend: "+0.4pp",
+    tone: "up" as const,
+  },
+  {
+    label: "Insurance premium rate avg",
+    value: "6.35%",
+    detail: "Average premium across attached bookings",
+    trend: "-0.2pp",
+    tone: "down" as const,
+  },
+  {
+    label: "Out of test conversion",
+    value: "1.0%",
+    detail: "Conversion lift outside test cohorts",
+    trend: "+0.3pp",
+    tone: "up" as const,
+  },
+  {
+    label: "Conversion benefit",
+    value: "1% = £900k",
+    detail: "Partner margin from +1pp conversion",
+    trend: "+£50k",
+    tone: "up" as const,
+  },
 ] as const
 
 function parseDisplayValue(value: string): number {
@@ -1146,7 +1170,7 @@ export function InsightsCalPanel() {
   }))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <p className={MONO_LABEL}>Product</p>
         <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
@@ -1154,7 +1178,7 @@ export function InsightsCalPanel() {
         </h2>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
         {CAL_RATE_CARDS.map((card) => (
           <div key={card.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
             <div className="flex items-start justify-between gap-2">
@@ -1167,11 +1191,12 @@ export function InsightsCalPanel() {
                 {card.value}
               </p>
             </div>
+            <p className="mt-auto text-xs text-muted-foreground">{card.detail}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-8 xl:grid-cols-2">
         <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1362,10 +1387,34 @@ export function InsightsCalPanel() {
 }
 
 const DDL_RATE_CARDS = [
-  { label: "DDL guest price avg", value: "£30", trend: "+£2", tone: "up" as const },
-  { label: "Insurance premium rate avg", value: "2.12%", trend: "-0.1pp", tone: "down" as const },
-  { label: "Out of test conversion", value: "0.4%", trend: "+0.1pp", tone: "up" as const },
-  { label: "Conversion benefit", value: "£180k", trend: "+£20k", tone: "up" as const },
+  {
+    label: "DDL guest price avg",
+    value: "£30",
+    detail: "Average waiver price per booking",
+    trend: "+£2",
+    tone: "up" as const,
+  },
+  {
+    label: "Insurance premium rate avg",
+    value: "2.12%",
+    detail: "Average premium across attached bookings",
+    trend: "-0.1pp",
+    tone: "down" as const,
+  },
+  {
+    label: "Out of test conversion",
+    value: "0.4%",
+    detail: "Conversion lift outside test cohorts",
+    trend: "+0.1pp",
+    tone: "up" as const,
+  },
+  {
+    label: "Conversion benefit",
+    value: "£180k",
+    detail: "Partner margin from DDL conversion",
+    trend: "+£20k",
+    tone: "up" as const,
+  },
 ] as const
 
 /** DDL Damage Deposit Waiver analytics — same layout as CAL, driven by DDL grid data. */
@@ -1406,7 +1455,7 @@ export function InsightsDdlPanel() {
   }))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <p className={MONO_LABEL}>Product</p>
         <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
@@ -1414,7 +1463,7 @@ export function InsightsDdlPanel() {
         </h2>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
         {DDL_RATE_CARDS.map((card) => (
           <div key={card.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
             <div className="flex items-start justify-between gap-2">
@@ -1427,11 +1476,12 @@ export function InsightsDdlPanel() {
                 {card.value}
               </p>
             </div>
+            <p className="mt-auto text-xs text-muted-foreground">{card.detail}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-8 xl:grid-cols-2">
         <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1613,88 +1663,9 @@ export function InsightsDdlPanel() {
   )
 }
 
-function findContributionRow(rows: ReturnType<typeof buildContributionToPerformanceGrid>, label: string) {
-  return rows.find((row) => row.label === label)
-}
-
-/** Contribution to performance — derived from FC/DDL proposition grids above. */
-export function InsightsContributionPanel({ filters }: { filters: ActiveFilters }) {
-  const fcGrid = scaleInsightsChannelGrid(FLEXIBLE_CANCELLATION_GRID, filters.brand)
-  const ddlGrid = scaleInsightsChannelGrid(DAMAGE_DEPOSIT_WAIVER_GRID, filters.brand)
-  const contributionGrid = buildContributionToPerformanceGrid(fcGrid, ddlGrid)
-  const financialsGrid = scaleInsightsChannelGrid(FINANCIALS_GRID, filters.brand)
-
-  const cancelVolume = findContributionRow(contributionGrid, "Cancellation Volume")
-  const cancelRate = findContributionRow(contributionGrid, "Cancellation Avg %")
-  const reletVolume = findContributionRow(contributionGrid, "Relet Volume")
-  const leadTravel = findContributionRow(
-    contributionGrid,
-    "Average Lead time between Booking and Travel"
-  )
-
-  const summaryCards = [
-    {
-      label: "Cancellation volume",
-      value: cancelVolume?.total.value ?? "—",
-      sub: `Direct ${cancelVolume?.direct.value ?? "—"}`,
-    },
-    {
-      label: "Cancellation avg %",
-      value: cancelRate?.total.value ?? "—",
-      sub: `FC ${findContributionRow(contributionGrid, "Cancellation % Avg FC")?.total.value ?? "—"}`,
-    },
-    {
-      label: "Relet volume",
-      value: reletVolume?.total.value ?? "—",
-      sub: `Re-let ${findContributionRow(contributionGrid, "Re-let % Avg")?.total.value ?? "—"}`,
-    },
-    {
-      label: "Avg lead time (booking → travel)",
-      value: leadTravel?.total.value ?? "—",
-      sub: `FC ${findContributionRow(contributionGrid, "Average Lead time between Booking and Travel FC")?.total.value ?? "—"}`,
-    },
-  ]
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className={MONO_LABEL}>Performance</p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-          Contribution to performance
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Cancellations, relets, lead times and financials — calculated from the proposition
-          metrics above (Direct = Website + App + Offline, Total = Direct + OTA).
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <div key={card.label} className={cn(PANEL, "flex flex-col gap-3 p-5")}>
-            <TileIcon label={card.label} />
-            <div className="space-y-1">
-              <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
-              <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
-                {card.value}
-              </p>
-              <p className="text-xs text-muted-foreground">{card.sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <CollapsibleDataTable
-        title="Cancellations, relets & lead times"
-        defaultOpen={false}
-      >
-        <ChannelGridTable rows={contributionGrid} className="border-0 shadow-none" />
-      </CollapsibleDataTable>
-
-      <CollapsibleDataTable title="Financials" defaultOpen={false}>
-        <ChannelGridTable rows={financialsGrid} className="border-0 shadow-none" />
-      </CollapsibleDataTable>
-    </div>
-  )
+/** Contribution to performance — cancellations & re-lets dashboard. */
+export function InsightsContributionPanel({ filters: _filters }: { filters: ActiveFilters }) {
+  return <CancellationsReletsDashboard />
 }
 
 /** Top card row for the Insights page — same style as the Home tab cards. */
@@ -1702,11 +1673,11 @@ export function InsightsTopCards() {
   return (
     <div className="rounded-2xl bg-[#e8f0fc] p-4 dark:bg-[#141b28]">
       <div className="@container overflow-x-auto">
-        <div className="flex w-max gap-6">
+        <div className="flex w-max gap-8">
           {TOTAL_PRODUCTS_SUMMARY.map((item) => (
             <div
               key={item.label}
-              className={cn(PANEL, "flex w-[calc((100cqi-6rem)/4.25)] shrink-0 flex-col gap-4 p-5")}
+              className={cn(PANEL, "flex w-[calc((100cqi-8rem)/4.25)] shrink-0 flex-col gap-4 p-5")}
             >
               <div className="flex items-start justify-between gap-2">
                 <TileIcon label={item.label} />
@@ -1718,6 +1689,7 @@ export function InsightsTopCards() {
                   {item.value}
                 </p>
               </div>
+              <p className="mt-auto text-xs text-muted-foreground">{item.detail}</p>
             </div>
           ))}
         </div>
