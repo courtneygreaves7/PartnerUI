@@ -491,8 +491,13 @@ function App() {
                     <div className="space-y-8">
                       <InsightsTopCards />
                       <InsightsProductTabs value={insightsProduct} onChange={setInsightsProduct} />
-                      {insightsProduct === "cal" ? <InsightsCalPanel /> : <InsightsDdlPanel />}
-                      <InsightsContributionPanel filters={activeFilters} />
+                      {insightsProduct === "cal" ? (
+                        <InsightsCalPanel />
+                      ) : insightsProduct === "ddl" ? (
+                        <InsightsDdlPanel />
+                      ) : (
+                        <InsightsContributionPanel filters={activeFilters} />
+                      )}
                     </div>
                   )}
                 </section>

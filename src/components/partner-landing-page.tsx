@@ -1019,6 +1019,7 @@ function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
 const INSIGHTS_PRODUCT_TABS = [
   { id: "cal", label: "CAL" },
   { id: "ddl", label: "DDL" },
+  { id: "performance", label: "Performance" },
 ] as const
 
 export type InsightsProductId = (typeof INSIGHTS_PRODUCT_TABS)[number]["id"]
