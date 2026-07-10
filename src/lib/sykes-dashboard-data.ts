@@ -20,11 +20,11 @@ export const PARTNER_REVENUE = {
   headline: "£1.8m",
   headlineNote: "(net of insurance premium rate + IPT)",
   drivers: [
-    { label: "Attachment (Average)", value: "14%" },
+    { label: "Attachment (average)", value: "14%" },
     { label: "Margin (ex. VAT) £m", value: "£900k" },
-    { label: "Inc Cancellations & Relets", value: "£100k" },
+    { label: "Inc cancellations & relets", value: "£100k" },
     {
-      label: "Website Conversion*",
+      label: "Website conversion*",
       value: "£800k p/a",
     },
     { label: "Total", value: "£1,800k", highlight: true },
@@ -35,25 +35,25 @@ export const ADDITIONAL_PARTNER_REVENUE = {
   headline: "£1.2m",
   drivers: [
     {
-      label: "Gross Bookings",
+      label: "Gross bookings",
       value: "690k",
       trend: "+500",
-      side: "65% % Product available",
+      side: "65% product available",
     },
     {
-      label: "Average Lead Time v Non-FC",
-      value: "125 Days",
+      label: "Average lead time v non-FC",
+      value: "125 days",
       trend: "+15",
       side: "£100k est. value",
     },
     {
-      label: "Average Length of Stay v Non-FC",
-      value: "6.1 Days",
+      label: "Average length of stay v non-FC",
+      value: "6.1 days",
       trend: "+0.5",
       side: "£100k est. value",
     },
     {
-      label: "Avg Spend per Booking v Non-FC",
+      label: "Avg spend per booking v non-FC",
       value: "£899",
       trend: "+3",
       side: "£100k est. value",
@@ -77,28 +77,28 @@ export const GROSS_BOOKINGS_TREND = [
 ] as const
 
 export const MARKET_COMPARISON_METRICS = [
-  "Cancellation Rate",
-  "Rebookability Rate",
-  "Rebookability Average value",
-  "Average Lead Time",
-  "Average Length of Stay",
+  "Cancellation rate",
+  "Rebookability rate",
+  "Rebookability average value",
+  "Average lead time",
+  "Average length of stay",
 ] as const
 
 /** Partner vs market mock figures — same measures, filled values. */
 export const MARKET_COMPARISON_VALUES = [
-  { metric: "Cancellation Rate", value: "8.3%", trend: "-0.6pp", tone: "up" as const, side: "Market 8.9%" },
-  { metric: "Rebookability Rate", value: "58%", trend: "+2.1pp", tone: "up" as const, side: "Market 55%" },
-  { metric: "Rebookability Average value", value: "£830", trend: "+£40", tone: "up" as const, side: "Market £790" },
-  { metric: "Average Lead Time", value: "125 days", trend: "+15", tone: "up" as const, side: "Market 110 days" },
-  { metric: "Average Length of Stay", value: "6.1 days", trend: "+0.5", tone: "up" as const, side: "Market 5.6 days" },
+  { metric: "Cancellation rate", value: "8.3%", trend: "-0.6pp", tone: "up" as const, side: "Market 8.9%" },
+  { metric: "Rebookability rate", value: "58%", trend: "+2.1pp", tone: "up" as const, side: "Market 55%" },
+  { metric: "Rebookability average value", value: "£830", trend: "+£40", tone: "up" as const, side: "Market £790" },
+  { metric: "Average lead time", value: "125 days", trend: "+15", tone: "up" as const, side: "Market 110 days" },
+  { metric: "Average length of stay", value: "6.1 days", trend: "+0.5", tone: "up" as const, side: "Market 5.6 days" },
 ] as const
 
 export const TOTAL_PRODUCTS_SUMMARY = [
-  { label: "Total Bookings", value: "690k", trend: "+500", tone: "up" as const },
-  { label: "% of Bookings that are offered a product", value: "65%", trend: "+2.1pp", tone: "up" as const },
-  { label: "Total Bookings offered a Product", value: "448,500", trend: "+12.4k", tone: "up" as const },
-  { label: "Total Margin Earned", value: "800k", trend: "+£40k", tone: "up" as const },
-  { label: "Income per Booking Achieved", value: "4.01", trend: "+0.18", tone: "up" as const },
+  { label: "Total bookings", value: "690k", trend: "+500", tone: "up" as const },
+  { label: "Bookings offered a product", value: "65%", trend: "+2.1pp", tone: "up" as const },
+  { label: "Total bookings offered a product", value: "448,500", trend: "+12.4k", tone: "up" as const },
+  { label: "Total margin earned", value: "800k", trend: "+£40k", tone: "up" as const },
+  { label: "Income per booking achieved", value: "4.01", trend: "+0.18", tone: "up" as const },
 ] as const
 
 export type ChannelCellVariant =

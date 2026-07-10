@@ -22,7 +22,7 @@ export function DataSnapshotWidget({
   title,
   rows,
   overviewHref,
-  overviewLabel = "Link to Overview",
+  overviewLabel = "Link to overview",
   className,
   valueClassName,
   compact = false,
@@ -34,7 +34,7 @@ export function DataSnapshotWidget({
         {overviewHref ? (
           <a
             href={overviewHref}
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
           >
             {overviewLabel}
             <ArrowRight className="size-3" />
@@ -43,7 +43,7 @@ export function DataSnapshotWidget({
       </CardHeader>
 
       <CardContent className="px-0 pb-0">
-        {rows.map((row) => (
+        {rows.slice(0, 6).map((row) => (
           <div
             key={row.label}
             className={cn(

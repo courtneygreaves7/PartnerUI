@@ -122,7 +122,7 @@ function summariseCancellations(brandId?: string): string {
     ? getBrandInsightSnapshot(brandId, "month")
     : portfolioSnapshot()
   const label = brandId ? snap.brandLabel : "all brands"
-  const market = MARKET_COMPARISON_VALUES.find((m) => m.metric === "Cancellation Rate")
+  const market = MARKET_COMPARISON_VALUES.find((m) => m.metric === "Cancellation rate")
 
   return [
     `**Cancellations & relets** — ${label}:`,

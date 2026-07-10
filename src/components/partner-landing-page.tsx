@@ -72,7 +72,7 @@ const TOTAL_DRIVER = PARTNER_REVENUE.drivers.find((d) => d.label === "Total")
 const REVENUE_TOTAL = TOTAL_DRIVER ? parseNumeric(TOTAL_DRIVER.value) : 1800
 
 const GROSS_BOOKINGS_DRIVER = ADDITIONAL_PARTNER_REVENUE.drivers.find(
-  (d) => d.label === "Gross Bookings"
+  (d) => d.label === "Gross bookings"
 )
 const ATTACHMENT_DRIVER = PARTNER_REVENUE.drivers.find((d) =>
   d.label.startsWith("Attachment")
@@ -106,8 +106,8 @@ const TILE_ICONS: Array<{ match: string; icon: LucideIcon }> = [
   { match: "Margin", icon: PiggyBank },
   { match: "Inc Cancellations & Relets", icon: RefreshCcw },
   { match: "Website Conversion", icon: MousePointerClick },
-  { match: "% of Bookings that are offered", icon: Percent },
-  { match: "offered a Product", icon: Package },
+  { match: "Total bookings offered", icon: Package },
+  { match: "Bookings offered a product", icon: Percent },
   { match: "Total Bookings", icon: CalendarCheck },
   { match: "Income per Booking", icon: Receipt },
   { match: "Total", icon: Sigma },
@@ -129,7 +129,8 @@ const TILE_ICONS: Array<{ match: string; icon: LucideIcon }> = [
 ]
 
 function tileIcon(label: string): LucideIcon {
-  return TILE_ICONS.find((entry) => label.includes(entry.match))?.icon ?? Sigma
+  const lower = label.toLowerCase()
+  return TILE_ICONS.find((entry) => lower.includes(entry.match.toLowerCase()))?.icon ?? Sigma
 }
 
 function TileIcon({ label }: { label: string }) {
@@ -342,14 +343,14 @@ const DRIVER_BREAKDOWN = [
     footnote: "Ex. VAT",
   },
   {
-    label: "Inc Cancellations & Relets",
+    label: "Inc cancellations & relets",
     value: "£100k",
     corner: "6%",
     percent: 6,
     footnote: "6% share",
   },
   {
-    label: "Website Conversion",
+    label: "Website conversion",
     value: "£800k p/a",
     corner: "44%",
     percent: 44,
@@ -421,7 +422,7 @@ function PiklStaysTab() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiStatTile label="Gross Bookings" value="690k" chip="+125k">
+        <KpiStatTile label="Gross bookings" value="690k" chip="+125k">
           <Sparkline data={sparkData} showAxis={false} className="h-10 text-foreground/60" />
         </KpiStatTile>
         <KpiStatTile
@@ -498,7 +499,7 @@ function PiklEffectTab() {
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
         <div className={cn(PANEL, "flex flex-col")}>
-          <PanelEyebrow label="Gross Bookings Trend" sub="Monthly volume" />
+          <PanelEyebrow label="Gross bookings trend" sub="Monthly volume" />
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
             <p className="text-5xl font-bold tracking-tight tabular-nums text-foreground">
               {GROSS_BOOKINGS_DRIVER?.value ?? "690k"}
@@ -524,7 +525,7 @@ function PiklEffectTab() {
               percent={PRODUCT_AVAILABLE_PCT}
             />
             <ProgressRow
-              label="Attachment (Average)"
+              label="Attachment (average)"
               value={ATTACHMENT_DRIVER?.value ?? "14%"}
               percent={ATTACHMENT_PCT}
               strong={false}
@@ -692,10 +693,10 @@ const INCREMENTAL_SHARE_PCT = Math.round(
 )
 
 const STAYS_CARD_SUPPORT: Record<string, string> = {
-  "Attachment (Average)": `vs ${PRODUCT_AVAILABLE_PCT}% product availability`,
+  "Attachment (average)": `vs ${PRODUCT_AVAILABLE_PCT}% product availability`,
   "Margin (ex. VAT) £m": `${MARGIN_SHARE_PCT}% of total partner revenue`,
-  "Inc Cancellations & Relets": `${INCREMENTAL_SHARE_PCT}% of total partner revenue`,
-  "Website Conversion*": "Website conversion uplift",
+  "Inc cancellations & relets": `${INCREMENTAL_SHARE_PCT}% of total partner revenue`,
+  "Website conversion*": "Website conversion uplift",
   Total: PARTNER_REVENUE.headlineNote,
 }
 
@@ -963,7 +964,7 @@ function EffectSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
   return (
     <div className="grid gap-6 xl:grid-cols-5">
       <ChartRowCard
-        eyebrow="Gross Bookings Trend"
+        eyebrow="Gross bookings trend"
         sub="Monthly volume"
         value={GROSS_BOOKINGS_DRIVER?.value ?? "690k"}
         trend={GROSS_BOOKINGS_DRIVER?.trend ?? "+500"}
@@ -1054,10 +1055,10 @@ export function InsightsProductTabs({
 const CAL_CHANNEL_COLORS = ["#006BFF", "#3389FF", "#66A6FF", "#99C4FF"] as const
 
 const CAL_RATE_CARDS = [
-  { label: "FC Guest Price Avg", value: "10%", trend: "+0.4pp", tone: "up" as const },
-  { label: "Insurance Premium Rate Avg", value: "6.35%", trend: "-0.2pp", tone: "down" as const },
-  { label: "Out of Test Conversion", value: "1.0%", trend: "+0.3pp", tone: "up" as const },
-  { label: "Conversion Benefit", value: "1% = £900k", trend: "+£50k", tone: "up" as const },
+  { label: "FC guest price avg", value: "10%", trend: "+0.4pp", tone: "up" as const },
+  { label: "Insurance premium rate avg", value: "6.35%", trend: "-0.2pp", tone: "down" as const },
+  { label: "Out of test conversion", value: "1.0%", trend: "+0.3pp", tone: "up" as const },
+  { label: "Conversion benefit", value: "1% = £900k", trend: "+£50k", tone: "up" as const },
 ] as const
 
 function parseDisplayValue(value: string): number {
@@ -1318,7 +1319,7 @@ export function InsightsCalPanel() {
               </div>
             </div>
             <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <p className="text-xs font-medium text-foreground">Inc Cancellations & Relets</p>
+              <p className="text-xs font-medium text-foreground">Inc cancellations & relets</p>
               <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                 {benefitRow.total.value}
               </p>
@@ -1361,10 +1362,10 @@ export function InsightsCalPanel() {
 }
 
 const DDL_RATE_CARDS = [
-  { label: "DDL Guest Price Avg", value: "£30", trend: "+£2", tone: "up" as const },
-  { label: "Insurance Premium Rate Avg", value: "2.12%", trend: "-0.1pp", tone: "down" as const },
-  { label: "Out of Test Conversion", value: "0.4%", trend: "+0.1pp", tone: "up" as const },
-  { label: "Conversion Benefit", value: "£180k", trend: "+£20k", tone: "up" as const },
+  { label: "DDL guest price avg", value: "£30", trend: "+£2", tone: "up" as const },
+  { label: "Insurance premium rate avg", value: "2.12%", trend: "-0.1pp", tone: "down" as const },
+  { label: "Out of test conversion", value: "0.4%", trend: "+0.1pp", tone: "up" as const },
+  { label: "Conversion benefit", value: "£180k", trend: "+£20k", tone: "up" as const },
 ] as const
 
 /** DDL Damage Deposit Waiver analytics — same layout as CAL, driven by DDL grid data. */
@@ -1583,7 +1584,7 @@ export function InsightsDdlPanel() {
               </div>
             </div>
             <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <p className="text-xs font-medium text-foreground">Out of Test Conversion Benefit</p>
+              <p className="text-xs font-medium text-foreground">Out of test conversion benefit</p>
               <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                 {conversionRow.total.value}
               </p>

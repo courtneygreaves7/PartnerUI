@@ -1,5 +1,7 @@
 import { useMemo } from "react"
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -29,6 +31,7 @@ export type GraphWidgetProps = {
   layers: GraphLayer[]
   data: Record<string, string | number>[]
   xAxisKey: string
+  variant?: "line" | "bar"
   className?: string
 }
 
@@ -38,6 +41,7 @@ export function GraphWidget({
   layers,
   data,
   xAxisKey,
+  variant = "line",
   className,
 }: GraphWidgetProps) {
   const layerKeys = useMemo(() => layers.map((layer) => layer.dataKey), [layers])
@@ -49,10 +53,12 @@ export function GraphWidget({
         dataKey: layer.dataKey,
         value: layer.label,
         color: layer.color,
-        type: "line" as const,
+        type: (variant === "bar" ? "rect" : "line") as "rect" | "line",
       })),
-    [layers]
+    [layers, variant]
   )
+
+  const Chart = variant === "bar" ? BarChart : LineChart
 
   return (
     <Card className={cn("bg-card shadow-xs", className)}>
@@ -64,7 +70,7 @@ export function GraphWidget({
       <CardContent className="space-y-4 pb-5">
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <Chart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
                 dataKey={xAxisKey}
@@ -81,20 +87,31 @@ export function GraphWidget({
                   fontSize: 12,
                 }}
               />
-              {layers.map((layer) => (
-                <Line
-                  key={layer.id}
-                  type="monotone"
-                  dataKey={layer.dataKey}
-                  name={layer.label}
-                  hide={isHidden(layer.dataKey)}
-                  stroke={layer.color}
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              ))}
-            </LineChart>
+              {layers.map((layer) =>
+                variant === "bar" ? (
+                  <Bar
+                    key={layer.id}
+                    dataKey={layer.dataKey}
+                    name={layer.label}
+                    hide={isHidden(layer.dataKey)}
+                    fill={layer.color}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ) : (
+                  <Line
+                    key={layer.id}
+                    type="monotone"
+                    dataKey={layer.dataKey}
+                    name={layer.label}
+                    hide={isHidden(layer.dataKey)}
+                    stroke={layer.color}
+                    strokeWidth={1.5}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                )
+              )}
+            </Chart>
           </ResponsiveContainer>
         </div>
 

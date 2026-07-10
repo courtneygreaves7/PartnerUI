@@ -276,13 +276,14 @@ export function getBrandInsightSnapshot(
 
   const summary = TOTAL_PRODUCTS_SUMMARY.map((item) => {
     const raw = parseDisplayValue(item.value)
-    if (item.label.includes("%")) {
+    const labelLower = item.label.toLowerCase()
+    if (item.value.includes("%") || item.label.includes("%")) {
       return { label: item.label, value: formatPercent(raw + rateOffset) }
     }
-    if (item.label.includes("Income per Booking")) {
+    if (labelLower.includes("income per booking")) {
       return { label: item.label, value: formatIpb(raw * (1 + rateOffset / 20)) }
     }
-    if (item.value.includes("k") || item.label.includes("Margin") || item.label.includes("Bookings")) {
+    if (item.value.includes("k") || labelLower.includes("margin") || labelLower.includes("bookings")) {
       return { label: item.label, value: formatCount(raw * volumeFactor) }
     }
     return { label: item.label, value: item.value }
@@ -362,7 +363,7 @@ export function buildReportingCompareSections(
         buildMetric("FC attachment", left.calAttachment, right.calAttachment, "percent"),
         buildMetric("FC partner margin", left.calMargin, right.calMargin, "currency"),
         buildMetric(
-          "Inc Cancellations & Relets",
+          "Inc cancellations & relets",
           left.calBenefit,
           right.calBenefit,
           "currency"

@@ -18,6 +18,7 @@ import { FilterContextPill } from "@/components/filter-context-pill"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { AiCoworkerCard } from "@/components/ai-coworker-card"
 import { AiCoworkerPage } from "@/components/ai-coworker-page"
+import { AdminComponentsPage } from "@/components/admin-components-page"
 import { AdminPage } from "@/components/admin-page"
 import { LoginPage } from "@/components/login-page"
 import {
@@ -75,6 +76,7 @@ type ActiveSection =
   | "reporting"
   | "ai-coworker"
   | "admin"
+  | "components"
   | "support"
 type InsightsView = "detail" | "map"
 
@@ -97,6 +99,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: "Administration",
     items: [
       { id: "admin", label: "Admin", icon: SlidersHorizontal },
+      // { id: "components", label: "Components", icon: Puzzle },
       { id: "support", label: "Support", icon: LifeBuoy },
     ],
   },
@@ -110,6 +113,7 @@ const SECTION_LABELS: Record<ActiveSection, string> = {
   reporting: "Reporting",
   "ai-coworker": "AI Coworker",
   admin: "Admin",
+  components: "Components",
   support: "Support",
 }
 
@@ -238,6 +242,7 @@ function App() {
   }
 
   return (
+    <TooltipProvider>
     <div className="relative h-screen overflow-hidden bg-background text-foreground">
       <div
         className={cn(
@@ -246,7 +251,6 @@ function App() {
         )}
       >
         <aside className="relative flex h-full min-h-0 flex-col overflow-visible">
-          <TooltipProvider>
             {leftSidebarOpen ? (
               <div className="flex min-h-0 flex-1 flex-col overflow-visible">
                 <div className="shrink-0 px-5">
@@ -352,7 +356,6 @@ function App() {
                 </div>
               </div>
             )}
-          </TooltipProvider>
         </aside>
 
         <div className="flex h-full min-h-0 min-w-0 flex-col p-3 pl-0">
@@ -471,6 +474,8 @@ function App() {
                     <SupportPage />
                   ) : activeSection === "admin" ? (
                     <AdminPage />
+                  ) : activeSection === "components" ? (
+                    <AdminComponentsPage />
                   ) : activeSection === "insights" && insightsView === "map" ? (
                     <InsightsMapPage
                       filters={activeFilters}
@@ -516,6 +521,7 @@ function App() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   )
 }
 

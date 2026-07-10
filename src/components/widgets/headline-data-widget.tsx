@@ -33,19 +33,22 @@ export function HeadlineDataWidget({
   return (
     <Card
       className={cn(
-        "@container min-w-0 bg-card shadow-xs",
+        "@container relative min-w-0 bg-card shadow-xs",
         compact ? "h-auto" : "flex h-full flex-col",
         className
       )}
     >
-      <CardHeader className="flex-row items-start justify-between space-y-0 pb-0">
-        <h3 className="min-w-0 pr-2 text-sm font-semibold text-muted-foreground">{title}</h3>
+      <div className="absolute top-4 right-4">
         <WidgetHelpButton title={title} helpText={helpText} />
+      </div>
+
+      <CardHeader className="items-center justify-center pb-0 pt-4">
+        <h3 className="px-6 text-center text-sm font-semibold text-muted-foreground">{title}</h3>
       </CardHeader>
 
       <CardContent
         className={cn(
-          "flex flex-col gap-2 pb-4 pt-1",
+          "flex flex-col items-center gap-2 pb-5 pt-3 text-center",
           !compact && chartData && "flex-1"
         )}
       >
