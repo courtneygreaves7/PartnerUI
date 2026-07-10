@@ -616,75 +616,6 @@ function AvgReletValueByChannel() {
   )
 }
 
-function ContentSchemaStrip() {
-  return (
-    <div className={cn(PANEL, "overflow-x-auto")}>
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-foreground">Content schema</h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Direct = Website + App + Offline (A+B+C) · Total = Direct + OTA (A+B+C+D)
-        </p>
-      </div>
-      <div className="min-w-[44rem] space-y-2">
-        <div className="grid grid-cols-[11rem_repeat(4,minmax(0,1fr))_minmax(0,1.4fr)_minmax(0,1.4fr)] gap-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-          <span className="text-left normal-case tracking-normal">Metric</span>
-          {CHANNEL_META.map((channel) => (
-            <span key={channel.key}>
-              {channel.letter} · {channel.label}
-            </span>
-          ))}
-          <span className="text-primary">Direct A+B+C</span>
-          <span>Total A+B+C+D</span>
-        </div>
-        {CONTENT_METRIC_ROWS.map((row) => (
-          <div
-            key={row.id}
-            className="grid grid-cols-[11rem_repeat(4,minmax(0,1fr))_minmax(0,1.4fr)_minmax(0,1.4fr)] gap-2"
-          >
-            <div className="flex items-center text-xs font-medium text-foreground">{row.label}</div>
-            {CHANNEL_META.map((channel) => (
-              <SchemaCell
-                key={channel.key}
-                value={formatMetricValue(row.values[channel.key], row.format)}
-                tone="channel"
-              />
-            ))}
-            <SchemaCell
-              value={formatMetricValue(row.values.direct, row.format)}
-              tone="direct"
-            />
-            <SchemaCell
-              value={formatMetricValue(row.values.total, row.format)}
-              tone="total"
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function SchemaCell({
-  value,
-  tone,
-}: {
-  value: string
-  tone: "channel" | "direct" | "total"
-}) {
-  return (
-    <div
-      className={cn(
-        "flex min-h-9 items-center justify-center rounded-md px-2 text-xs font-semibold tabular-nums",
-        tone === "channel" && "bg-primary/10 text-foreground",
-        tone === "direct" && "bg-primary/20 text-foreground",
-        tone === "total" && "border border-primary/25 bg-card text-foreground"
-      )}
-    >
-      {value}
-    </div>
-  )
-}
-
 function round1(n: number) {
   return Math.round(n * 10) / 10
 }
@@ -723,8 +654,6 @@ export function CancellationsReletsDashboard() {
         <ReletVolumeVsForecast />
         <AvgReletValueByChannel />
       </div>
-
-      <ContentSchemaStrip />
     </div>
   )
 }
