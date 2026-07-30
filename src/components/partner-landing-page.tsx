@@ -981,6 +981,54 @@ function EffectSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
   )
 }
 
+function PartnerVsMarketBullets() {
+  return (
+    <div className="space-y-4 pb-1">
+      {MARKET_COMPARISON_VALUES.map((item) => {
+        const scale = Math.max(item.partner, item.market) * 1.15
+        const partnerPct = (item.partner / scale) * 100
+        const marketPct = (item.market / scale) * 100
+
+        return (
+          <div key={item.metric} className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-3 text-xs">
+              <span className="text-muted-foreground">{item.metric}</span>
+              <span className="shrink-0 tabular-nums">
+                <span className="font-semibold text-foreground">{item.value}</span>
+                <span className="text-muted-foreground"> · {item.marketLabel}</span>
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${partnerPct}%` }}
+                />
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-slate-400"
+                  style={{ width: `${marketPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )
+      })}
+      <div className="flex items-center gap-4 pt-0.5 text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-1.5 w-3 rounded-full bg-primary" />
+          Partner
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-1.5 w-3 rounded-full bg-slate-400" />
+          Market
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
   return (
     <div className="grid gap-6 xl:grid-cols-5">
@@ -991,25 +1039,7 @@ function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
         trend="-8"
         className="xl:col-span-3"
       >
-        <div className="space-y-3 pb-1">
-          {MARKET_COMPARISON_VALUES.map((item, index) => {
-            const widths = ["72%", "58%", "45%", "68%", "61%"]
-            return (
-              <div key={item.metric} className="space-y-1">
-                <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="text-muted-foreground">{item.metric}</span>
-                  <span className="font-semibold tabular-nums text-foreground">{item.value}</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: widths[index], opacity: 1 - index * 0.12 }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <PartnerVsMarketBullets />
       </ChartRowCard>
       <QuickActionsCard onOpenInsights={onOpenInsights} className="xl:col-span-2" />
     </div>
