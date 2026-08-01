@@ -4,6 +4,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Info,
+  PoundSterling,
   RefreshCcw,
   TrendingDown,
   TrendingUp,
@@ -33,8 +34,11 @@ import {
   CHANNEL_MIX_DIRECT_SHARE,
   CHANNEL_MIX_HELP,
   CONTENT_METRIC_ROWS,
-  KPI_CARDS,
+  LIVE_CANCELLATIONS,
+  LIVE_CANCELLATIONS_HELP,
   METRICS_SUMMARY_HELP,
+  PARTIAL_RELETS_HELP,
+  PARTIAL_RELETS_INSIGHT,
   RELET_RATE,
   RELET_RATE_STAT,
   RELET_VALUE_AVG,
@@ -43,24 +47,43 @@ import {
   RELET_VOLUME_VS_FORECAST_HELP,
   SERIES_COLORS,
   TARGET_CARDS,
+  TOP_KPI_CARDS,
   VOLUME_TREND,
   VOLUME_TREND_HELP,
   WEEKLY_CANCEL_RELET,
   deltaVsForecast,
+  filterLiveCancellations,
   formatCurrency,
   formatMetricValue,
   formatPercent,
+  formatReletFillLabel,
   formatVolume,
+  getOverlapNightMask,
+  getOverlappingNights,
+  getRecoveredValue,
+  getReletFills,
+  isSplitRelet,
+  summariseLiveCancellations,
+  type LiveCancellationFilter,
 } from "@/lib/cancellations-releats-data"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { InsightsMetricHeatmap } from "@/components/insights-metric-heatmap"
 
-const PANEL = "rounded-2xl border border-border/60 bg-card p-5 shadow-xs"
+const PANEL = "rounded-2xl border border-border/60 bg-card p-3 shadow-xs"
 const MONO_LABEL =
   "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
 
@@ -78,60 +101,100 @@ function MeasureHelp({ title, help }: { title: string; help: string }) {
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="left" align="start" className="max-w-64 text-left">
+      <TooltipContent side="top" className="max-w-64 text-left">
         {help}
       </TooltipContent>
     </Tooltip>
   )
 }
 
-function KpiIcon({ icon, className }: { icon: (typeof KPI_CARDS)[number]["icon"]; className?: string }) {
+function PanelTitle({
+  title,
+  help,
+  className,
+}: {
+  title: string
+  help: string
+  className?: string
+}) {
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <MeasureHelp title={title} help={help} />
+    </div>
+  )
+}
+
+function KpiIcon({
+  icon,
+  className,
+}: {
+  icon: (typeof TOP_KPI_CARDS)[number]["icon"]
+  className?: string
+}) {
   if (icon === "alert") return <AlertCircle className={className} />
   if (icon === "down") return <TrendingDown className={className} />
   if (icon === "refresh") return <RefreshCcw className={className} />
+  if (icon === "risk") return <PoundSterling className={className} />
   return <TrendingUp className={className} />
 }
 
 function AccentKpiCards() {
   return (
-    <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-      {KPI_CARDS.map((card) => {
+    <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
+      {TOP_KPI_CARDS.map((card) => {
+        const attention =
+          "deltaKind" in card && card.deltaKind === "attention"
         const deltaValue = Number.parseFloat(card.delta)
         const improved =
+          !attention &&
           Number.isFinite(deltaValue) &&
           (card.higherIsBetter ? deltaValue > 0 : deltaValue < 0)
         const worsened =
+          !attention &&
           Number.isFinite(deltaValue) &&
           (card.higherIsBetter ? deltaValue < 0 : deltaValue > 0)
-        const tone = improved ? "up" : worsened ? "down" : "neutral"
+        const tone = attention
+          ? "attention"
+          : improved
+            ? "up"
+            : worsened
+              ? "down"
+              : "neutral"
         const Arrow = tone === "down" ? ArrowDownRight : ArrowUpRight
         return (
-          <div key={card.id} className={cn(PANEL, "relative flex flex-col gap-4")}>
-            <div className="absolute top-3 right-3 z-10">
-              <MeasureHelp title={card.label} help={card.help} />
-            </div>
-            <div className="flex items-start justify-between gap-2 pr-8">
-              <span className="grid size-8 place-items-center rounded-lg bg-primary/10">
-                <KpiIcon icon={card.icon} className="size-4 text-primary" />
-              </span>
+          <div key={card.id} className={cn(PANEL, "flex flex-col gap-3")}>
+            <span className="grid size-8 place-items-center rounded-lg bg-primary/10">
+              <KpiIcon icon={card.icon} className="size-4 text-primary" />
+            </span>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+                <MeasureHelp title={card.label} help={card.help} />
+              </div>
+              <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+                {card.value}
+              </p>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     className={cn(
-                      "inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-[10px] font-medium tabular-nums",
+                      "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium tabular-nums",
                       tone === "up"
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                         : tone === "down"
                           ? "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                          : "bg-muted text-muted-foreground"
+                          : tone === "attention"
+                            ? "bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
+                            : "bg-muted text-muted-foreground"
                     )}
                     aria-label={card.delta}
                   >
-                    {tone !== "neutral" ? (
+                    {tone === "up" || tone === "down" ? (
                       <Arrow className="size-3 shrink-0" strokeWidth={2.5} />
                     ) : null}
-                    {card.delta.replace(/ vs .+$/, "")}
+                    {card.delta}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-56 text-left">
@@ -139,19 +202,15 @@ function AccentKpiCards() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="space-y-1">
-              <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
-              <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
-                {card.value}
-              </p>
-            </div>
-            <div className="mt-auto space-y-0.5">
-              {card.context.map((line) => (
-                <p key={line} className="text-xs text-muted-foreground">
-                  {line}
-                </p>
-              ))}
-            </div>
+            {card.context.length > 0 ? (
+              <div className="mt-auto space-y-0.5">
+                {card.context.map((line) => (
+                  <p key={line} className="text-xs text-muted-foreground">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            ) : null}
           </div>
         )
       })}
@@ -161,18 +220,18 @@ function AccentKpiCards() {
 
 function TargetProgressCards() {
   return (
-    <div className="grid gap-8 md:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-3">
       {TARGET_CARDS.map((card) => {
         const max = Math.max(card.actual, card.target) * 1.08
         const actualPct = (card.actual / max) * 100
         const targetPct = (card.target / max) * 100
         return (
-          <div key={card.id} className={cn(PANEL, "relative flex flex-col gap-4")}>
-            <div className="absolute top-3 right-3 z-10">
-              <MeasureHelp title={card.label} help={card.help} />
-            </div>
-            <div className="flex items-start justify-between gap-3 pr-8">
-              <p className={MONO_LABEL}>{card.label}</p>
+          <div key={card.id} className={cn(PANEL, "flex flex-col gap-4")}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5">
+                <p className={MONO_LABEL}>{card.label}</p>
+                <MeasureHelp title={card.label} help={card.help} />
+              </div>
               <span className="text-[10px] font-semibold tracking-wide text-primary uppercase">
                 {card.status}
               </span>
@@ -203,12 +262,9 @@ function TargetProgressCards() {
 
 function VolumeTrendChart() {
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="6-month volume trend" help={VOLUME_TREND_HELP} />
-      </div>
-      <div className="mb-4 pr-8">
-        <h3 className="text-sm font-semibold text-foreground">6-month volume trend</h3>
+    <div className={PANEL}>
+      <div className="mb-4">
+        <PanelTitle title="6-month volume trend" help={VOLUME_TREND_HELP} />
         <p className="mt-0.5 text-xs text-muted-foreground">
           Cancellations vs re-lets · Feb–Jul 2026
         </p>
@@ -296,13 +352,10 @@ function MetricsSummaryTable() {
       : deltaVsForecast(RELET_VOLUME.total, RELET_VOLUME_FC.total)
 
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="Metrics summary" help={METRICS_SUMMARY_HELP} />
-      </div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-8">
+    <div className={PANEL}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Metrics summary</h3>
+          <PanelTitle title="Metrics summary" help={METRICS_SUMMARY_HELP} />
           <p className="mt-0.5 text-xs text-muted-foreground">
             All channels · Actual and forecast · Jul 2026
           </p>
@@ -419,12 +472,9 @@ function MetricsSummaryTable() {
 function ChannelMixCard() {
   const maxShare = Math.max(...CHANNEL_MIX.map((item) => item.share))
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="Channel mix distribution" help={CHANNEL_MIX_HELP} />
-      </div>
-      <div className="mb-5 flex items-start justify-between gap-3 pr-8">
-        <h3 className="text-sm font-semibold text-foreground">Channel mix distribution</h3>
+    <div className={PANEL}>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <PanelTitle title="Channel mix distribution" help={CHANNEL_MIX_HELP} />
         <span className={MONO_LABEL}>Share of bookings</span>
       </div>
       <ul className="space-y-4">
@@ -458,12 +508,9 @@ function ChannelMixCard() {
 
 function CancelVsReletBars() {
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="Cancellation vs re-let" help={CANCEL_VS_RELET_HELP} />
-      </div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-8">
-        <h3 className="text-sm font-semibold text-foreground">Cancellation vs re-let</h3>
+    <div className={PANEL}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <PanelTitle title="Cancellation vs re-let" help={CANCEL_VS_RELET_HELP} />
         <div className="flex gap-3 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           <span className="inline-flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-primary/40" />
@@ -505,11 +552,8 @@ function CancelVsReletBars() {
 
 function ReletRateStatCard() {
   return (
-    <div className={cn(PANEL, "relative flex flex-col gap-5")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title={RELET_RATE_STAT.label} help={RELET_RATE_STAT.help} />
-      </div>
-      <div className="flex items-start justify-between gap-3 pr-8">
+    <div className={cn(PANEL, "flex flex-col gap-5")}>
+      <div className="flex items-start justify-between gap-3">
         <span className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground">
           <TrendingUp className="size-5" />
         </span>
@@ -522,7 +566,10 @@ function ReletRateStatCard() {
         </div>
       </div>
       <div>
-        <p className={MONO_LABEL}>{RELET_RATE_STAT.label}</p>
+        <div className="flex items-center gap-1.5">
+          <p className={MONO_LABEL}>{RELET_RATE_STAT.label}</p>
+          <MeasureHelp title={RELET_RATE_STAT.label} help={RELET_RATE_STAT.help} />
+        </div>
         <p className="mt-2 flex items-baseline gap-2">
           <span className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
             {RELET_RATE_STAT.value}
@@ -548,12 +595,9 @@ function ReletRateStatCard() {
 
 function CancellationRateByChannel() {
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="Cancellation rate by channel" help={CANCEL_RATE_BY_CHANNEL_HELP} />
-      </div>
-      <div className="mb-4 pr-8">
-        <h3 className="text-sm font-semibold text-foreground">Cancellation rate by channel</h3>
+    <div className={PANEL}>
+      <div className="mb-4">
+        <PanelTitle title="Cancellation rate by channel" help={CANCEL_RATE_BY_CHANNEL_HELP} />
         <p className="mt-0.5 text-xs text-muted-foreground">Actual vs forecast %</p>
       </div>
       <ul className="space-y-4">
@@ -610,13 +654,10 @@ function ReletVolumeVsForecast() {
   }))
 
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="Re-let volume vs forecast" help={RELET_VOLUME_VS_FORECAST_HELP} />
-      </div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-8">
+    <div className={PANEL}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Re-let volume vs forecast</h3>
+          <PanelTitle title="Re-let volume vs forecast" help={RELET_VOLUME_VS_FORECAST_HELP} />
           <p className="mt-0.5 text-xs text-muted-foreground">Jul 2026 by channel</p>
         </div>
         <div className="flex gap-3 text-xs text-muted-foreground">
@@ -662,12 +703,9 @@ function ReletVolumeVsForecast() {
 
 function AvgReletValueByChannel() {
   return (
-    <div className={cn(PANEL, "relative")}>
-      <div className="absolute top-3 right-3 z-10">
-        <MeasureHelp title="Avg re-let value" help={AVG_RELET_VALUE_HELP} />
-      </div>
-      <div className="mb-4 pr-8">
-        <h3 className="text-sm font-semibold text-foreground">Avg re-let value</h3>
+    <div className={PANEL}>
+      <div className="mb-4">
+        <PanelTitle title="Avg re-let value" help={AVG_RELET_VALUE_HELP} />
         <p className="mt-0.5 text-xs text-muted-foreground">Revenue recovered per re-let (£)</p>
       </div>
       <ul className="space-y-4">
@@ -704,6 +742,342 @@ function AvgReletValueByChannel() {
   )
 }
 
+function OverlapNightBar({
+  nights,
+  mask,
+}: {
+  nights: number
+  mask: boolean[]
+}) {
+  return (
+    <div
+      className="mt-1.5 flex h-1.5 w-full max-w-[5.5rem] gap-px overflow-hidden rounded-full"
+      title={`${mask.filter(Boolean).length} of ${nights} nights overlapped`}
+      aria-hidden
+    >
+      {Array.from({ length: nights }, (_, index) => (
+        <span
+          key={index}
+          className={cn(
+            "min-w-0 flex-1",
+            mask[index]
+              ? "bg-emerald-500/80 dark:bg-emerald-400/70"
+              : "bg-muted-foreground/20"
+          )}
+        />
+      ))}
+    </div>
+  )
+}
+
+function PartialReletsInsight() {
+  const { example, splitSharePct, splitRecoveredPct, singleRecoveredPct, avgOverlapPct } =
+    PARTIAL_RELETS_INSIGHT
+  const uplift =
+    ((example.recoveredValue - example.cancelledValue) / example.cancelledValue) * 100
+
+  return (
+    <div className={PANEL}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <p className={MONO_LABEL}>Revenue opportunity</p>
+          <PanelTitle title="Split re-lets" help={PARTIAL_RELETS_HELP} className="mt-1" />
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+            Filling a cancelled stay with more than one shorter booking often recovers more
+            than rebooking the full length to a single guest. Overlap shows how many cancelled
+            nights were covered.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6">
+          <div>
+            <p className={MONO_LABEL}>Of re-lets</p>
+            <p className={cn("mt-1 font-bold tabular-nums text-foreground", FIGURE_24PX_CLASS)}>
+              {formatPercent(splitSharePct)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">are split fills</p>
+          </div>
+          <div>
+            <p className={MONO_LABEL}>Split recovery</p>
+            <p className={cn("mt-1 font-bold tabular-nums text-foreground", FIGURE_24PX_CLASS)}>
+              {formatPercent(splitRecoveredPct)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">of cancelled value</p>
+          </div>
+          <div>
+            <p className={MONO_LABEL}>Single recovery</p>
+            <p className={cn("mt-1 font-bold tabular-nums text-foreground", FIGURE_24PX_CLASS)}>
+              {formatPercent(singleRecoveredPct)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">of cancelled value</p>
+          </div>
+          <div>
+            <p className={MONO_LABEL}>Avg overlap</p>
+            <p className={cn("mt-1 font-bold tabular-nums text-foreground", FIGURE_24PX_CLASS)}>
+              {formatPercent(avgOverlapPct)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">of cancelled nights</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-medium text-foreground">Example from live list</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {example.cancelledNights}n cancel ({formatCurrency(example.cancelledValue)}) filled as{" "}
+            <span className="font-semibold text-foreground">{example.fillsLabel}</span>
+            {" · "}
+            <span className="font-semibold text-foreground">
+              {example.overlappingNights} of {example.cancelledNights} nights overlap
+            </span>
+          </p>
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="text-sm font-semibold tabular-nums text-foreground">
+            Recovered {formatCurrency(example.recoveredValue)}
+          </p>
+          <p className="text-[11px] font-medium tabular-nums text-emerald-700 dark:text-emerald-400">
+            +{round1(uplift)}% vs cancelled value
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LiveCancellationsPanel() {
+  const [filter, setFilter] = useState<LiveCancellationFilter>("awaiting")
+  const summary = summariseLiveCancellations(LIVE_CANCELLATIONS)
+  const rows = filterLiveCancellations(LIVE_CANCELLATIONS, filter)
+  const channelLabel = (key: (typeof CHANNEL_META)[number]["key"]) =>
+    CHANNEL_META.find((channel) => channel.key === key)?.label ?? key
+
+  const filters: Array<{ id: LiveCancellationFilter; label: string; count: number }> = [
+    { id: "awaiting", label: "Not re-let", count: summary.awaiting },
+    { id: "relet", label: "Re-let", count: summary.relet },
+    { id: "split", label: "Split fills", count: summary.split },
+    { id: "all", label: "All", count: summary.total },
+  ]
+
+  return (
+    <div className={PANEL}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className={MONO_LABEL}>Booking detail</p>
+          <PanelTitle title="Live cancellations" help={LIVE_CANCELLATIONS_HELP} className="mt-1" />
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+            Focus on stays still open for re-let. Re-let rows show fill pattern, overlapping
+            nights of the cancelled stay, and recovered value.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums text-muted-foreground">
+          <span>
+            <span className="font-semibold text-foreground">{summary.awaiting}</span> not re-let
+          </span>
+          <span>
+            <span className="font-semibold text-foreground">
+              {formatCurrency(summary.valueAtRisk)}
+            </span>{" "}
+            at risk
+          </span>
+          <span>
+            <span className="font-semibold text-foreground">{summary.split}</span> split fills
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {filters.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setFilter(item.id)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              filter === item.id
+                ? "border-foreground/20 bg-background text-foreground shadow-sm"
+                : "border-transparent bg-muted text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {item.label}
+            <span className="ml-1.5 tabular-nums text-muted-foreground">{item.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 overflow-hidden rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
+              <TableHead className="h-10 px-3 text-xs">Ref</TableHead>
+              <TableHead className="px-3 text-xs">Property</TableHead>
+              <TableHead className="px-3 text-xs">Channel</TableHead>
+              <TableHead className="px-3 text-xs">Cancelled</TableHead>
+              <TableHead className="px-3 text-xs">Check-in</TableHead>
+              <TableHead className="px-3 text-right text-xs">Value</TableHead>
+              <TableHead className="px-3 text-xs">FC</TableHead>
+              <TableHead className="px-3 text-xs">Re-let</TableHead>
+              <TableHead className="px-3 text-xs">
+                <span className="inline-flex items-center gap-1">
+                  Overlap
+                  <MeasureHelp
+                    title="Overlap"
+                    help="How many nights of the cancelled stay were covered by re-let booking(s). Gaps show nights still empty inside the original dates."
+                  />
+                </span>
+              </TableHead>
+              <TableHead className="px-3 text-right text-xs">Recovered</TableHead>
+              <TableHead className="px-3 text-right text-xs">Days open</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={11}
+                  className="px-3 py-8 text-center text-sm text-muted-foreground"
+                >
+                  No cancellations in this view.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((booking) => {
+                const awaiting = booking.reletStatus === "awaiting"
+                const fills = getReletFills(booking)
+                const split = isSplitRelet(booking)
+                const fillLabel = formatReletFillLabel(booking)
+                const recovered = getRecoveredValue(booking)
+                const overlappingNights = getOverlappingNights(booking)
+                const overlapMask = getOverlapNightMask(booking)
+                const uncoveredNights = booking.nights - overlappingNights
+                const recoveredUplift =
+                  !awaiting && booking.value > 0
+                    ? ((recovered - booking.value) / booking.value) * 100
+                    : null
+
+                return (
+                  <TableRow
+                    key={booking.id}
+                    className={cn(awaiting && "bg-primary/[0.03]")}
+                  >
+                    <TableCell className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
+                      {booking.id}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5">
+                      <div className="text-sm text-foreground">{booking.property}</div>
+                      <div className="text-[11px] text-muted-foreground">{booking.brand}</div>
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-sm text-muted-foreground">
+                      {channelLabel(booking.channel)}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-sm tabular-nums">
+                      {booking.cancelledAt}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-sm tabular-nums">
+                      {booking.checkIn}
+                      <span className="ml-1 text-[11px] text-muted-foreground">
+                        · {booking.nights}n
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-right text-sm font-medium tabular-nums">
+                      {formatCurrency(booking.value)}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5">
+                      {booking.hasFlexibleCancellation ? (
+                        <span className="inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5">
+                      <span
+                        className={cn(
+                          "inline-flex rounded border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                          awaiting
+                            ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+                            : split
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+                              : "border-border bg-muted/50 text-muted-foreground"
+                        )}
+                      >
+                        {awaiting ? "Not re-let" : split ? "Split" : "Re-let"}
+                      </span>
+                      {!awaiting && fillLabel ? (
+                        <div className="mt-1 text-[11px] font-medium tabular-nums text-foreground">
+                          {fillLabel}
+                        </div>
+                      ) : null}
+                      {!awaiting && fills.length > 0 ? (
+                        <div className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                          {fills.map((fill) => fill.ref).join(", ")}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5">
+                      {awaiting ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <div>
+                          <div className="text-sm font-medium tabular-nums text-foreground">
+                            {overlappingNights}/{booking.nights}n
+                          </div>
+                          <OverlapNightBar nights={booking.nights} mask={overlapMask} />
+                          {uncoveredNights > 0 ? (
+                            <div className="mt-1 text-[10px] text-amber-700 dark:text-amber-400">
+                              {uncoveredNights}n gap
+                            </div>
+                          ) : (
+                            <div className="mt-1 text-[10px] text-muted-foreground">
+                              Full cover
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-right text-sm tabular-nums">
+                      {awaiting ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {formatCurrency(recovered)}
+                          </div>
+                          {recoveredUplift !== null && recoveredUplift !== 0 ? (
+                            <div
+                              className={cn(
+                                "text-[10px] font-medium",
+                                recoveredUplift > 0
+                                  ? "text-emerald-700 dark:text-emerald-400"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {recoveredUplift > 0 ? "+" : ""}
+                              {round1(recoveredUplift)}%
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-right text-sm tabular-nums">
+                      {awaiting ? (
+                        <span className="font-semibold text-foreground">{booking.daysOpen}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}
+
 function round1(n: number) {
   return Math.round(n * 10) / 10
 }
@@ -723,23 +1097,30 @@ export function CancellationsReletsDashboard() {
 
       <AccentKpiCards />
       <TargetProgressCards />
+      <PartialReletsInsight />
+      <LiveCancellationsPanel />
 
-      <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <VolumeTrendChart />
         <ReletRateStatCard />
       </div>
 
       <MetricsSummaryTable />
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <ChannelMixCard />
         <CancelVsReletBars />
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-3">
         <CancellationRateByChannel />
         <ReletVolumeVsForecast />
         <AvgReletValueByChannel />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <InsightsMetricHeatmap metricId="cancellation" eyebrow="Cancellations" />
+        <InsightsMetricHeatmap metricId="relet" eyebrow="Re-lets" />
       </div>
     </div>
   )

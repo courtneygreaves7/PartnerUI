@@ -30,6 +30,8 @@ import {
 
 import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
 import { CancellationsReletsDashboard } from "@/components/cancellations-releats-dashboard"
+import { InsightsMetricHeatmap } from "@/components/insights-metric-heatmap"
+import { OccupancyInsightsDashboard } from "@/components/occupancy-insights-dashboard"
 import {
   CollapsibleDataTable,
   MiniBarChart,
@@ -46,12 +48,18 @@ import { cn } from "@/lib/utils"
 import {
   ADDITIONAL_PARTNER_REVENUE,
   DAMAGE_DEPOSIT_WAIVER_GRID,
+  DDL_ATTACHMENT_VALUE_PER_PP,
+  FC_ATTACHMENT_VALUE_PER_PP,
+  FC_BOOKINGS_BY_DEPARTURE,
+  FC_CANCEL_RATE_BY_DEPARTURE,
   FLEXIBLE_CANCELLATION_GRID,
   GROSS_BOOKINGS_TREND,
   MARGIN_EARNED_FC_DATA,
   MARKET_COMPARISON_VALUES,
   PARTNER_REVENUE,
   TOTAL_PRODUCTS_SUMMARY,
+  formatAttachmentValuePerPp,
+  type AttachmentValueChannel,
 } from "@/lib/sykes-dashboard-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 import type { ActiveFilters } from "@/lib/chart-data"
@@ -106,7 +114,7 @@ const TILE_ICONS: Array<{ match: string; icon: LucideIcon }> = [
   { match: "Attachment", icon: Package },
   { match: "Relet", icon: RefreshCcw },
   { match: "Margin", icon: PiggyBank },
-  { match: "Inc Cancellations & Relets", icon: RefreshCcw },
+  { match: "Incremental Cancellations & Relets", icon: RefreshCcw },
   { match: "Website Conversion", icon: MousePointerClick },
   { match: "Total bookings offered", icon: Package },
   { match: "Bookings offered product", icon: Package },
@@ -148,11 +156,13 @@ function MeasureHelpButton({
   helpText,
   className,
   tone = "default",
+  side = "top",
 }: {
   title: string
   helpText?: string
   className?: string
   tone?: "default" | "onPrimary"
+  side?: "top" | "bottom" | "left" | "right"
 }) {
   const text = helpText ?? getMetricHelp(title)
 
@@ -173,42 +183,99 @@ function MeasureHelpButton({
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="left" align="start" className="max-w-64 text-left">
+      <TooltipContent side={side} align="start" className="max-w-72 text-left">
         {text}
       </TooltipContent>
     </Tooltip>
   )
 }
 
-function CardCornerHelp({
+/** Inline help — sits next to the metric heading/label. */
+function MetricHelpActions({
   title,
   helpText,
-  onOpenInsights,
   tone = "default",
 }: {
   title: string
   helpText?: string
+  tone?: "default" | "onPrimary"
+}) {
+  return <MeasureHelpButton title={title} helpText={helpText} tone={tone} />
+}
+
+/** Top-right insights link on home metric cards. */
+function CardCornerLink({
+  title,
+  onOpenInsights,
+  tone = "default",
+}: {
+  title: string
   onOpenInsights?: () => void
   tone?: "default" | "onPrimary"
 }) {
+  if (!onOpenInsights) return null
+
   return (
-    <div className="absolute top-3 right-3 z-10 flex items-center gap-0.5">
-      <MeasureHelpButton title={title} helpText={helpText} tone={tone} />
-      {onOpenInsights ? (
-        <button
-          type="button"
-          onClick={onOpenInsights}
-          aria-label={`View ${title} in insights`}
-          className={cn(
-            "grid size-7 shrink-0 place-items-center rounded-md transition-colors",
-            tone === "onPrimary"
-              ? "text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          )}
-        >
-          <ArrowUpRight className="size-4" />
-        </button>
-      ) : null}
+    <button
+      type="button"
+      onClick={onOpenInsights}
+      aria-label={`View ${title} in insights`}
+      className={cn(
+        "absolute top-3 right-3 grid size-7 place-items-center rounded-md transition-colors",
+        tone === "onPrimary"
+          ? "text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      <ArrowUpRight className="size-4" />
+    </button>
+  )
+}
+
+function HeadingWithHelp({
+  title,
+  helpTitle,
+  helpText,
+  tone = "default",
+  className,
+  titleClassName,
+}: {
+  title: string
+  helpTitle?: string
+  helpText?: string
+  tone?: "default" | "onPrimary"
+  className?: string
+  titleClassName?: string
+}) {
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <h3 className={cn("text-sm font-semibold text-foreground", titleClassName)}>{title}</h3>
+      <MetricHelpActions title={helpTitle ?? title} helpText={helpText} tone={tone} />
+    </div>
+  )
+}
+
+function LabelWithHelp({
+  title,
+  helpTitle,
+  helpText,
+  tone = "default",
+  className,
+  titleClassName,
+}: {
+  title: string
+  helpTitle?: string
+  helpText?: string
+  tone?: "default" | "onPrimary"
+  className?: string
+  titleClassName?: string
+}) {
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <p className={cn("text-[13px] leading-snug text-muted-foreground", titleClassName)}>
+        {title}
+      </p>
+      <MetricHelpActions title={helpTitle ?? title} helpText={helpText} tone={tone} />
     </div>
   )
 }
@@ -226,10 +293,26 @@ function MonoPill({ children, className }: { children: React.ReactNode; classNam
   )
 }
 
-function PanelEyebrow({ label, sub }: { label: string; sub?: string }) {
+function PanelEyebrow({
+  label,
+  sub,
+  helpTitle,
+  helpText,
+}: {
+  label: string
+  sub?: string
+  helpTitle?: string
+  helpText?: string
+}) {
+  const showHelp = Boolean(helpTitle || helpText)
   return (
     <div className="space-y-1">
-      <p className={MONO_LABEL}>{label}</p>
+      <div className="flex items-center gap-1.5">
+        <p className={MONO_LABEL}>{label}</p>
+        {showHelp ? (
+          <MetricHelpActions title={helpTitle ?? label} helpText={helpText} />
+        ) : null}
+      </div>
       {sub ? <p className="text-sm text-muted-foreground">{sub}</p> : null}
     </div>
   )
@@ -279,14 +362,13 @@ function DriverTile({
   tooltip?: string
 }) {
   return (
-    <div className="relative flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/25 p-4">
-      <CardCornerHelp title={label} helpText={tooltip} />
-      <div className="flex items-center justify-between gap-2 pr-8">
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/25 p-4">
+      <div className="flex items-center justify-between gap-2">
         <TileIcon label={label} />
         {trend ? <MonoPill>{trend}</MonoPill> : null}
       </div>
       <div className="space-y-1">
-        <p className="text-[13px] leading-snug text-muted-foreground">{label}</p>
+        <LabelWithHelp title={label} helpText={tooltip} />
         <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">{value}</p>
       </div>
       {footnote ? (
@@ -351,7 +433,7 @@ function TrendChip({
 const REVENUE_MIX = [
   { label: "Margin", value: 900, display: "£900k", opacity: 0.9 },
   { label: "Website", value: 800, display: "£800k", opacity: 0.6 },
-  { label: "Inc", value: 100, display: "£100k", opacity: 0.3 },
+  { label: "Incremental", value: 100, display: "£100k", opacity: 0.3 },
 ] as const
 
 const OFFER_CONVERSION_PCT = Math.round((ATTACHMENT_PCT / PRODUCT_AVAILABLE_PCT) * 100)
@@ -363,9 +445,11 @@ function AttachmentGaugeCard() {
   const arc = (ATTACHMENT_PCT / PRODUCT_AVAILABLE_PCT) * circumference
 
   return (
-    <div className={cn(PANEL, "relative flex flex-col items-center")}>
-      <CardCornerHelp title="Attachment (average)" />
-      <p className={MONO_LABEL}>Attachment Rate</p>
+    <div className={cn(PANEL, "flex flex-col items-center")}>
+      <div className="flex w-full items-center justify-center gap-1.5">
+        <p className={MONO_LABEL}>Attachment Rate</p>
+        <MetricHelpActions title="Attachment (average)" />
+      </div>
       <div className="relative my-auto grid place-items-center py-5">
         <svg viewBox="0 0 112 112" className="size-28 -rotate-90">
           <circle
@@ -413,14 +497,13 @@ function KpiStatTile({
   children?: React.ReactNode
 }) {
   return (
-    <div className={cn(PANEL, "relative flex flex-col gap-3 p-5")}>
-      <CardCornerHelp title={label} />
-      <div className="flex items-center justify-between gap-2 pr-8">
+    <div className={cn(PANEL, "flex flex-col gap-3 p-5")}>
+      <div className="flex items-center justify-between gap-2">
         <TileIcon label={label} />
         {chip ? <TrendChip value={chip} tone={chipTone} label={label} /> : null}
       </div>
       <div className="space-y-1">
-        <p className="text-[13px] leading-snug text-muted-foreground">{label}</p>
+        <LabelWithHelp title={label} />
         <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">{value}</p>
       </div>
       {children}
@@ -449,7 +532,7 @@ const DRIVER_BREAKDOWN = [
     footnote: "Ex. VAT",
   },
   {
-    label: "Inc cancellations & relets",
+    label: "Incremental cancellations & relets",
     value: "£100k",
     corner: "6%",
     percent: 6,
@@ -470,9 +553,11 @@ function PiklStaysTab() {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1.4fr_0.8fr]">
-        <div className={cn(PANEL, "relative flex flex-col")}>
-          <CardCornerHelp title="Total" helpText={getMetricHelp("Total")} />
-          <p className={cn(MONO_LABEL, "pr-8")}>Partner Revenue</p>
+        <div className={cn(PANEL, "flex flex-col")}>
+          <div className="flex items-center gap-1.5">
+            <p className={MONO_LABEL}>Partner Revenue</p>
+            <MetricHelpActions title="Total" helpText={getMetricHelp("Total")} />
+          </div>
           <p className="mt-4 text-5xl font-bold tracking-tight tabular-nums text-foreground">
             {PARTNER_REVENUE.headline}
           </p>
@@ -500,9 +585,11 @@ function PiklStaysTab() {
           </div>
         </div>
 
-        <div className={cn(PANEL, "relative flex flex-col")}>
-          <CardCornerHelp title="Revenue Drivers" />
-          <p className={cn(MONO_LABEL, "pr-8")}>Revenue Mix by Driver</p>
+        <div className={cn(PANEL, "flex flex-col")}>
+          <div className="flex items-center gap-1.5">
+            <p className={MONO_LABEL}>Revenue Mix by Driver</p>
+            <MetricHelpActions title="Revenue Drivers" />
+          </div>
           <div className="mt-5 flex flex-1 flex-col justify-between gap-4">
             {REVENUE_MIX.map((item) => (
               <div key={item.label} className="space-y-1.5">
@@ -569,17 +656,16 @@ function PiklStaysTab() {
           {DRIVER_BREAKDOWN.map((driver) => (
             <div
               key={driver.label}
-              className="relative flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/25 p-4"
+              className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/25 p-4"
             >
-              <CardCornerHelp title={driver.label} />
-              <div className="flex items-center justify-between gap-2 pr-8">
+              <div className="flex items-center justify-between gap-2">
                 <TileIcon label={driver.label} />
                 <span className="text-[11px] tabular-nums text-muted-foreground">
                   {driver.corner}
                 </span>
               </div>
               <div className="space-y-1">
-                <p className="text-[13px] leading-snug text-muted-foreground">{driver.label}</p>
+                <LabelWithHelp title={driver.label} />
                 <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                   {driver.value}
                 </p>
@@ -607,11 +693,8 @@ function PiklEffectTab() {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className={cn(PANEL, "relative flex flex-col")}>
-          <CardCornerHelp title="Gross bookings trend" />
-          <div className="pr-8">
-            <PanelEyebrow label="Gross bookings trend" sub="Monthly volume" />
-          </div>
+        <div className={cn(PANEL, "flex flex-col")}>
+          <PanelEyebrow label="Gross bookings trend" sub="Monthly volume" helpTitle="Gross bookings trend" />
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
             <p className="text-5xl font-bold tracking-tight tabular-nums text-foreground">
               {GROSS_BOOKINGS_DRIVER?.value ?? "690k"}
@@ -628,11 +711,8 @@ function PiklEffectTab() {
           </div>
         </div>
 
-        <div className={cn(PANEL, "relative flex flex-col")}>
-          <CardCornerHelp title="Offer Rate" />
-          <div className="pr-8">
-            <PanelEyebrow label="Offer Rate" sub="Product availability" />
-          </div>
+        <div className={cn(PANEL, "flex flex-col")}>
+          <PanelEyebrow label="Offer Rate" sub="Product availability" helpTitle="Offer Rate" />
           <div className="mt-6 space-y-5">
             <ProgressRow
               label="% Product available"
@@ -691,11 +771,12 @@ function PiklMarketTab() {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_1fr]">
-        <div className={cn(PANEL, "relative flex flex-col")}>
-          <CardCornerHelp title="Pikl Index Score" />
-          <div className="pr-8">
-            <PanelEyebrow label="Pikl Index" sub="Weighted average vs market (100)" />
-          </div>
+        <div className={cn(PANEL, "flex flex-col")}>
+          <PanelEyebrow
+            label="Pikl Index"
+            sub="Weighted average vs market (100)"
+            helpTitle="Pikl Index Score"
+          />
           <p className="mt-5 text-6xl font-bold tracking-tight tabular-nums text-foreground">
             {PIKL_INDEX}
           </p>
@@ -722,11 +803,12 @@ function PiklMarketTab() {
           </div>
         </div>
 
-        <div className={cn(PANEL, "relative")}>
-          <CardCornerHelp title="Partner vs Market" />
-          <div className="pr-8">
-            <PanelEyebrow label="Index by category" sub="Score out of 100" />
-          </div>
+        <div className={PANEL}>
+          <PanelEyebrow
+            label="Index by category"
+            sub="Score out of 100"
+            helpTitle="Partner vs Market"
+          />
           <MiniBarChart
             data={MARKET_BENCHMARKS.map((item) => ({
               label: item.chartLabel,
@@ -770,15 +852,14 @@ function PiklMarketTab() {
             return (
             <div
               key={item.metric}
-              className="relative flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/25 p-4"
+              className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/25 p-4"
             >
-              <CardCornerHelp title={item.metric} />
-              <div className="flex items-center justify-between gap-2 pr-8">
+              <div className="flex items-center justify-between gap-2">
                 <TileIcon label={item.metric} />
                 <MonoPill>{vsMarket}</MonoPill>
               </div>
               <div className="space-y-1">
-                <p className="text-[13px] leading-snug text-muted-foreground">{item.metric}</p>
+                <LabelWithHelp title={item.metric} />
                 <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                   {item.score}
                 </p>
@@ -823,13 +904,13 @@ function driverAmount(labelIncludes: string): number {
 
 const MARGIN_SHARE_PCT = Math.round((driverAmount("Margin") / REVENUE_TOTAL) * 100)
 const INCREMENTAL_SHARE_PCT = Math.round(
-  (driverAmount("Inc Cancellations") / REVENUE_TOTAL) * 100
+  (driverAmount("Incremental Cancellations") / REVENUE_TOTAL) * 100
 )
 
 const STAYS_CARD_SUPPORT: Record<string, string> = {
   "Attachment (average)": `vs ${PRODUCT_AVAILABLE_PCT}% product availability`,
   "Margin (ex. VAT) £m": `${MARGIN_SHARE_PCT}% of total partner revenue`,
-  "Inc cancellations & relets": `${INCREMENTAL_SHARE_PCT}% of total partner revenue`,
+  "Incremental cancellations & relets": `${INCREMENTAL_SHARE_PCT}% of total partner revenue`,
   "Website conversion*": "Website conversion uplift",
   Total: PARTNER_REVENUE.headlineNote,
 }
@@ -850,12 +931,12 @@ function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void 
                 "border-primary/80 bg-gradient-to-br from-primary to-[#0047b3] text-primary-foreground shadow-sm"
             )}
           >
-            <CardCornerHelp
+            <CardCornerLink
               title={driver.label}
               onOpenInsights={onOpenInsights}
               tone={highlight ? "onPrimary" : "default"}
             />
-            <div className="pr-14">
+            <div>
               {highlight ? (
                 <Sigma className="size-4 shrink-0 text-primary-foreground" />
               ) : (
@@ -863,14 +944,13 @@ function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void 
               )}
             </div>
             <div className="space-y-1">
-              <p
-                className={cn(
-                  "text-[13px] leading-snug",
+              <LabelWithHelp
+                title={driver.label}
+                tone={highlight ? "onPrimary" : "default"}
+                titleClassName={
                   highlight ? "text-primary-foreground/80" : "text-muted-foreground"
-                )}
-              >
-                {driver.label}
-              </p>
+                }
+              />
               <p
                 className={cn(
                   "text-xl font-bold tracking-tight tabular-nums",
@@ -903,15 +983,15 @@ function PiklEffectDriverCards({ onOpenInsights }: { onOpenInsights?: () => void
           key={driver.label}
           className={cn(PANEL, "relative flex flex-col gap-4 p-5")}
         >
-          <CardCornerHelp title={driver.label} onOpenInsights={onOpenInsights} />
-          <div className="flex items-start justify-between gap-2 pr-14">
+          <CardCornerLink title={driver.label} onOpenInsights={onOpenInsights} />
+          <div className="flex items-start justify-between gap-2 pr-8">
             <TileIcon label={driver.label} />
             {driver.role === "volume" ? (
               <MonoPill className="mr-0">Volume base</MonoPill>
             ) : null}
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] leading-snug text-muted-foreground">{driver.label}</p>
+            <LabelWithHelp title={driver.label} />
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                 {driver.value}
@@ -940,12 +1020,12 @@ function PiklMarketDriverCards({ onOpenInsights }: { onOpenInsights?: () => void
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {MARKET_COMPARISON_VALUES.map((item) => (
         <div key={item.metric} className={cn(PANEL, "relative flex flex-col gap-4 p-5")}>
-          <CardCornerHelp title={item.metric} onOpenInsights={onOpenInsights} />
-          <div className="pr-14">
+          <CardCornerLink title={item.metric} onOpenInsights={onOpenInsights} />
+          <div>
             <TileIcon label={item.metric} />
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] leading-snug text-muted-foreground">{item.metric}</p>
+            <LabelWithHelp title={item.metric} />
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                 {item.value}
@@ -969,6 +1049,7 @@ function ChartRowCard({
   className,
   contentClassName,
   helpText,
+  onOpenInsights,
 }: {
   eyebrow: string
   sub?: string
@@ -978,12 +1059,18 @@ function ChartRowCard({
   className?: string
   contentClassName?: string
   helpText?: string
+  onOpenInsights?: () => void
 }) {
   return (
     <div className={cn(PANEL, "relative flex flex-col", className)}>
-      <CardCornerHelp title={eyebrow} helpText={helpText} />
-      <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
-        <PanelEyebrow label={eyebrow} sub={sub} />
+      <CardCornerLink title={eyebrow} onOpenInsights={onOpenInsights} />
+      <div
+        className={cn(
+          "flex flex-wrap items-start justify-between gap-3",
+          onOpenInsights && "pr-8"
+        )}
+      >
+        <PanelEyebrow label={eyebrow} sub={sub} helpTitle={eyebrow} helpText={helpText} />
         {value ? (
           <div className="flex items-center gap-2">
             <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
@@ -1044,7 +1131,7 @@ function QuickActionsCard({
 }
 
 const STAYS_DRIVER_BARS = [
-  { label: "Inc", width: "28%", color: "#0054CC", value: "£100k" },
+  { label: "Incremental", width: "28%", color: "#0054CC", value: "£100k" },
   { label: "Website", width: "72%", color: "#3389FF", value: "£800k" },
   { label: "Margin", width: "100%", color: "#99C4FF", value: "£900k" },
 ] as const
@@ -1058,6 +1145,7 @@ function StaysSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
         value={PARTNER_REVENUE.headline}
         className="xl:col-span-3"
         contentClassName="mt-0 flex min-h-0 flex-1 flex-col justify-center py-3"
+        onOpenInsights={onOpenInsights}
       >
         <div className="space-y-2.5">
           {STAYS_DRIVER_BARS.map((bar) => (
@@ -1090,6 +1178,7 @@ function EffectSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
         value={GROSS_BOOKINGS_DRIVER?.value ?? "690k"}
         trend={GROSS_BOOKINGS_DRIVER?.trend ?? "+500"}
         className="xl:col-span-3"
+        onOpenInsights={onOpenInsights}
       >
         <Sparkline
           data={GROSS_BOOKINGS_TREND.map((point) => ({ ...point }))}
@@ -1104,48 +1193,60 @@ function EffectSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
 
 function PartnerVsMarketBullets() {
   return (
-    <div className="space-y-4 pb-1">
+    <div className="pb-1">
+      <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+        <span className="inline-flex items-center justify-end gap-1.5">
+          <span className="size-1.5 rounded-full bg-primary" />
+          Partner
+        </span>
+        <span className="w-px" aria-hidden />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full bg-slate-400" />
+          Market
+        </span>
+      </div>
+
       {MARKET_COMPARISON_VALUES.map((item) => {
-        const scale = Math.max(item.partner, item.market) * 1.15
-        const partnerPct = (item.partner / scale) * 100
-        const marketPct = (item.market / scale) * 100
+        const max = Math.max(item.partner, item.market, 1)
+        const partnerWidth = `${(item.partner / max) * 100}%`
+        const marketWidth = `${(item.market / max) * 100}%`
 
         return (
-          <div key={item.metric} className="space-y-1.5">
-            <div className="flex items-baseline justify-between gap-3 text-xs">
-              <span className="text-muted-foreground">{item.metric}</span>
-              <span className="shrink-0 tabular-nums">
-                <span className="font-semibold text-foreground">{item.value}</span>
-                <span className="text-muted-foreground"> · {item.marketLabel}</span>
-              </span>
-            </div>
-            <div className="space-y-1">
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${partnerPct}%` }}
-                />
+          <div
+            key={item.metric}
+            className="border-b border-border/60 py-3 last:border-b-0"
+          >
+            <p className="mb-2 text-xs text-muted-foreground">{item.metric}</p>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="w-[4.25rem] shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+                  {item.value}
+                </p>
+                <div className="h-2 min-w-0 flex-1 rounded-full bg-muted">
+                  <div
+                    className="ml-auto h-2 rounded-full bg-primary"
+                    style={{ width: partnerWidth }}
+                  />
+                </div>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-slate-400"
-                  style={{ width: `${marketPct}%` }}
-                />
+
+              <div className="h-5 w-px bg-border" aria-hidden />
+
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="h-2 min-w-0 flex-1 rounded-full bg-muted">
+                  <div
+                    className="h-2 rounded-full bg-slate-400"
+                    style={{ width: marketWidth }}
+                  />
+                </div>
+                <p className="w-[4.25rem] shrink-0 text-sm tabular-nums text-muted-foreground">
+                  {item.marketLabel}
+                </p>
               </div>
             </div>
           </div>
         )
       })}
-      <div className="flex items-center gap-4 pt-0.5 text-[10px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-1.5 w-3 rounded-full bg-primary" />
-          Partner
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-1.5 w-3 rounded-full bg-slate-400" />
-          Market
-        </span>
-      </div>
     </div>
   )
 }
@@ -1159,6 +1260,7 @@ function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
         value="92"
         trend="-8"
         className="xl:col-span-3"
+        onOpenInsights={onOpenInsights}
       >
         <PartnerVsMarketBullets />
       </ChartRowCard>
@@ -1170,6 +1272,7 @@ function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
 const INSIGHTS_PRODUCT_TABS = [
   { id: "cal", label: "Flexible Cancellation" },
   { id: "ddl", label: "Damage Deposit Waiver" },
+  { id: "occupancy", label: "Occupancy" },
   { id: "performance", label: "Cancellations & re-lets" },
 ] as const
 
@@ -1259,10 +1362,14 @@ function AttachmentDonut({ percent, className }: { percent: number; className?: 
 
   return (
     <div
-      className={cn("relative grid size-14 shrink-0 place-items-center", className)}
+      className={cn(
+        // h-0 + min-h-full: match the text row height without growing it
+        "aspect-square h-0 min-h-full w-auto justify-self-end",
+        className
+      )}
       aria-hidden
     >
-      <svg viewBox="0 0 48 48" className="size-full -rotate-90">
+      <svg viewBox="0 0 48 48" className="block size-full -rotate-90">
         <circle
           cx="24"
           cy="24"
@@ -1282,6 +1389,77 @@ function AttachmentDonut({ percent, className }: { percent: number; className?: 
           strokeDasharray={`${dash} ${circumference - dash}`}
         />
       </svg>
+    </div>
+  )
+}
+
+function AttachmentOpportunityCard({
+  productLabel,
+  channels,
+  colors,
+}: {
+  productLabel: string
+  channels: AttachmentValueChannel[]
+  colors: readonly string[]
+}) {
+  const channelOnly = channels.filter((channel) =>
+    ["website", "app", "offline", "ota"].includes(channel.key)
+  )
+  const total = channels.find((channel) => channel.key === "total")
+  const maxValue = Math.max(...channelOnly.map((channel) => channel.valuePerPp), 1)
+
+  return (
+    <div className={cn(PANEL, "border-primary/25 bg-primary/[0.04] p-5")}>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className={MONO_LABEL}>Opportunity</p>
+          <HeadingWithHelp
+            className="mt-1"
+            title={`1pp of ${productLabel} attachment is worth`}
+            helpTitle="1pp attachment value"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Estimated extra partner margin from a 1 percentage point lift · by channel
+          </p>
+        </div>
+        <p className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
+          {total ? formatAttachmentValuePerPp(total.valuePerPp) : "—"}
+        </p>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {channelOnly.map((channel, index) => (
+          <div
+            key={channel.key}
+            className="rounded-xl border border-border/60 bg-card px-3 py-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: colors[index] ?? colors[0] }}
+                />
+                {channel.label}
+              </span>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {channel.attachmentPct}%
+              </span>
+            </div>
+            <p className="mt-2 text-lg font-bold tabular-nums text-foreground">
+              {formatAttachmentValuePerPp(channel.valuePerPp)}
+            </p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${(channel.valuePerPp / maxValue) * 100}%`,
+                  backgroundColor: colors[index] ?? colors[0],
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1323,6 +1501,26 @@ export function InsightsCalPanel() {
     label: point.month,
     value: point.value,
   }))
+  const fcBookingsByDeparture = FC_BOOKINGS_BY_DEPARTURE.map((point) => ({
+    label: point.month,
+    value: point.value,
+  }))
+  const fcCancelRateByDeparture = FC_CANCEL_RATE_BY_DEPARTURE.map((point) => ({
+    label: point.month,
+    value: point.value,
+  }))
+  const departureBookingsTotal = FC_BOOKINGS_BY_DEPARTURE.reduce(
+    (sum, point) => sum + point.value,
+    0
+  )
+  const departureCancelRateAvg =
+    fcCancelRateByDeparture.length > 0
+      ? Math.round(
+          (fcCancelRateByDeparture.reduce((sum, point) => sum + point.value, 0) /
+            fcCancelRateByDeparture.length) *
+            10
+        ) / 10
+      : 0
 
   return (
     <div className="space-y-8">
@@ -1335,13 +1533,15 @@ export function InsightsCalPanel() {
 
       <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
         {CAL_RATE_CARDS.map((card) => (
-          <div key={card.label} className={cn(PANEL, "relative flex flex-col gap-4 p-5")}>
-            <CardCornerHelp title={card.label} />
-            <div className="pr-8">
+          <div key={card.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
+            <div>
               <TileIcon label={card.label} />
             </div>
             <div className="space-y-1">
-              <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+                <MeasureHelpButton title={card.label} />
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                   {card.value}
@@ -1357,12 +1557,11 @@ export function InsightsCalPanel() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
-        <div className={cn(PANEL, "relative flex flex-col gap-5 p-5")}>
-          <CardCornerHelp title="FC Bookings by channel" />
-          <div className="flex items-start justify-between gap-3 pr-8">
+        <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className={MONO_LABEL}>Volume</p>
-              <h3 className="mt-1 text-sm font-semibold text-foreground">FC Bookings by channel</h3>
+              <HeadingWithHelp className="mt-1" title="FC Bookings by channel" />
             </div>
             <TrendChip value="+4.2%" tone="up" label="FC Bookings by channel" />
           </div>
@@ -1440,7 +1639,7 @@ export function InsightsCalPanel() {
 
           <div className="border-t border-border/60 pt-4">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">FC bookings made · monthly</p>
+              <p className="text-xs text-muted-foreground">When FC was purchased · monthly</p>
               <p className="text-xs font-semibold tabular-nums text-foreground">
                 {bookingsDirect.toLocaleString("en-GB")} direct
               </p>
@@ -1453,18 +1652,16 @@ export function InsightsCalPanel() {
           </div>
         </div>
 
-        <div className={cn(PANEL, "relative flex flex-col gap-5 p-5")}>
-          <CardCornerHelp title="Attachment & margin" />
-          <div className="pr-8">
+        <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
+          <div>
             <p className={MONO_LABEL}>Commercial</p>
-            <h3 className="mt-1 text-sm font-semibold text-foreground">Attachment & margin</h3>
+            <HeadingWithHelp className="mt-1" title="Attachment & margin" />
           </div>
 
           <div className="space-y-4">
-            <div className="relative flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
-              <CardCornerHelp title="FC Attachment" />
-              <div className="min-w-0 pr-8">
-                <p className="text-xs text-muted-foreground">FC Attachment</p>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
+              <div className="min-w-0">
+                <LabelWithHelp title="FC Attachment" />
                 <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
                   {attachmentRowData.total.value}
                 </p>
@@ -1474,9 +1671,8 @@ export function InsightsCalPanel() {
               </div>
               <AttachmentDonut percent={parseDisplayValue(attachmentRowData.total.value)} />
             </div>
-            <div className="relative rounded-xl border border-border/70 bg-muted/20 p-4">
-              <CardCornerHelp title="FC Partner Margin" />
-              <p className="pr-8 text-xs font-medium text-foreground">FC Partner Margin</p>
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+              <LabelWithHelp title="FC Partner Margin" />
               <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                 {marginRow.total.value}
               </p>
@@ -1507,9 +1703,8 @@ export function InsightsCalPanel() {
                 ))}
               </div>
             </div>
-            <div className="relative rounded-xl border border-border/70 bg-muted/20 p-4">
-              <CardCornerHelp title="Inc cancellations & relets" />
-              <p className="pr-8 text-xs font-medium text-foreground">Inc cancellations & relets</p>
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+              <LabelWithHelp title="Incremental cancellations & relets" />
               <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                 {benefitRow.total.value}
               </p>
@@ -1541,6 +1736,56 @@ export function InsightsCalPanel() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <AttachmentOpportunityCard
+        productLabel="Flexible Cancellation"
+        channels={FC_ATTACHMENT_VALUE_PER_PP}
+        colors={CAL_CHANNEL_COLORS}
+      />
+
+      <InsightsMetricHeatmap metricId="attachment" eyebrow="Attachment" />
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <div className={cn(PANEL, "flex flex-col gap-4 p-5")}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className={MONO_LABEL}>Timing</p>
+              <HeadingWithHelp className="mt-1" title="Departure period booked with FC" />
+              <p className="mt-1 text-xs text-muted-foreground">
+                By month of departure · same view as when FC was purchased
+              </p>
+            </div>
+            <p className="text-xs font-semibold tabular-nums text-foreground">
+              {departureBookingsTotal.toLocaleString("en-GB")}
+            </p>
+          </div>
+          <Sparkline
+            data={fcBookingsByDeparture}
+            valueFormatter={(v) => v.toLocaleString("en-GB")}
+            className="h-28 text-primary/70"
+          />
+        </div>
+
+        <div className={cn(PANEL, "flex flex-col gap-4 p-5")}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className={MONO_LABEL}>Timing</p>
+              <HeadingWithHelp className="mt-1" title="Cancel rate by departure" />
+              <p className="mt-1 text-xs text-muted-foreground">
+                FC cancellations ÷ FC bookings · by departure month
+              </p>
+            </div>
+            <p className="text-xs font-semibold tabular-nums text-foreground">
+              {departureCancelRateAvg}% avg
+            </p>
+          </div>
+          <MiniBarChart
+            data={fcCancelRateByDeparture}
+            valueFormatter={(v) => `${v}%`}
+            className="h-28 text-primary/70"
+          />
         </div>
       </div>
 
@@ -1633,13 +1878,15 @@ export function InsightsDdlPanel() {
 
       <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
         {DDL_RATE_CARDS.map((card) => (
-          <div key={card.label} className={cn(PANEL, "relative flex flex-col gap-4 p-5")}>
-            <CardCornerHelp title={card.label} />
-            <div className="pr-8">
+          <div key={card.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
+            <div>
               <TileIcon label={card.label} />
             </div>
             <div className="space-y-1">
-              <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+                <MeasureHelpButton title={card.label} />
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                   {card.value}
@@ -1655,12 +1902,11 @@ export function InsightsDdlPanel() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
-        <div className={cn(PANEL, "relative flex flex-col gap-5 p-5")}>
-          <CardCornerHelp title="DDL Bookings by channel" />
-          <div className="flex items-start justify-between gap-3 pr-8">
+        <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className={MONO_LABEL}>Volume</p>
-              <h3 className="mt-1 text-sm font-semibold text-foreground">DDL Bookings by channel</h3>
+              <HeadingWithHelp className="mt-1" title="DDL Bookings by channel" />
             </div>
             <TrendChip value="+3.1%" tone="up" label="DDL Bookings by channel" />
           </div>
@@ -1756,18 +2002,20 @@ export function InsightsDdlPanel() {
           </div>
         </div>
 
-        <div className={cn(PANEL, "relative flex flex-col gap-5 p-5")}>
-          <CardCornerHelp title="DDL Attachment & margin" />
-          <div className="pr-8">
+        <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
+          <div>
             <p className={MONO_LABEL}>Commercial</p>
-            <h3 className="mt-1 text-sm font-semibold text-foreground">Attachment & margin</h3>
+            <HeadingWithHelp
+              className="mt-1"
+              title="Attachment & margin"
+              helpTitle="DDL Attachment & margin"
+            />
           </div>
 
           <div className="space-y-4">
-            <div className="relative flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
-              <CardCornerHelp title="DDL Attachment" />
-              <div className="min-w-0 pr-8">
-                <p className="text-xs text-muted-foreground">DDL Attachment</p>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
+              <div className="min-w-0">
+                <LabelWithHelp title="DDL Attachment" />
                 <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
                   {attachmentRowData.total.value}
                 </p>
@@ -1777,9 +2025,8 @@ export function InsightsDdlPanel() {
               </div>
               <AttachmentDonut percent={parseDisplayValue(attachmentRowData.total.value)} />
             </div>
-            <div className="relative rounded-xl border border-border/70 bg-muted/20 p-4">
-              <CardCornerHelp title="DDL Partner Margin" />
-              <p className="pr-8 text-xs font-medium text-foreground">DDL Partner Margin</p>
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+              <LabelWithHelp title="DDL Partner Margin" />
               <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                 {marginRow.total.value}
               </p>
@@ -1811,7 +2058,10 @@ export function InsightsDdlPanel() {
               </div>
             </div>
             <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <p className="text-xs font-medium text-foreground">Out of test conversion benefit</p>
+              <LabelWithHelp
+                title="Out of test conversion benefit"
+                helpTitle="Out of Test Conversion Benefit"
+              />
               <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                 {conversionRow.total.value}
               </p>
@@ -1833,6 +2083,14 @@ export function InsightsDdlPanel() {
         </div>
       </div>
 
+      <AttachmentOpportunityCard
+        productLabel="Damage Deposit Waiver"
+        channels={DDL_ATTACHMENT_VALUE_PER_PP}
+        colors={CAL_CHANNEL_COLORS}
+      />
+
+      <InsightsMetricHeatmap metricId="attachment" eyebrow="Attachment" />
+
       <CollapsibleDataTable title="View full channel breakdown" defaultOpen>
         <ChannelGridTable rows={DAMAGE_DEPOSIT_WAIVER_GRID} className="border-0 shadow-none" />
       </CollapsibleDataTable>
@@ -1845,23 +2103,33 @@ export function InsightsContributionPanel({ filters: _filters }: { filters: Acti
   return <CancellationsReletsDashboard />
 }
 
+/** Occupancy — partner vs market by departure week and bedrooms. */
+export function InsightsOccupancyPanel() {
+  return <OccupancyInsightsDashboard />
+}
+
 /** Top card row for the Insights page — same style as the Home tab cards. */
 export function InsightsTopCards() {
   return (
     <div className="rounded-2xl bg-[#e8f0fc] p-4 dark:bg-[#141b28]">
+      <h2 className="mb-3 text-sm font-semibold tracking-tight text-foreground">
+        Total products
+      </h2>
       <div className="@container overflow-x-auto">
         <div className="flex w-max gap-8">
           {TOTAL_PRODUCTS_SUMMARY.map((item) => (
             <div
               key={item.label}
-              className={cn(PANEL, "relative flex w-[calc((100cqi-8rem)/4.25)] shrink-0 flex-col gap-4 p-5")}
+              className={cn(PANEL, "flex w-[calc((100cqi-8rem)/4.25)] shrink-0 flex-col gap-4 p-5")}
             >
-              <CardCornerHelp title={item.label} />
-              <div className="pr-8">
+              <div>
                 <TileIcon label={item.label} />
               </div>
               <div className="space-y-1">
-                <p className="text-[13px] leading-snug text-muted-foreground">{item.label}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[13px] leading-snug text-muted-foreground">{item.label}</p>
+                  <MeasureHelpButton title={item.label} />
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
                     {item.value}

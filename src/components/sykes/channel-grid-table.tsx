@@ -6,6 +6,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { getMetricHelp } from "@/lib/metric-help"
 import type { ChannelCellVariant, ChannelGridCell, ChannelGridRow } from "@/lib/sykes-dashboard-data"
 import { cn } from "@/lib/utils"
 
@@ -43,6 +49,24 @@ function ChannelCellBox({ cell }: { cell: ChannelGridCell }) {
   )
 }
 
+function MetricLabelHelp({ label }: { label: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="max-w-[14rem] text-left text-sm font-medium text-foreground underline decoration-dotted decoration-muted-foreground/60 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/50"
+        >
+          {label}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" align="start" className="max-w-72 text-left">
+        {getMetricHelp(label)}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 type ChannelGridTableProps = {
   rows: ChannelGridRow[]
   className?: string
@@ -65,7 +89,9 @@ export function ChannelGridTable({ rows, className }: ChannelGridTableProps) {
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.label}>
-              <TableCell className="text-sm font-medium">{row.label}</TableCell>
+              <TableCell>
+                <MetricLabelHelp label={row.label} />
+              </TableCell>
               {CHANNEL_COLUMNS.map((column) => (
                 <TableCell key={column.key} className="text-center">
                   <ChannelCellBox cell={row[column.key]} />

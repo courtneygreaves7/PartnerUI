@@ -1,5 +1,8 @@
+import { useEffect, useRef } from "react"
+
 import { FileText } from "lucide-react"
 
+import { BdxSubmissionsPanel } from "@/components/bdx-submissions-panel"
 import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
 import { CollapsibleDataTable } from "@/components/sykes/sykes-visual-primitives"
 import { CompareMetricSection } from "@/components/compare/compare-metric-section"
@@ -18,6 +21,8 @@ import { cn } from "@/lib/utils"
 type ReportingPageProps = {
   filters: ReportingFilters
   hasRun: boolean
+  /** Increments each time Run report is clicked — scrolls past BDX to the report. */
+  runId?: number
 }
 
 const PANEL = "rounded-2xl border border-border/60 bg-card p-5 shadow-xs"
@@ -247,9 +252,19 @@ function SingleBrandReport({ filters }: { filters: ReportingFilters }) {
   )
 }
 
-export function ReportingPage({ filters, hasRun }: ReportingPageProps) {
+export function ReportingPage({ filters, hasRun, runId = 0 }: ReportingPageProps) {
+  const reportRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!hasRun || runId < 1) return
+    const timer = window.setTimeout(() => {
+      reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 100)
+    return () => window.clearTimeout(timer)
+  }, [hasRun, runId])
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-[22px] font-semibold tracking-tight">Reporting</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -259,22 +274,35 @@ export function ReportingPage({ filters, hasRun }: ReportingPageProps) {
         </p>
       </div>
 
-      {!hasRun ? (
-        <div className="flex min-h-[28rem] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-24 text-center">
-          <span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">
-            <FileText className="size-4" />
-          </span>
-          <p className="mt-4 text-sm font-semibold text-foreground">No report yet</p>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Choose a period and brands in the filter bar, then run a report to compare Insights
-            metrics side by side.
-          </p>
+      <BdxSubmissionsPanel />
+
+      <div
+        ref={reportRef}
+        id="reporting-brand-performance"
+        className="scroll-mt-6 space-y-6"
+      >
+        <div>
+          <p className={MONO_LABEL}>Insights report</p>
+          <h2 className="mt-1 text-sm font-semibold text-foreground">Brand performance</h2>
         </div>
-      ) : filters.compareEnabled ? (
-        <CompareReport filters={filters} />
-      ) : (
-        <SingleBrandReport filters={filters} />
-      )}
+
+        {!hasRun ? (
+          <div className="flex min-h-[20rem] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-24 text-center">
+            <span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">
+              <FileText className="size-4" />
+            </span>
+            <p className="mt-4 text-sm font-semibold text-foreground">No report yet</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Choose a period and brands in the filter bar, then run a report to compare Insights
+              metrics side by side.
+            </p>
+          </div>
+        ) : filters.compareEnabled ? (
+          <CompareReport filters={filters} />
+        ) : (
+          <SingleBrandReport filters={filters} />
+        )}
+      </div>
     </div>
   )
 }

@@ -606,7 +606,7 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
       fontFace: FONT,
     })
 
-    const driverLabels = ["Inc", "Website conv.", "Margin", "Total"]
+    const driverLabels = ["Incremental", "Website conv.", "Margin", "Total"]
     const driverValues = [100, 800, 900, 1800]
     slide.addChart(
       ChartType.bar,

@@ -21,7 +21,7 @@ import {
 const REVENUE_SPLIT = [
   { name: "Margin (ex. VAT)", value: 900, color: "#006BFF" },
   { name: "Website conversion", value: 800, color: "#3389FF" },
-  { name: "Inc canx & relets", value: 100, color: "#99C4FF" },
+  { name: "Incremental canx & relets", value: 100, color: "#99C4FF" },
 ]
 
 const CHANNEL_COLORS = {

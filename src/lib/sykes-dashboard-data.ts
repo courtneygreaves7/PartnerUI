@@ -22,7 +22,7 @@ export const PARTNER_REVENUE = {
   drivers: [
     { label: "Attachment (average)", value: "14%" },
     { label: "Margin (ex. VAT) £m", value: "£900k" },
-    { label: "Inc cancellations & relets", value: "£100k" },
+    { label: "Incremental cancellations & relets", value: "£100k" },
     {
       label: "Website conversion*",
       value: "£800k p/a",
@@ -364,8 +364,8 @@ export const FLEXIBLE_CANCELLATION_GRID: ChannelGridRow[] = [
   flatRateRow("FC Insurance Premium Rate Avg %", "6.35%"),
   // Aligns to PARTNER_REVENUE Margin (ex. VAT) £900k
   moneyRow("FC Partner Margin £", { website: 520000, app: 180000, offline: 80000, ota: 120000 }),
-  // Aligns to PARTNER_REVENUE Inc Cancellations & Relets £100k
-  moneyRow("Inc Cancellations & Relets", {
+  // Aligns to PARTNER_REVENUE Incremental Cancellations & Relets £100k
+  moneyRow("Incremental Cancellations & Relets", {
     website: 55000,
     app: 20000,
     offline: 10000,
@@ -398,6 +398,67 @@ export const DAMAGE_DEPOSIT_WAIVER_GRID: ChannelGridRow[] = [
     total: { value: "£180k", variant: "total" },
   },
 ]
+
+export type AttachmentValueChannel = {
+  key: "website" | "app" | "offline" | "ota" | "direct" | "total"
+  label: string
+  attachmentPct: number
+  margin: number
+  /** Estimated partner margin from +1 percentage point of attachment. */
+  valuePerPp: number
+}
+
+function formatCompactMoney(value: number): string {
+  if (Math.abs(value) >= 1000) {
+    const thousands = value / 1000
+    const rounded =
+      Math.abs(thousands - Math.round(thousands)) < 0.05
+        ? String(Math.round(thousands))
+        : thousands.toFixed(1)
+    return `£${rounded}k`
+  }
+  return `£${Math.round(value).toLocaleString("en-GB")}`
+}
+
+/**
+ * Value of +1pp attachment ≈ current margin ÷ current attachment rate.
+ * Uses only the attachment and margin rows already on the channel grid.
+ */
+export function getAttachmentValuePerPp(
+  attachmentRow: ChannelGridRow,
+  marginRow: ChannelGridRow
+): AttachmentValueChannel[] {
+  const keys = [
+    { key: "website" as const, label: "Website" },
+    { key: "app" as const, label: "App" },
+    { key: "offline" as const, label: "Offline" },
+    { key: "ota" as const, label: "OTA" },
+    { key: "direct" as const, label: "Direct" },
+    { key: "total" as const, label: "Total" },
+  ]
+
+  return keys.map(({ key, label }) => {
+    const attachmentPct = parseGridValue(attachmentRow[key].value)
+    const margin = parseGridValue(marginRow[key].value)
+    const valuePerPp =
+      attachmentPct > 0 ? Math.round(margin / attachmentPct) : 0
+    return { key, label, attachmentPct, margin, valuePerPp }
+  })
+}
+
+export function formatAttachmentValuePerPp(value: number): string {
+  return formatCompactMoney(value)
+}
+
+export const FC_ATTACHMENT_VALUE_PER_PP = getAttachmentValuePerPp(
+  FLEXIBLE_CANCELLATION_GRID[1],
+  FLEXIBLE_CANCELLATION_GRID[4]
+)
+
+export const DDL_ATTACHMENT_VALUE_PER_PP = getAttachmentValuePerPp(
+  DAMAGE_DEPOSIT_WAIVER_GRID[1],
+  DAMAGE_DEPOSIT_WAIVER_GRID[4]
+)
 
 function parseGridValue(value: string): number {
   const numeric = Number(value.replace(/[^0-9.]/g, "")) || 0
@@ -806,6 +867,21 @@ export const EVENTS_BY_DATE_DECLINING_DATA: MonthlyTripleSeries[] = [
 ]
 
 export const DEPARTURES_BY_DATE_DATA = EVENTS_BY_DATE_SUMMER_DATA
+
+/** FC bookings by month of departure (same series as phasing “based on date of departure”). */
+export const FC_BOOKINGS_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => ({
+  month: row.month,
+  value: row.bookings,
+}))
+
+/** Cancel rate (%) by departure month — cancellations ÷ FC bookings on departure date. */
+export const FC_CANCEL_RATE_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => ({
+  month: row.month,
+  value:
+    row.bookings > 0
+      ? Math.round((row.cancellations / row.bookings) * 1000) / 10
+      : 0,
+}))
 
 export const TRIPLE_SERIES_COLORS = {
   bookings: "#3f3f46",

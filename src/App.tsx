@@ -33,6 +33,7 @@ import {
   InsightsCalPanel,
   InsightsContributionPanel,
   InsightsDdlPanel,
+  InsightsOccupancyPanel,
   InsightsProductTabs,
   InsightsTopCards,
   PartnerLandingPage,
@@ -185,6 +186,7 @@ function App() {
   const [reportingFilters, setReportingFilters] =
     useState<ReportingFilters>(DEFAULT_REPORTING_FILTERS)
   const [reportingHasRun, setReportingHasRun] = useState(false)
+  const [reportingRunId, setReportingRunId] = useState(0)
   const [insightsProduct, setInsightsProduct] = useState<InsightsProductId>("cal")
   const [insightsView, setInsightsView] = useState<InsightsView>("detail")
   const [insightsScrollTarget, setInsightsScrollTarget] = useState<string | null>(null)
@@ -467,7 +469,11 @@ function App() {
                   {activeSection === "dashboard" ? (
                     <PartnerLandingPage onOpenInsights={() => handleOpenInsights()} />
                   ) : activeSection === "reporting" ? (
-                    <ReportingPage filters={reportingFilters} hasRun={reportingHasRun} />
+                    <ReportingPage
+                      filters={reportingFilters}
+                      hasRun={reportingHasRun}
+                      runId={reportingRunId}
+                    />
                   ) : activeSection === "ai-coworker" ? (
                     <AiCoworkerPage partnerName={PARTNER_BRANDING.userDisplayName} />
                   ) : activeSection === "support" ? (
@@ -495,6 +501,8 @@ function App() {
                         <InsightsCalPanel />
                       ) : insightsProduct === "ddl" ? (
                         <InsightsDdlPanel />
+                      ) : insightsProduct === "occupancy" ? (
+                        <InsightsOccupancyPanel />
                       ) : (
                         <InsightsContributionPanel filters={activeFilters} />
                       )}
@@ -511,6 +519,7 @@ function App() {
                     onRun={(next) => {
                       setReportingFilters(next)
                       setReportingHasRun(true)
+                      setReportingRunId((id) => id + 1)
                     }}
                   />
                 ) : (
