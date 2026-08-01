@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 import {
   ADDITIONAL_PARTNER_REVENUE,
   GROSS_BOOKINGS_TREND,
-  MARKET_COMPARISON_METRICS,
+  MARKET_COMPARISON_VALUES,
   PARTNER_REVENUE,
 } from "@/lib/sykes-dashboard-data"
 
@@ -142,8 +142,9 @@ function AttachmentGaugeCard() {
 function additionalDriverHint(
   driver: (typeof ADDITIONAL_PARTNER_REVENUE.drivers)[number]
 ): string | undefined {
-  const extended = driver as { side?: string; note?: string }
-  return extended.side ?? extended.note
+  if (driver.versus) return `vs ${driver.versus}`
+  if (driver.side) return driver.side
+  return undefined
 }
 
 export function RevenueOverviewVisual() {
@@ -193,17 +194,17 @@ export function RevenueOverviewVisual() {
           className="border-border bg-card"
         >
           <div className="space-y-4">
-            {MARKET_COMPARISON_METRICS.map((metric, index) => (
+            {MARKET_COMPARISON_VALUES.map((item, index) => (
               <ProgressMetricRow
-                key={metric}
-                label={metric}
-                value="—"
-                percent={[72, 58, 45, 68, 61][index] ?? 50}
+                key={item.metric}
+                label={item.metric}
+                value={item.value}
+                percent={Math.min(100, Math.round((item.partner / item.market) * 100))}
                 tone={index % 2 === 0 ? "brand" : "accent"}
               />
             ))}
             <p className="text-xs text-muted-foreground">
-              Benchmark data pending — bars show relative index placeholders.
+              Partner value shown. Bar is partner as a share of market (100 = market).
             </p>
           </div>
         </VisualCard>

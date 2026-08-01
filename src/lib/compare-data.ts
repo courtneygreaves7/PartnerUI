@@ -73,6 +73,8 @@ export function toActiveFilters(side: CompareSideFilters): ActiveFilters {
     partner: side.partner,
     brand: side.brand,
     county: "all-counties",
+    region: "all-regions",
+    bedrooms: "all-bedrooms",
     year: side.year,
     month: side.month,
     dateRange: side.dateRange,

@@ -65,6 +65,8 @@ export function DashboardFilterBar({ filters, hasRun = false, onRun }: Dashboard
       partner,
       brand: partner === "all-partners" ? "all-brands" : brand,
       county: filters.county ?? "all-counties",
+      region: filters.region ?? "all-regions",
+      bedrooms: filters.bedrooms ?? "all-bedrooms",
       dateRange,
       year,
       month,

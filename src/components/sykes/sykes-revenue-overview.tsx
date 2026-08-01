@@ -115,7 +115,17 @@ export function SykesRevenueOverview() {
         />
         <RevenueDriverList title="Additional Partner Revenue Drivers" theme="blue">
           {ADDITIONAL_PARTNER_REVENUE.drivers.map((driver) => (
-            <AdditionalRevenueRow key={driver.label} {...driver} />
+            <AdditionalRevenueRow
+              key={driver.label}
+              label={driver.label}
+              value={driver.value}
+              trend={driver.trend}
+              side={
+                driver.versus
+                  ? `vs ${driver.versus}`
+                  : driver.side ?? undefined
+              }
+            />
           ))}
         </RevenueDriverList>
       </div>

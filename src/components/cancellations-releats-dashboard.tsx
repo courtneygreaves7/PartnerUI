@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowDownRight,
   ArrowUpRight,
+  Info,
   RefreshCcw,
   TrendingDown,
   TrendingUp,
@@ -14,29 +15,36 @@ import {
   BarChart,
   CartesianGrid,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from "recharts"
 
 import {
+  AVG_RELET_VALUE_HELP,
   CANCEL_RATE,
+  CANCEL_RATE_BY_CHANNEL_HELP,
   CANCEL_RATE_FC,
   CANCEL_VOLUME,
   CANCEL_VOLUME_FC,
+  CANCEL_VS_RELET_HELP,
   CHANNEL_META,
   CHANNEL_MIX,
   CHANNEL_MIX_DIRECT_SHARE,
+  CHANNEL_MIX_HELP,
   CONTENT_METRIC_ROWS,
   KPI_CARDS,
+  METRICS_SUMMARY_HELP,
   RELET_RATE,
   RELET_RATE_STAT,
   RELET_VALUE_AVG,
   RELET_VOLUME,
   RELET_VOLUME_FC,
+  RELET_VOLUME_VS_FORECAST_HELP,
   SERIES_COLORS,
   TARGET_CARDS,
   VOLUME_TREND,
+  VOLUME_TREND_HELP,
   WEEKLY_CANCEL_RELET,
   deltaVsForecast,
   formatCurrency,
@@ -46,12 +54,36 @@ import {
 } from "@/lib/cancellations-releats-data"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const PANEL = "rounded-2xl border border-border/60 bg-card p-5 shadow-xs"
 const MONO_LABEL =
   "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
 
 const TICK = { fontSize: 11, fill: "var(--color-muted-foreground)" }
+
+function MeasureHelp({ title, help }: { title: string; help: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label={`More information about ${title}`}
+        >
+          <Info className="size-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left" align="start" className="max-w-64 text-left">
+        {help}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
 
 function KpiIcon({ icon, className }: { icon: (typeof KPI_CARDS)[number]["icon"]; className?: string }) {
   if (icon === "alert") return <AlertCircle className={className} />
@@ -64,25 +96,48 @@ function AccentKpiCards() {
   return (
     <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
       {KPI_CARDS.map((card) => {
-        const tone = card.delta.startsWith("-") ? "down" : "up"
-        const Arrow = tone === "up" ? ArrowUpRight : ArrowDownRight
+        const deltaValue = Number.parseFloat(card.delta)
+        const improved =
+          Number.isFinite(deltaValue) &&
+          (card.higherIsBetter ? deltaValue > 0 : deltaValue < 0)
+        const worsened =
+          Number.isFinite(deltaValue) &&
+          (card.higherIsBetter ? deltaValue < 0 : deltaValue > 0)
+        const tone = improved ? "up" : worsened ? "down" : "neutral"
+        const Arrow = tone === "down" ? ArrowDownRight : ArrowUpRight
         return (
-          <div key={card.id} className={cn(PANEL, "flex flex-col gap-4")}>
-            <div className="flex items-start justify-between gap-2">
+          <div key={card.id} className={cn(PANEL, "relative flex flex-col gap-4")}>
+            <div className="absolute top-3 right-3 z-10">
+              <MeasureHelp title={card.label} help={card.help} />
+            </div>
+            <div className="flex items-start justify-between gap-2 pr-8">
               <span className="grid size-8 place-items-center rounded-lg bg-primary/10">
                 <KpiIcon icon={card.icon} className="size-4 text-primary" />
               </span>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-[10px] font-medium tabular-nums",
-                  tone === "up"
-                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                    : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                )}
-              >
-                <Arrow className="size-3 shrink-0" strokeWidth={2.5} />
-                {card.delta.replace(/ vs .+$/, "")}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-[10px] font-medium tabular-nums",
+                      tone === "up"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        : tone === "down"
+                          ? "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
+                          : "bg-muted text-muted-foreground"
+                    )}
+                    aria-label={card.delta}
+                  >
+                    {tone !== "neutral" ? (
+                      <Arrow className="size-3 shrink-0" strokeWidth={2.5} />
+                    ) : null}
+                    {card.delta.replace(/ vs .+$/, "")}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-56 text-left">
+                  {card.delta}
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="space-y-1">
               <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
@@ -90,7 +145,13 @@ function AccentKpiCards() {
                 {card.value}
               </p>
             </div>
-            <p className="mt-auto text-xs text-muted-foreground">{card.detail}</p>
+            <div className="mt-auto space-y-0.5">
+              {card.context.map((line) => (
+                <p key={line} className="text-xs text-muted-foreground">
+                  {line}
+                </p>
+              ))}
+            </div>
           </div>
         )
       })}
@@ -106,8 +167,11 @@ function TargetProgressCards() {
         const actualPct = (card.actual / max) * 100
         const targetPct = (card.target / max) * 100
         return (
-          <div key={card.id} className={cn(PANEL, "flex flex-col gap-4")}>
-            <div className="flex items-start justify-between gap-3">
+          <div key={card.id} className={cn(PANEL, "relative flex flex-col gap-4")}>
+            <div className="absolute top-3 right-3 z-10">
+              <MeasureHelp title={card.label} help={card.help} />
+            </div>
+            <div className="flex items-start justify-between gap-3 pr-8">
               <p className={MONO_LABEL}>{card.label}</p>
               <span className="text-[10px] font-semibold tracking-wide text-primary uppercase">
                 {card.status}
@@ -139,11 +203,14 @@ function TargetProgressCards() {
 
 function VolumeTrendChart() {
   return (
-    <div className={PANEL}>
-      <div className="mb-4">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="6-month volume trend" help={VOLUME_TREND_HELP} />
+      </div>
+      <div className="mb-4 pr-8">
         <h3 className="text-sm font-semibold text-foreground">6-month volume trend</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Cancellations vs re-lets — Feb–Jul 2026
+          Cancellations vs re-lets · Feb–Jul 2026
         </p>
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
@@ -172,7 +239,7 @@ function VolumeTrendChart() {
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="month" tick={TICK} tickLine={false} axisLine={false} />
             <YAxis tick={TICK} tickLine={false} axisLine={false} width={36} />
-            <Tooltip
+            <RechartsTooltip
               contentStyle={{
                 background: "var(--color-card)",
                 border: "1px solid var(--color-border)",
@@ -229,8 +296,11 @@ function MetricsSummaryTable() {
       : deltaVsForecast(RELET_VOLUME.total, RELET_VOLUME_FC.total)
 
   return (
-    <div className={PANEL}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="Metrics summary" help={METRICS_SUMMARY_HELP} />
+      </div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-8">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Metrics summary</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -349,8 +419,11 @@ function MetricsSummaryTable() {
 function ChannelMixCard() {
   const maxShare = Math.max(...CHANNEL_MIX.map((item) => item.share))
   return (
-    <div className={PANEL}>
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="Channel mix distribution" help={CHANNEL_MIX_HELP} />
+      </div>
+      <div className="mb-5 flex items-start justify-between gap-3 pr-8">
         <h3 className="text-sm font-semibold text-foreground">Channel mix distribution</h3>
         <span className={MONO_LABEL}>Share of bookings</span>
       </div>
@@ -385,8 +458,11 @@ function ChannelMixCard() {
 
 function CancelVsReletBars() {
   return (
-    <div className={PANEL}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="Cancellation vs re-let" help={CANCEL_VS_RELET_HELP} />
+      </div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-8">
         <h3 className="text-sm font-semibold text-foreground">Cancellation vs re-let</h3>
         <div className="flex gap-3 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           <span className="inline-flex items-center gap-1.5">
@@ -429,8 +505,11 @@ function CancelVsReletBars() {
 
 function ReletRateStatCard() {
   return (
-    <div className={cn(PANEL, "flex flex-col gap-5")}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={cn(PANEL, "relative flex flex-col gap-5")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title={RELET_RATE_STAT.label} help={RELET_RATE_STAT.help} />
+      </div>
+      <div className="flex items-start justify-between gap-3 pr-8">
         <span className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground">
           <TrendingUp className="size-5" />
         </span>
@@ -469,8 +548,11 @@ function ReletRateStatCard() {
 
 function CancellationRateByChannel() {
   return (
-    <div className={PANEL}>
-      <div className="mb-4">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="Cancellation rate by channel" help={CANCEL_RATE_BY_CHANNEL_HELP} />
+      </div>
+      <div className="mb-4 pr-8">
         <h3 className="text-sm font-semibold text-foreground">Cancellation rate by channel</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">Actual vs forecast %</p>
       </div>
@@ -528,8 +610,11 @@ function ReletVolumeVsForecast() {
   }))
 
   return (
-    <div className={PANEL}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="Re-let volume vs forecast" help={RELET_VOLUME_VS_FORECAST_HELP} />
+      </div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-8">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Re-let volume vs forecast</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">Jul 2026 by channel</p>
@@ -558,7 +643,7 @@ function ReletVolumeVsForecast() {
               axisLine={false}
               width={64}
             />
-            <Tooltip
+            <RechartsTooltip
               contentStyle={{
                 background: "var(--color-card)",
                 border: "1px solid var(--color-border)",
@@ -577,8 +662,11 @@ function ReletVolumeVsForecast() {
 
 function AvgReletValueByChannel() {
   return (
-    <div className={PANEL}>
-      <div className="mb-4">
+    <div className={cn(PANEL, "relative")}>
+      <div className="absolute top-3 right-3 z-10">
+        <MeasureHelp title="Avg re-let value" help={AVG_RELET_VALUE_HELP} />
+      </div>
+      <div className="mb-4 pr-8">
         <h3 className="text-sm font-semibold text-foreground">Avg re-let value</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">Revenue recovered per re-let (£)</p>
       </div>
@@ -624,7 +712,7 @@ export function CancellationsReletsDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <p className={MONO_LABEL}>Performance</p>
+        <p className={MONO_LABEL}>Operations</p>
         <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
           Cancellations &amp; re-lets
         </h2>

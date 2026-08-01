@@ -148,7 +148,11 @@ function summariseRevenue(): string {
     .map((d) => `• **${d.label}:** ${d.value}`)
     .join("\n")
   const effect = ADDITIONAL_PARTNER_REVENUE.drivers
-    .map((d) => `• **${d.label}:** ${d.value} (${d.trend}) — ${d.side}`)
+    .map((d) => {
+      const note = d.versus ? `vs ${d.versus}` : d.side
+      const roleNote = d.role === "volume" ? "volume base, not incremental" : "profile comparison"
+      return `• **${d.label}:** ${d.value} (${d.trend})${note ? ` — ${note}` : ""} · ${roleNote}`
+    })
     .join("\n")
 
   return [

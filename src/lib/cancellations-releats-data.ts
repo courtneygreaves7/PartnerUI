@@ -1,5 +1,7 @@
 /** Channel roll-up: Direct = A+B+C, Total = A+B+C+D (content schema). */
 
+import { MARKET_COMPARISON_VALUES } from "@/lib/sykes-dashboard-data"
+
 export type ChannelKey = "website" | "app" | "offline" | "ota"
 
 export type ChannelBreakdown = Record<ChannelKey, number> & {
@@ -190,43 +192,100 @@ export const CONTENT_METRIC_ROWS: ContentMetricRow[] = [
   },
 ]
 
+/** Jun 2026 point from the volume trend series (month before current Jul actuals). */
+const PRIOR_MONTH_VOLUME = { cancellations: 1120, relets: 1110 } as const
+
+const RECOVERY_RATE =
+  (RELET_VOLUME.total / CANCEL_VOLUME.total) * 100
+const RECOVERY_RATE_FC =
+  (RELET_VOLUME_FC.total / CANCEL_VOLUME_FC.total) * 100
+const RECOVERY_RATE_PRIOR =
+  (PRIOR_MONTH_VOLUME.relets / PRIOR_MONTH_VOLUME.cancellations) * 100
+
+/** Market cancel rate from Home benchmarks — rate only; no invented volume markets. */
+const MARKET_CANCEL_RATE =
+  MARKET_COMPARISON_VALUES.find((m) => m.metric === "Cancellation rate")?.market ??
+  null
+
+function formatSignedPct(n: number) {
+  const rounded = round1(n)
+  const sign = rounded > 0 ? "+" : ""
+  return `${sign}${rounded}%`
+}
+
+function formatSignedPp(n: number) {
+  const rounded = round1(n)
+  const sign = rounded > 0 ? "+" : ""
+  return `${sign}${rounded}pp`
+}
+
 export const KPI_CARDS = [
   {
     id: "total-cancellations",
     label: "Total cancellations",
     value: formatVolume(CANCEL_VOLUME.total),
-    detail: "All channels · Jul 2026",
-    delta: "+8.6% vs forecast",
+    help: "Cancellation Volume total across Website, App, Offline, and OTA. Compared with Cancellation Volume FC. Direct is Website + App + Offline.",
+    delta: `${formatSignedPct(
+      ((CANCEL_VOLUME.total - CANCEL_VOLUME_FC.total) / CANCEL_VOLUME_FC.total) *
+        100
+    )} vs forecast`,
+    higherIsBetter: false,
     tone: "primary" as const,
     icon: "alert" as const,
+    context: [
+      `vs ${formatVolume(CANCEL_VOLUME_FC.total)} forecast`,
+      `Direct ${formatVolume(CANCEL_VOLUME.direct)} · OTA ${formatVolume(CANCEL_VOLUME.ota)}`,
+      `Prior month ${formatVolume(PRIOR_MONTH_VOLUME.cancellations)}`,
+    ],
   },
   {
     id: "avg-cancel-rate",
     label: "Avg cancel rate",
     value: formatPercent(CANCEL_RATE.total),
-    detail: "Blended across channels",
-    delta: "+0.6pp vs forecast",
+    help: "Cancellation Avg % total (all channels). Forecast is Cancellation % Avg FC total. Direct excludes OTA. Market figure is the Home market cancel-rate benchmark.",
+    delta: `${formatSignedPp(CANCEL_RATE.total - CANCEL_RATE_FC.total)} vs forecast`,
+    higherIsBetter: false,
     tone: "accent" as const,
     icon: "down" as const,
+    context: [
+      `vs ${formatPercent(CANCEL_RATE_FC.total)} forecast`,
+      MARKET_CANCEL_RATE != null
+        ? `Direct ${formatPercent(CANCEL_RATE.direct)} · Market ${formatPercent(MARKET_CANCEL_RATE)}`
+        : `Direct ${formatPercent(CANCEL_RATE.direct)}`,
+    ],
   },
   {
     id: "total-relets",
     label: "Total re-lets",
     value: formatVolume(RELET_VOLUME.total),
-    detail: "Successfully re-booked",
-    delta: "-8.2% vs forecast",
+    help: "Relet Volume total. Compared with Re-Let Volume FC. Direct is Website + App + Offline.",
+    delta: `${formatSignedPct(
+      ((RELET_VOLUME.total - RELET_VOLUME_FC.total) / RELET_VOLUME_FC.total) *
+        100
+    )} vs forecast`,
+    higherIsBetter: true,
     tone: "soft" as const,
     icon: "refresh" as const,
-    deltaPositive: false,
+    context: [
+      `vs ${formatVolume(RELET_VOLUME_FC.total)} forecast`,
+      `Direct ${formatVolume(RELET_VOLUME.direct)} · OTA ${formatVolume(RELET_VOLUME.ota)}`,
+      `Prior month ${formatVolume(PRIOR_MONTH_VOLUME.relets)}`,
+    ],
   },
   {
     id: "recovery-rate",
     label: "Recovery rate",
-    value: formatPercent((RELET_VOLUME.total / CANCEL_VOLUME.total) * 100),
-    detail: "Re-lets ÷ cancellations",
-    delta: "+0.4pp vs last month",
+    value: formatPercent(RECOVERY_RATE),
+    help: "Re-lets ÷ cancellations (Relet Volume total ÷ Cancellation Volume total). Forecast uses the matching FC volume totals. Prior month uses the Jun point on the volume trend.",
+    delta: `${formatSignedPp(RECOVERY_RATE - RECOVERY_RATE_FC)} vs forecast`,
+    higherIsBetter: true,
     tone: "light" as const,
     icon: "up" as const,
+    context: [
+      "Re-lets ÷ cancellations",
+      `vs ${formatPercent(RECOVERY_RATE_FC)} forecast`,
+      `Prior month ${formatPercent(RECOVERY_RATE_PRIOR)}`,
+    ],
   },
 ] as const
 
@@ -236,6 +295,7 @@ export const TARGET_CARDS = [
     label: "Cancellation volume",
     value: formatVolume(2699),
     targetLabel: "vs 2,780 target",
+    help: "Cancellation volume against the 2,780 target. Status: On track.",
     actual: 2699,
     target: 2780,
     status: "On track" as const,
@@ -246,6 +306,7 @@ export const TARGET_CARDS = [
     label: "Re-let efficiency",
     value: "93.2%",
     targetLabel: "vs 90.0% target",
+    help: "Re-let efficiency against the 90.0% target. Status: On track.",
     actual: 93.2,
     target: 90,
     status: "On track" as const,
@@ -256,6 +317,7 @@ export const TARGET_CARDS = [
     label: "Direct rollup value",
     value: "£141.20",
     targetLabel: "vs £135.00 target",
+    help: "Direct rollup value (Website + App + Offline) against the £135.00 target. Status: On track.",
     actual: 141.2,
     target: 135,
     status: "On track" as const,
@@ -268,7 +330,11 @@ export const VOLUME_TREND = [
   { month: "Mar", cancellations: 1050, relets: 1035 },
   { month: "Apr", cancellations: 1010, relets: 990 },
   { month: "May", cancellations: 1180, relets: 1170 },
-  { month: "Jun", cancellations: 1120, relets: 1110 },
+  {
+    month: "Jun",
+    cancellations: PRIOR_MONTH_VOLUME.cancellations,
+    relets: PRIOR_MONTH_VOLUME.relets,
+  },
   { month: "Jul", cancellations: CANCEL_VOLUME.total, relets: RELET_VOLUME.total },
 ]
 
@@ -291,14 +357,36 @@ export const WEEKLY_CANCEL_RELET = [
   { day: "Sun", cancel: 44, relet: 60 },
 ]
 
+export const VOLUME_TREND_HELP =
+  "Cancellations vs re-lets. Feb–Jul 2026. Jul uses Cancellation Volume total and Relet Volume total."
+
 export const RELET_RATE_STAT = {
   label: "Re-let % avg",
   value: "63.5%",
   unit: "Rate",
   delta: "+2.3%",
   deltaLabel: "vs prev. month",
+  help: "Re-let % Avg. Change vs prev. month.",
   bars: [38, 44, 52, 61, 68, 74],
 }
+
+export const CHANNEL_MIX_HELP =
+  "Share of bookings by channel. Direct (A+B+C) is Website + App + Offline."
+
+export const CANCEL_VS_RELET_HELP =
+  "Cancellation vs re-let by day of week."
+
+export const CANCEL_RATE_BY_CHANNEL_HELP =
+  "Cancellation Avg % by channel. Actual vs forecast % (Cancellation % Avg FC)."
+
+export const RELET_VOLUME_VS_FORECAST_HELP =
+  "Relet Volume vs Re-Let Volume FC by channel. Jul 2026."
+
+export const AVG_RELET_VALUE_HELP =
+  "Re-Let Value Avg (£). Bar width uses Re-let % Avg for that channel. Units are Relet Volume."
+
+export const METRICS_SUMMARY_HELP =
+  "All channels · Actual and forecast · Jul 2026. Direct is Website + App + Offline. Total is Direct + OTA."
 
 function round1(n: number) {
   return Math.round(n * 10) / 10

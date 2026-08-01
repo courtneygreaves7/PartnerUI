@@ -13,7 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { ActiveFilters } from "@/lib/chart-data"
+import {
+  BEDROOM_OPTIONS,
+  REGION_OPTIONS,
+  type ActiveFilters,
+} from "@/lib/chart-data"
 import { downloadInsightsPitchDeck } from "@/lib/insights-pitch-deck"
 import { loadMapRegions, type MapRegion } from "@/lib/insights-map-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
@@ -49,6 +53,8 @@ type FilterSidebarProps = {
 export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRun }: FilterSidebarProps) {
   const [brand, setBrand] = useState(filters.brand)
   const [county, setCounty] = useState(filters.county)
+  const [region, setRegion] = useState(filters.region)
+  const [bedrooms, setBedrooms] = useState(filters.bedrooms)
   const [dateRange, setDateRange] = useState(filters.dateRange)
   const [year, setYear] = useState(filters.year)
   const [month, setMonth] = useState(filters.month)
@@ -61,6 +67,8 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
   useEffect(() => {
     setBrand(filters.brand)
     setCounty(filters.county)
+    setRegion(filters.region)
+    setBedrooms(filters.bedrooms)
     setDateRange(filters.dateRange)
     setYear(filters.year)
     setMonth(filters.month)
@@ -79,6 +87,8 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
       partner: PARTNER_BRANDING.partnerId,
       brand,
       county,
+      region,
+      bedrooms,
       dateRange,
       year,
       month,
@@ -110,7 +120,7 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
         <div>
           <h2 className="text-sm font-semibold">Filters</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Refine metrics by brand and period, then update the report.
+            Refine metrics by brand, region, bedrooms, and period, then update the report.
           </p>
         </div>
 
@@ -130,6 +140,38 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
             </Select>
           </Field>
         ) : null}
+
+        <Field>
+          <Label htmlFor="region-filter">Region</Label>
+          <Select value={region} onValueChange={setRegion}>
+            <SelectTrigger id="region-filter">
+              <SelectValue placeholder="All regions" />
+            </SelectTrigger>
+            <SelectContent>
+              {REGION_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field>
+          <Label htmlFor="bedrooms-filter">No. of bedrooms</Label>
+          <Select value={bedrooms} onValueChange={setBedrooms}>
+            <SelectTrigger id="bedrooms-filter">
+              <SelectValue placeholder="All bedrooms" />
+            </SelectTrigger>
+            <SelectContent>
+              {BEDROOM_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
 
         {showCounty ? (
           <Field>

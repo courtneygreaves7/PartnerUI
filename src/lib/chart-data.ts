@@ -17,6 +17,8 @@ export type ActiveFilters = {
   partner: string
   brand: string
   county: string
+  region: string
+  bedrooms: string
   dateRange: string
   year: string
   month: string
@@ -28,12 +30,37 @@ export const DEFAULT_FILTERS: ActiveFilters = {
   partner: "partner-a",
   brand: "all-brands",
   county: "all-counties",
+  region: "all-regions",
+  bedrooms: "all-bedrooms",
   dateRange: "year-to-month-end",
   year: "2026",
   month: "June",
   metric: "sales",
   sortBy: "revenue-desc",
 }
+
+export const REGION_OPTIONS = [
+  { value: "all-regions", label: "All regions" },
+  { value: "south-west", label: "South West" },
+  { value: "south-east", label: "South East" },
+  { value: "wales", label: "Wales" },
+  { value: "scotland", label: "Scotland" },
+  { value: "lake-district", label: "Lake District" },
+  { value: "yorkshire", label: "Yorkshire" },
+  { value: "east-of-england", label: "East of England" },
+  { value: "midlands", label: "Midlands" },
+  { value: "north-west", label: "North West" },
+  { value: "north-east", label: "North East" },
+] as const
+
+export const BEDROOM_OPTIONS = [
+  { value: "all-bedrooms", label: "All bedrooms" },
+  { value: "1", label: "1 bedroom" },
+  { value: "2", label: "2 bedrooms" },
+  { value: "3", label: "3 bedrooms" },
+  { value: "4", label: "4 bedrooms" },
+  { value: "5-plus", label: "5+ bedrooms" },
+] as const
 
 export function formatFilterContext(filters: ActiveFilters) {
   const partner =
@@ -53,14 +80,30 @@ export function formatFilterContext(filters: ActiveFilters) {
       ? `YTD to ${filters.month} ${filters.year}`
       : `${filters.month} ${filters.year}`
 
+  const parts = [partner, brand]
+
+  const region =
+    filters.region && filters.region !== "all-regions"
+      ? (REGION_OPTIONS.find((option) => option.value === filters.region)?.label ??
+        filters.region.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
+      : null
+  if (region) parts.push(region)
+
   const county =
     filters.county && filters.county !== "all-counties"
       ? filters.county.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
       : null
+  if (county) parts.push(county)
 
-  return county
-    ? `${partner} · ${brand} · ${county} · ${range}`
-    : `${partner} · ${brand} · ${range}`
+  const bedrooms =
+    filters.bedrooms && filters.bedrooms !== "all-bedrooms"
+      ? (BEDROOM_OPTIONS.find((option) => option.value === filters.bedrooms)?.label ??
+        filters.bedrooms)
+      : null
+  if (bedrooms) parts.push(bedrooms)
+
+  parts.push(range)
+  return parts.join(" · ")
 }
 
 // Deterministic noise seeded by a string key
