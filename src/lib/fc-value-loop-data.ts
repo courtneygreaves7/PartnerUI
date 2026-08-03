@@ -436,7 +436,7 @@ export function getFcLoopOpportunities(): FcLoopOpportunity[] {
     const avg = averageMetrics(rows)!
     const bedroom = HEAT_BEDROOM_BANDS.find((b) => b.id === avg.bedroom)?.label ?? avg.bedroom
     const departure = HEAT_DEPARTURE_MONTHS.find((d) => d.id === avg.departure)?.label ?? avg.departure
-    return { key, bedroom, departure, ...avg }
+    return { ...avg, key, bedroom, departure }
   })
 
   const leak = [...aggregates].sort((a, b) => b.cancel - b.relet - (a.cancel - a.relet))[0]
