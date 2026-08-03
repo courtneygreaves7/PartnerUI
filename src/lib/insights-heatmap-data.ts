@@ -130,15 +130,15 @@ export const RELET_HEAT_CELLS = buildCube({
 export const HEAT_METRICS: Record<HeatMetricId, HeatMetricConfig> = {
   attachment: {
     id: "attachment",
-    label: "Attachment",
+    label: "CAL attachment",
     unit: "%",
     higherIsBetter: true,
-    help: "Attachment rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: attached bookings ÷ bookings in each cell.",
+    help: "CAL attachment rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: attached bookings ÷ bookings in each cell.",
     cells: ATTACHMENT_HEAT_CELLS,
   },
   cancellation: {
     id: "cancellation",
-    label: "Cancellation rate",
+    label: "Cancel rate",
     unit: "%",
     higherIsBetter: false,
     help: "Cancellation rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: cancellations ÷ bookings in each cell.",
@@ -146,10 +146,10 @@ export const HEAT_METRICS: Record<HeatMetricId, HeatMetricConfig> = {
   },
   relet: {
     id: "relet",
-    label: "Re-let rate",
+    label: "Relet rate",
     unit: "%",
     higherIsBetter: true,
-    help: "Re-let rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: re-lets ÷ cancellations in each cell.",
+    help: "Relet rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: relets ÷ cancellations in each cell.",
     cells: RELET_HEAT_CELLS,
   },
 }

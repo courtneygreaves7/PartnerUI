@@ -1119,8 +1119,8 @@ export function CancellationsReletsDashboard() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <InsightsMetricHeatmap metricId="cancellation" eyebrow="Cancellations" />
-        <InsightsMetricHeatmap metricId="relet" eyebrow="Re-lets" />
+        <InsightsMetricHeatmap metricId="cancellation" eyebrow="Cancel rate" />
+        <InsightsMetricHeatmap metricId="relet" eyebrow="Relet rate" />
       </div>
     </div>
   )

@@ -190,6 +190,7 @@ function App() {
   const [insightsProduct, setInsightsProduct] = useState<InsightsProductId>("cal")
   const [insightsView, setInsightsView] = useState<InsightsView>("detail")
   const [insightsScrollTarget, setInsightsScrollTarget] = useState<string | null>(null)
+  const [aiPendingPrompt, setAiPendingPrompt] = useState<string | null>(null)
   const mainScrollRef = useRef<HTMLElement>(null)
 
   function handleLogout() {
@@ -438,31 +439,17 @@ function App() {
                       ? "overflow-hidden"
                       : activeSection === "ai-coworker"
                         ? "overflow-hidden px-6 py-5 xl:px-10 xl:py-6"
-                        : "overflow-y-auto px-10 py-10 xl:px-16 xl:py-14"
+                        : activeSection === "insights" && insightsView === "detail"
+                          ? "overflow-y-auto py-10 xl:py-14"
+                          : "overflow-y-auto px-10 py-10 xl:px-16 xl:py-14"
                   )}
                 >
                   {activeSection === "insights" && insightsView === "detail" ? (
-                    <div className="mb-10 flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h1 className="text-[22px] font-semibold tracking-tight">Insights</h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Detailed Pikl&apos;d Stays performance for {PARTNER_BRANDING.name}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 gap-1.5"
-                          onClick={() => setInsightsView("map")}
-                        >
-                          <Map className="size-3.5" />
-                          Map view
-                        </Button>
-                        {SHOW_INSIGHTS_CONTENT ? (
-                          <FilterContextPill filters={activeFilters} />
-                        ) : null}
-                      </div>
+                    <div className="mb-8 px-10 xl:px-16">
+                      <h1 className="text-[22px] font-semibold tracking-tight">Insights</h1>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Detailed Pikl&apos;d Stays performance for {PARTNER_BRANDING.name}
+                      </p>
                     </div>
                   ) : null}
 
@@ -475,7 +462,11 @@ function App() {
                       runId={reportingRunId}
                     />
                   ) : activeSection === "ai-coworker" ? (
-                    <AiCoworkerPage partnerName={PARTNER_BRANDING.userDisplayName} />
+                    <AiCoworkerPage
+                      partnerName={PARTNER_BRANDING.userDisplayName}
+                      pendingPrompt={aiPendingPrompt}
+                      onPendingPromptConsumed={() => setAiPendingPrompt(null)}
+                    />
                   ) : activeSection === "support" ? (
                     <SupportPage />
                   ) : activeSection === "admin" ? (
@@ -494,18 +485,49 @@ function App() {
                   ) : SHOW_INSIGHTS_CONTENT ? (
                     <SykesPartnerDashboardPage filters={activeFilters} />
                   ) : (
-                    <div className="space-y-8">
-                      <InsightsTopCards />
-                      <InsightsProductTabs value={insightsProduct} onChange={setInsightsProduct} />
-                      {insightsProduct === "cal" ? (
-                        <InsightsCalPanel />
-                      ) : insightsProduct === "ddl" ? (
-                        <InsightsDdlPanel />
-                      ) : insightsProduct === "occupancy" ? (
-                        <InsightsOccupancyPanel />
-                      ) : (
-                        <InsightsContributionPanel filters={activeFilters} />
-                      )}
+                    <div className="space-y-10">
+                      <div className="px-10 xl:px-16">
+                        <InsightsTopCards />
+                      </div>
+                      <div className="sticky top-0 z-20 border-b border-border/50 bg-[var(--panel-bg)]">
+                        <div className="flex w-full items-center gap-3 px-10 py-3 xl:px-16">
+                          <div className="min-w-0 flex-1">
+                            <InsightsProductTabs
+                              value={insightsProduct}
+                              onChange={setInsightsProduct}
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 shrink-0 gap-1.5"
+                            onClick={() => setInsightsView("map")}
+                          >
+                            <Map className="size-3.5" />
+                            Map view
+                          </Button>
+                          {SHOW_INSIGHTS_CONTENT ? (
+                            <FilterContextPill filters={activeFilters} />
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="px-10 xl:px-16">
+                        {insightsProduct === "cal" ? (
+                          <InsightsCalPanel
+                            onOpenRelets={() => setInsightsProduct("performance")}
+                            onAskAi={(prompt) => {
+                              setAiPendingPrompt(prompt)
+                              setActiveSection("ai-coworker")
+                            }}
+                          />
+                        ) : insightsProduct === "ddl" ? (
+                          <InsightsDdlPanel />
+                        ) : insightsProduct === "occupancy" ? (
+                          <InsightsOccupancyPanel />
+                        ) : (
+                          <InsightsContributionPanel filters={activeFilters} />
+                        )}
+                      </div>
                     </div>
                   )}
                 </section>

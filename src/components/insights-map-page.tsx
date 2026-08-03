@@ -147,6 +147,8 @@ function MapRegionCalloutCard({
     { label: "CAL take-up", value: formatMapMetric(stats.calTakeUp, "calTakeUp") },
     { label: "With CAL", value: `${stats.withCal.toLocaleString("en-GB")} · ${stats.withCalPct.toFixed(1)}%` },
     { label: "Cancel rate", value: formatMapMetric(stats.cancellationRate, "cancellationRate") },
+    { label: "Re-let rate", value: formatMapMetric(stats.reletRate, "reletRate") },
+    { label: "Recovery rate", value: formatMapMetric(stats.recoveryRate, "recoveryRate") },
   ]
 
   return (
@@ -276,6 +278,16 @@ function buildStatRows(
       label: "Cancellation rate",
       value: formatMapMetric(stats.cancellationRate, "cancellationRate"),
       icon: Ban,
+    },
+    {
+      label: "Re-let rate",
+      value: formatMapMetric(stats.reletRate, "reletRate"),
+      icon: TrendingUp,
+    },
+    {
+      label: "Recovery rate",
+      value: formatMapMetric(stats.recoveryRate, "recoveryRate"),
+      icon: PoundSterling,
     }
   )
 

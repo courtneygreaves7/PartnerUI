@@ -188,12 +188,66 @@ export const METRIC_HELP: Record<string, string> = {
     "Partner occupancy compared with the market by bedroom count. Calculation: days booked ÷ total days available within each bedroom band. Owner bookings are not in the feed.",
   "Occupancy method":
     "Requires full booking data. Owner bookings are not available, so occupancy is days booked ÷ total days available.",
+  "How Flexible Cancellation pays back":
+    "This is how you run the book for more revenue: convert guests onto cover, earn product margin, manage cancels, and re-let so cancelled holidays still pay.",
+  "How Flexible Cancellation drives max revenue":
+    "This is how you run the book for more revenue: convert guests onto cover, earn product margin, manage cancels, and re-let so cancelled holidays still pay. Not an add-on — the loop that keeps top-line moving.",
+  "FC value loop":
+    "This is how you run the book for more revenue: convert guests onto cover, earn product margin, manage cancels, and re-let so cancelled holidays still pay.",
+  "FC sales":
+    "Share of bookings where the guest bought Flexible Cancellation — conversion onto cover, the start of the revenue loop. Calculation: Flexible Cancellation bookings ÷ all bookings.",
+  "Cover take-up":
+    "Share of bookings where the guest bought Flexible Cancellation — conversion onto cover, the start of the revenue loop. Calculation: Flexible Cancellation bookings ÷ all bookings.",
+  "Cancel rate":
+    "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next.",
+  "Guests cancelled":
+    "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next.",
+  "Re-let rate":
+    "Share of cancelled stays that were re-let to another guest. This is how cancelled holidays turn back into revenue — and why the product is operational, not optional. Calculation: re-lets ÷ cancellations.",
+  "Recovery rate":
+    "Money from re-lets versus the cancelled booking value. Over 100% means you earned more than you lost. Use history by region to spot where recovery usually holds.",
+  "Re-let":
+    "Share of cancelled stays that were re-let to another guest. This is how cancelled holidays turn back into revenue — and why the product is operational, not optional. Calculation: re-lets ÷ cancellations.",
+  "Filled again":
+    "Share of cancelled stays that were re-let to another guest. This is how cancelled holidays turn back into revenue — and why the product is operational, not optional. Calculation: re-lets ÷ cancellations.",
+  "Incremental £":
+    "Extra revenue from re-letting cancelled Flexible Cancellation stays — commercial proof the loop is a necessity for max revenue.",
+  "Extra revenue":
+    "Extra revenue from re-letting cancelled Flexible Cancellation stays — commercial proof the loop is a necessity for max revenue.",
+  "Loop by booking type":
+    "Each card is a booking type. The top bar shows relet vs not relet. Below: ATT attachment, CXL cancel rate, REC recovered %.",
+  "By bedrooms and travel dates":
+    "Each card is a booking type. The top bar shows relet vs not relet. Below: ATT attachment, CXL cancel rate, REC recovered %.",
+  Opportunities:
+    "Where to run the business harder for max revenue: weak re-let recovery, under-sold cover where demand is strong, and proof points that show the loop already pays.",
+  "Where to look next":
+    "Where to run the business harder for max revenue: weak re-let recovery, under-sold cover where demand is strong, and proof points that show the loop already pays.",
+  "Where to run the business":
+    "Where to run the business harder for max revenue: weak re-let recovery, under-sold cover where demand is strong, and proof points that show the loop already pays.",
+  "Split re-let proof":
+    "A cancelled holiday re-let to more than one shorter booking, bringing in more money than the original stay — proof the ops loop grows revenue.",
+  "Latest re-lets":
+    "The most recent completed re-lets from live cancellations. Each row shows recovered revenue versus the cancelled booking.",
+  "Example: one cancel, two new bookings":
+    "A cancelled holiday re-let to more than one shorter booking, bringing in more money than the original stay.",
+  "Example: one cancel, two re-lets":
+    "A cancelled holiday re-let to more than one shorter booking, bringing in more money than the original stay.",
+  "Recovered / cancelled":
+    "Money from the re-let versus the cancelled booking. Over 100% means you earned more than you lost.",
+  "Value kept":
+    "Money from the re-let versus the cancelled booking. Over 100% means you earned more than you lost.",
   "Attachment heatmap":
-    "Attachment rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: attached bookings ÷ bookings in each cell.",
+    "CAL attachment rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: attached bookings ÷ bookings in each cell.",
+  "CAL attachment heatmap":
+    "CAL attachment rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: attached bookings ÷ bookings in each cell.",
   "Cancellation rate heatmap":
     "Cancellation rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: cancellations ÷ bookings in each cell.",
+  "Cancel rate heatmap":
+    "Cancellation rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: cancellations ÷ bookings in each cell.",
   "Re-let rate heatmap":
-    "Re-let rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: re-lets ÷ cancellations in each cell.",
+    "Relet rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: relets ÷ cancellations in each cell.",
+  "Relet rate heatmap":
+    "Relet rate across lead time, bedrooms, and departure. Swap row and column axes, and filter the third dimension. Calculation: relets ÷ cancellations in each cell.",
 }
 
 export function getMetricHelp(label: string): string {

@@ -1,4 +1,11 @@
-export type MapMetricId = "bookings" | "abv" | "calTakeUp" | "gwp" | "cancellationRate"
+export type MapMetricId =
+  | "bookings"
+  | "abv"
+  | "calTakeUp"
+  | "gwp"
+  | "cancellationRate"
+  | "reletRate"
+  | "recoveryRate"
 
 import {
   adjustAverageCurrency,
@@ -21,6 +28,10 @@ export type MapRegion = {
   calTakeUp: number
   gwp: number
   cancellationRate: number
+  /** Share of cancelled stays re-let (derived mock when absent from geo JSON). */
+  reletRate: number
+  /** Recovered value as % of cancelled booking value (derived mock when absent). */
+  recoveryRate: number
 }
 
 export const MAP_METRICS: Array<{ id: MapMetricId; label: string }> = [
@@ -29,6 +40,8 @@ export const MAP_METRICS: Array<{ id: MapMetricId; label: string }> = [
   { id: "calTakeUp", label: "CAL take-up" },
   { id: "gwp", label: "GWP" },
   { id: "cancellationRate", label: "Cancellation rate" },
+  { id: "reletRate", label: "Re-let rate" },
+  { id: "recoveryRate", label: "Recovery rate" },
 ]
 
 /** SVG viewBox for the projected UK counties map (see public/uk-counties-map.json). */
@@ -36,11 +49,34 @@ export const MAP_VIEWBOX = "0 0 800 1000"
 
 let cachedRegions: MapRegion[] | null = null
 
+type RawMapRegion = Omit<MapRegion, "reletRate" | "recoveryRate"> & {
+  reletRate?: number
+  recoveryRate?: number
+}
+
+function enrichRegionRecovery(region: RawMapRegion): MapRegion {
+  const seed = hashId(region.id)
+  const reletRate =
+    region.reletRate ??
+    Math.round(
+      Math.min(
+        92,
+        Math.max(28, 56 + (seed % 29) - region.cancellationRate * 0.9 + (seed % 7) * 0.3)
+      ) * 10
+    ) / 10
+  const recoveryRate =
+    region.recoveryRate ??
+    Math.round(Math.min(128, Math.max(62, reletRate * 1.2 + (seed % 18) - 4)) * 10) / 10
+
+  return { ...region, reletRate, recoveryRate }
+}
+
 export async function loadMapRegions(): Promise<MapRegion[]> {
   if (cachedRegions) return cachedRegions
   const response = await fetch("/uk-counties-map.json")
   if (!response.ok) throw new Error("Failed to load UK counties map data")
-  cachedRegions = (await response.json()) as MapRegion[]
+  const raw = (await response.json()) as RawMapRegion[]
+  cachedRegions = raw.map(enrichRegionRecovery)
   return cachedRegions
 }
 
@@ -109,6 +145,8 @@ export function scaleRegionForFilters(
     gwp: scaleCurrencyValue(region.gwp, filters.brand),
     calTakeUp: adjustPercent(region.calTakeUp, filters.brand),
     cancellationRate: adjustPercent(region.cancellationRate, filters.brand),
+    reletRate: adjustPercent(region.reletRate, filters.brand),
+    recoveryRate: adjustPercent(region.recoveryRate, filters.brand),
   }
 }
 
@@ -127,6 +165,8 @@ export type RegionDetailStats = {
   gwp: number
   calTakeUp: number
   cancellationRate: number
+  reletRate: number
+  recoveryRate: number
 }
 
 function hashId(id: string): number {
@@ -162,6 +202,8 @@ export function getRegionDetailStats(region: MapRegion, brand = "all-brands"): R
     gwp: region.gwp,
     calTakeUp: region.calTakeUp,
     cancellationRate: region.cancellationRate,
+    reletRate: region.reletRate,
+    recoveryRate: region.recoveryRate,
   }
 }
 
@@ -192,6 +234,8 @@ export function getAggregateDetailStats(
       abv: 0,
       calTakeUp: 0,
       cancellationRate: 0,
+      reletRate: 0,
+      recoveryRate: 0,
     }
   )
 
@@ -207,6 +251,14 @@ export function getAggregateDetailStats(
     regions.length > 0
       ? Math.round((regions.reduce((sum, r) => sum + r.cancellationRate, 0) / regions.length) * 10) /
         10
+      : 0
+  const avgRelet =
+    regions.length > 0
+      ? Math.round((regions.reduce((sum, r) => sum + r.reletRate, 0) / regions.length) * 10) / 10
+      : 0
+  const avgRecovery =
+    regions.length > 0
+      ? Math.round((regions.reduce((sum, r) => sum + r.recoveryRate, 0) / regions.length) * 10) / 10
       : 0
 
   return {
@@ -224,6 +276,8 @@ export function getAggregateDetailStats(
     gwp: totals.gwp,
     calTakeUp: avgCal,
     cancellationRate: avgCancel,
+    reletRate: avgRelet,
+    recoveryRate: avgRecovery,
   }
 }
 
@@ -298,5 +352,7 @@ export function scaleRegionByTownShare(region: MapRegion, share: number): MapReg
     abv: region.abv,
     calTakeUp: region.calTakeUp,
     cancellationRate: region.cancellationRate,
+    reletRate: region.reletRate,
+    recoveryRate: region.recoveryRate,
   }
 }

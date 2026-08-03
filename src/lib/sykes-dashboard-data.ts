@@ -868,6 +868,122 @@ export const EVENTS_BY_DATE_DECLINING_DATA: MonthlyTripleSeries[] = [
 
 export const DEPARTURES_BY_DATE_DATA = EVENTS_BY_DATE_SUMMER_DATA
 
+/**
+ * Rolling departure-window series for AI period reports (Jun 2025 – Jun 2026).
+ * Volumes follow the same seasonal shape as DEPARTURES_BY_DATE_DATA; cancel rate
+ * eases slightly so trend questions have a grounded answer.
+ */
+export type PeriodSalesCancelPoint = {
+  label: string
+  month: string
+  year: number
+  bookings: number
+  cancellations: number
+  relets: number
+  cancelRate: number
+  reletRate: number
+}
+
+const DEPARTURE_VOLUME_BY_MONTH = Object.fromEntries(
+  DEPARTURES_BY_DATE_DATA.map((row) => [row.month, row.bookings])
+) as Record<string, number>
+
+const PERIOD_MONTH_KEYS = [
+  { month: "Jun", year: 2025 },
+  { month: "Jul", year: 2025 },
+  { month: "Aug", year: 2025 },
+  { month: "Sep", year: 2025 },
+  { month: "Oct", year: 2025 },
+  { month: "Nov", year: 2025 },
+  { month: "Dec", year: 2025 },
+  { month: "Jan", year: 2026 },
+  { month: "Feb", year: 2026 },
+  { month: "Mar", year: 2026 },
+  { month: "Apr", year: 2026 },
+  { month: "May", year: 2026 },
+  { month: "Jun", year: 2026 },
+] as const
+
+export const SALES_VS_CANCEL_PERIOD: PeriodSalesCancelPoint[] = PERIOD_MONTH_KEYS.map(
+  ({ month, year }, index) => {
+    const baseBookings = DEPARTURE_VOLUME_BY_MONTH[month] ?? 600
+    // Mild year-on-year growth into 2026 peak season
+    const growth = year === 2026 ? 1.04 : 1
+    const bookings = Math.round(baseBookings * growth)
+    // Cancel rate improves ~0.8pp across the window (10.2% → 9.4%)
+    const cancelRate = Math.round((10.2 - (index / (PERIOD_MONTH_KEYS.length - 1)) * 0.8) * 10) / 10
+    const cancellations = Math.round((bookings * cancelRate) / 100)
+    // Re-let rate edges up with demand recovery into summer
+    const reletRate = Math.round((58 + (index / (PERIOD_MONTH_KEYS.length - 1)) * 4) * 10) / 10
+    const relets = Math.round((cancellations * reletRate) / 100)
+    return {
+      label: `${month} ${year}`,
+      month,
+      year,
+      bookings,
+      cancellations,
+      relets,
+      cancelRate,
+      reletRate,
+    }
+  }
+)
+
+export function summariseSalesCancelPeriod(rows: PeriodSalesCancelPoint[] = SALES_VS_CANCEL_PERIOD) {
+  const sum = (key: "bookings" | "cancellations" | "relets") =>
+    rows.reduce((total, row) => total + row[key], 0)
+  const bookings = sum("bookings")
+  const cancellations = sum("cancellations")
+  const relets = sum("relets")
+  const cancelRate =
+    bookings > 0 ? Math.round((cancellations / bookings) * 1000) / 10 : 0
+  const reletRate =
+    cancellations > 0 ? Math.round((relets / cancellations) * 1000) / 10 : 0
+
+  const midpoint = Math.ceil(rows.length / 2)
+  const firstHalf = rows.slice(0, midpoint)
+  const secondHalf = rows.slice(midpoint)
+  const halfRate = (half: PeriodSalesCancelPoint[]) => {
+    const b = half.reduce((t, r) => t + r.bookings, 0)
+    const c = half.reduce((t, r) => t + r.cancellations, 0)
+    return b > 0 ? Math.round((c / b) * 1000) / 10 : 0
+  }
+  const earlyCancelRate = halfRate(firstHalf)
+  const lateCancelRate = halfRate(secondHalf)
+  const cancelRateDelta = Math.round((lateCancelRate - earlyCancelRate) * 10) / 10
+
+  const first = rows[0]!
+  const last = rows[rows.length - 1]!
+  const peak = [...rows].sort((a, b) => b.bookings - a.bookings)[0]!
+  const softestCancel = [...rows].sort((a, b) => a.cancelRate - b.cancelRate)[0]!
+  const highestCancel = [...rows].sort((a, b) => b.cancelRate - a.cancelRate)[0]!
+
+  return {
+    fromLabel: first.label,
+    toLabel: last.label,
+    bookings,
+    cancellations,
+    relets,
+    cancelRate,
+    reletRate,
+    earlyCancelRate,
+    lateCancelRate,
+    cancelRateDelta,
+    cancelTrend:
+      cancelRateDelta <= -0.3
+        ? ("improving" as const)
+        : cancelRateDelta >= 0.3
+          ? ("worsening" as const)
+          : ("stable" as const),
+    first,
+    last,
+    peak,
+    softestCancel,
+    highestCancel,
+    rows,
+  }
+}
+
 /** FC bookings by month of departure (same series as phasing “based on date of departure”). */
 export const FC_BOOKINGS_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => ({
   month: row.month,
@@ -882,6 +998,69 @@ export const FC_CANCEL_RATE_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => 
       ? Math.round((row.cancellations / row.bookings) * 1000) / 10
       : 0,
 }))
+
+/**
+ * FC value loop — sales → cancel → re-let → incremental £.
+ * Uses figures already shown elsewhere on Insights so Stage B invents no new truth.
+ */
+const FC_LOOP_CANCEL_AVG =
+  FC_CANCEL_RATE_BY_DEPARTURE.length > 0
+    ? Math.round(
+        (FC_CANCEL_RATE_BY_DEPARTURE.reduce((sum, row) => sum + row.value, 0) /
+          FC_CANCEL_RATE_BY_DEPARTURE.length) *
+          10
+      ) / 10
+    : 0
+
+const FC_LOOP_ATTACHMENT =
+  PARTNER_REVENUE.drivers.find((d) => d.label === "Attachment (average)")?.value ?? "14%"
+
+const FC_LOOP_INCREMENTAL =
+  PARTNER_REVENUE.drivers.find((d) => d.label === "Incremental cancellations & relets")
+    ?.value ?? "£100k"
+
+const FC_LOOP_RELET =
+  MARKET_COMPARISON_VALUES.find((d) => d.metric === "Relet rate")?.value ?? "60%"
+
+export const FC_VALUE_LOOP = {
+  title: "How Flexible Cancellation drives max revenue",
+  story:
+    "This is how you run the book for more revenue: convert more guests onto cover, earn product margin, manage the cancels that follow, and re-let so cancelled holidays still pay. Not an add-on — the loop that keeps top-line moving.",
+  steps: [
+    {
+      id: "sales",
+      label: "Cover take-up",
+      value: FC_LOOP_ATTACHMENT,
+      hint: "Conversion onto Flexible Cancellation",
+      goodWhen: "higher" as const,
+      help: "Share of bookings where the guest bought Flexible Cancellation. This is booking conversion onto cover — the start of the revenue loop. Calculation: Flexible Cancellation bookings ÷ all bookings.",
+    },
+    {
+      id: "cancel",
+      label: "Guests cancelled",
+      value: `${FC_LOOP_CANCEL_AVG}%`,
+      hint: "Expected when guests have cover",
+      goodWhen: "context" as const,
+      help: "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next. Calculation: cancellations ÷ Flexible Cancellation bookings.",
+    },
+    {
+      id: "relet",
+      label: "Re-let",
+      value: FC_LOOP_RELET,
+      hint: "Cancelled stays filled again",
+      goodWhen: "higher" as const,
+      help: "Share of cancelled stays that were re-let to another guest. This is how cancelled holidays turn back into revenue — and why the product is operational, not optional. Calculation: re-lets ÷ cancellations.",
+    },
+    {
+      id: "incremental",
+      label: "Extra revenue",
+      value: FC_LOOP_INCREMENTAL,
+      hint: "Proof the loop is working",
+      goodWhen: "higher" as const,
+      help: "Extra revenue from re-letting cancelled Flexible Cancellation stays. The commercial proof that cover + ops is a necessity for max revenue, not an ancillary add-on.",
+    },
+  ],
+} as const
 
 export const TRIPLE_SERIES_COLORS = {
   bookings: "#3f3f46",

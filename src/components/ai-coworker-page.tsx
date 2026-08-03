@@ -1,41 +1,35 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import {
   ArrowUp,
-  BarChart3,
-  Building2,
-  LineChart,
+  Lightbulb,
   Plus,
-  Shield,
+  RefreshCcw,
   Sparkles,
+  TrendingUp,
+  Waypoints,
   type LucideIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
+  AI_COWORKER_EXAMPLE_PROMPTS,
   buildAiCoworkerReply,
   type AiChatMessage,
 } from "@/lib/ai-coworker-knowledge"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 import { cn } from "@/lib/utils"
 
-const EXAMPLE_PROMPTS: Array<{ prompt: string; icon: LucideIcon }> = [
-  {
-    prompt: "Summarise portfolio performance for this month",
-    icon: BarChart3,
-  },
-  {
-    prompt: "How is Flexible Cancellation doing across channels?",
-    icon: Shield,
-  },
-  {
-    prompt: "Compare Manor Cottages vs Lake Lovers",
-    icon: Building2,
-  },
-  {
-    prompt: "How do we compare to market on cancellations?",
-    icon: LineChart,
-  },
+const EXAMPLE_PROMPT_ICONS: LucideIcon[] = [
+  RefreshCcw,
+  Waypoints,
+  TrendingUp,
+  Lightbulb,
 ]
+
+const EXAMPLE_PROMPTS = AI_COWORKER_EXAMPLE_PROMPTS.map((prompt, index) => ({
+  prompt,
+  icon: EXAMPLE_PROMPT_ICONS[index] ?? Sparkles,
+}))
 
 function timeOfDayGreeting(): string {
   const hour = new Date().getHours()
@@ -44,48 +38,222 @@ function timeOfDayGreeting(): string {
   return "Good evening"
 }
 
-function renderMessageText(text: string) {
-  const blocks = text.split("\n")
-  return blocks.map((line, index) => {
-    if (!line.trim()) {
-      return <div key={index} className="h-2" />
-    }
-
-    if (line.startsWith("### ")) {
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, partIndex) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <p key={index} className="pt-1 text-sm font-semibold text-foreground">
-          {line.slice(4)}
-        </p>
+        <strong key={partIndex} className="font-semibold text-foreground">
+          {part.slice(2, -2)}
+        </strong>
       )
     }
+    return <span key={partIndex}>{part}</span>
+  })
+}
 
-    if (line.startsWith("| ")) {
-      return (
-        <p
-          key={index}
-          className="font-mono text-[12px] leading-relaxed text-muted-foreground"
-        >
-          {line}
-        </p>
-      )
-    }
-
-    const parts = line.split(/(\*\*[^*]+\*\*)/g)
+function renderAskChip(
+  prompt: string,
+  key: string | number,
+  onAsk?: (prompt: string) => void
+) {
+  if (!onAsk) {
     return (
-      <p key={index} className="text-[15px] leading-relaxed text-foreground">
-        {parts.map((part, partIndex) => {
-          if (part.startsWith("**") && part.endsWith("**")) {
-            return (
-              <strong key={partIndex} className="font-semibold text-foreground">
-                {part.slice(2, -2)}
-              </strong>
-            )
-          }
-          return <span key={partIndex}>{part}</span>
-        })}
+      <p key={key} className="text-sm leading-relaxed text-primary">
+        {prompt}
       </p>
     )
-  })
+  }
+
+  return (
+    <button
+      key={key}
+      type="button"
+      onClick={() => onAsk(prompt)}
+      className="flex w-full items-start gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] px-3 py-2 text-left text-sm leading-snug text-primary transition-colors hover:border-primary/35 hover:bg-primary/[0.1]"
+    >
+      <Sparkles className="mt-0.5 size-3.5 shrink-0" />
+      <span>
+        <span className="font-medium">Ask me: </span>
+        {prompt}
+      </span>
+    </button>
+  )
+}
+
+function renderBullet(line: string, key: string | number, compact = false) {
+  return (
+    <div
+      key={key}
+      className={cn(
+        "flex gap-2.5 leading-relaxed",
+        compact ? "text-sm" : "text-[15px]"
+      )}
+    >
+      <span
+        className={cn(
+          "shrink-0 rounded-full bg-primary/70",
+          compact ? "mt-[0.45rem] size-1.5" : "mt-[0.55rem] size-1.5"
+        )}
+      />
+      <p className="min-w-0 text-foreground">{renderInline(line.slice(2))}</p>
+    </div>
+  )
+}
+
+function renderMessageLine(
+  line: string,
+  key: string | number,
+  onAsk?: (prompt: string) => void
+) {
+  if (line.startsWith("## ")) {
+    return (
+      <h2
+        key={key}
+        className="pt-4 text-base font-semibold tracking-tight text-foreground first:pt-0"
+      >
+        {line.slice(3)}
+      </h2>
+    )
+  }
+
+  if (line.startsWith("### ")) {
+    return (
+      <h3
+        key={key}
+        className="pt-3 text-sm font-semibold tracking-tight text-foreground"
+      >
+        {line.slice(4)}
+      </h3>
+    )
+  }
+
+  if (line.startsWith(">>> ")) {
+    return renderAskChip(line.slice(4), key, onAsk)
+  }
+
+  if (line.startsWith("> ")) {
+    return (
+      <div
+        key={key}
+        className="rounded-xl border border-primary/15 bg-primary/[0.04] px-3.5 py-2.5 text-sm leading-relaxed text-foreground"
+      >
+        {renderInline(line.slice(2))}
+      </div>
+    )
+  }
+
+  if (line.startsWith("| ")) {
+    return (
+      <p
+        key={key}
+        className="font-mono text-[12px] leading-relaxed text-muted-foreground"
+      >
+        {line}
+      </p>
+    )
+  }
+
+  const numbered = line.match(/^(\d+)\.\s+(.*)$/)
+  if (numbered) {
+    return (
+      <div
+        key={key}
+        className="flex gap-3 rounded-xl border border-border/60 bg-card/80 px-3.5 py-3 shadow-xs"
+      >
+        <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+          {numbered[1]}
+        </span>
+        <div className="min-w-0 space-y-1 text-sm leading-relaxed text-foreground">
+          {renderInline(numbered[2]!)}
+        </div>
+      </div>
+    )
+  }
+
+  if (line.startsWith("• ") || line.startsWith("- ")) {
+    return renderBullet(line, key)
+  }
+
+  return (
+    <p key={key} className="text-[15px] leading-relaxed text-foreground">
+      {renderInline(line)}
+    </p>
+  )
+}
+
+function renderMessageText(text: string, onAsk?: (prompt: string) => void) {
+  const lines = text.split("\n")
+  const nodes: ReactNode[] = []
+  let index = 0
+
+  while (index < lines.length) {
+    const line = lines[index]!
+
+    if (!line.trim()) {
+      nodes.push(<div key={`gap-${index}`} className="h-2.5" />)
+      index += 1
+      continue
+    }
+
+    // Group #### opportunity headings with following body lines into one card
+    if (line.startsWith("#### ")) {
+      const body: string[] = []
+      let cursor = index + 1
+      while (cursor < lines.length && lines[cursor]!.trim()) {
+        const next = lines[cursor]!
+        if (
+          next.startsWith("## ") ||
+          next.startsWith("### ") ||
+          next.startsWith("#### ")
+        ) {
+          break
+        }
+        body.push(next)
+        cursor += 1
+      }
+
+      nodes.push(
+        <div
+          key={`card-${index}`}
+          className="rounded-xl border border-border/60 bg-card/80 px-3.5 py-3 shadow-xs"
+        >
+          <h4 className="text-[13px] font-semibold text-foreground">
+            {line.slice(5)}
+          </h4>
+          <div className="mt-2 space-y-1.5">
+            {body.map((bodyLine, bodyIndex) => {
+              if (bodyLine.startsWith(">>> ")) {
+                return renderAskChip(
+                  bodyLine.slice(4),
+                  `${index}-b-${bodyIndex}`,
+                  onAsk
+                )
+              }
+              if (bodyLine.startsWith("• ") || bodyLine.startsWith("- ")) {
+                return renderBullet(bodyLine, `${index}-b-${bodyIndex}`, true)
+              }
+              return (
+                <p
+                  key={`${index}-b-${bodyIndex}`}
+                  className="text-sm leading-relaxed text-muted-foreground"
+                >
+                  {renderInline(bodyLine)}
+                </p>
+              )
+            })}
+          </div>
+        </div>
+      )
+      index = cursor
+      continue
+    }
+
+    nodes.push(renderMessageLine(line, index, onAsk))
+    index += 1
+  }
+
+  return nodes
 }
 
 function Composer({
@@ -164,14 +332,20 @@ function Composer({
 
 export function AiCoworkerPage({
   partnerName = PARTNER_BRANDING.userDisplayName,
+  pendingPrompt = null,
+  onPendingPromptConsumed,
 }: {
   partnerName?: string
+  /** When set, auto-sends this prompt once (e.g. from Insights Act links). */
+  pendingPrompt?: string | null
+  onPendingPromptConsumed?: () => void
 }) {
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [input, setInput] = useState("")
   const [isThinking, setIsThinking] = useState(false)
   const [messages, setMessages] = useState<AiChatMessage[]>([])
+  const consumedPromptRef = useRef<string | null>(null)
 
   const hasUserMessage = messages.some((m) => m.role === "user")
 
@@ -187,6 +361,7 @@ export function AiCoworkerPage({
     setMessages([])
     setInput("")
     setIsThinking(false)
+    consumedPromptRef.current = null
     window.setTimeout(() => inputRef.current?.focus(), 50)
   }
 
@@ -213,6 +388,15 @@ export function AiCoworkerPage({
       setIsThinking(false)
     }, 550)
   }
+
+  useEffect(() => {
+    if (!pendingPrompt) return
+    if (consumedPromptRef.current === pendingPrompt) return
+    consumedPromptRef.current = pendingPrompt
+    sendMessage(pendingPrompt)
+    onPendingPromptConsumed?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once per pending prompt
+  }, [pendingPrompt])
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/50 bg-[#f7f9fc] shadow-xs dark:bg-card">
@@ -256,7 +440,8 @@ export function AiCoworkerPage({
               {timeOfDayGreeting()}, {partnerName}
             </h1>
             <p className="mt-1.5 max-w-lg text-center text-sm text-muted-foreground sm:text-base">
-              Ask for a report, comparison or more, I&apos;m here to help.
+              Ask how Flexible Cancellation drives max revenue — conversion, margin, behaviour, and
+              re-lets.
             </p>
 
             <div className="mt-8 w-full max-w-2xl">
@@ -296,7 +481,7 @@ export function AiCoworkerPage({
       ) : (
         <>
           <div ref={listRef} className="relative z-10 min-h-0 flex-1 overflow-y-auto px-5 py-4">
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -310,8 +495,8 @@ export function AiCoworkerPage({
                       <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[#0047b3] text-[9px] font-bold text-primary-foreground">
                         AI
                       </span>
-                      <div className="min-w-0 space-y-0.5 pt-0.5">
-                        {renderMessageText(message.text)}
+                      <div className="min-w-0 max-w-xl space-y-1.5 pt-0.5">
+                        {renderMessageText(message.text, sendMessage)}
                       </div>
                     </div>
                   ) : (

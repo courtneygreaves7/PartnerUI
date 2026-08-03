@@ -1,6 +1,7 @@
 import { useState } from "react"
 import {
   Check,
+  FolderOpen,
   KeyRound,
   Mail,
   RefreshCcw,
@@ -11,6 +12,7 @@ import {
   UserRound,
 } from "lucide-react"
 
+import { SubmittedFilesPanel } from "@/components/submitted-files-panel"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -18,6 +20,8 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 import { cn } from "@/lib/utils"
+
+type AdminTab = "account" | "files"
 
 const PANEL = "rounded-2xl border border-border/60 bg-card p-6 shadow-xs"
 const MONO_LABEL =
@@ -50,6 +54,7 @@ const INITIAL_PROFILE: ProfileForm = {
 const DEMO_BACKUP_CODES = ["8F2K-91LQ", "P3NM-47VX", "Q9WT-2H5C", "M6YR-8BKD"] as const
 
 export function AdminPage() {
+  const [tab, setTab] = useState<AdminTab>("account")
   const [profile, setProfile] = useState<ProfileForm>(INITIAL_PROFILE)
   const [password, setPassword] = useState<PasswordForm>({
     currentPassword: "",
@@ -139,15 +144,51 @@ export function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <p className={MONO_LABEL}>Administration</p>
-        <h1 className="mt-1 text-[22px] font-semibold tracking-tight">Admin</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your {PARTNER_BRANDING.shortName} account details and sign-in settings.
-        </p>
+    <div
+      className={cn(
+        "mx-auto space-y-6",
+        tab === "files" ? "max-w-5xl" : "max-w-3xl"
+      )}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className={MONO_LABEL}>Administration</p>
+          <h1 className="mt-1 text-[22px] font-semibold tracking-tight">Admin</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {tab === "files"
+              ? `View and manage files your team has submitted for ${PARTNER_BRANDING.shortName}.`
+              : `Manage your ${PARTNER_BRANDING.shortName} account details and sign-in settings.`}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5 rounded-full border border-border/70 bg-muted/40 p-1">
+          {(
+            [
+              { id: "account", label: "Account", icon: UserRound },
+              { id: "files", label: "Submitted files", icon: FolderOpen },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
+                tab === item.id
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <item.icon className="size-3.5" />
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {tab === "files" ? <SubmittedFilesPanel /> : null}
+
+      {tab === "account" ? (
+      <>
       <section className={PANEL}>
         <div className="flex items-start gap-3">
           <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -498,6 +539,8 @@ export function AdminPage() {
         Changes apply to your {PARTNER_BRANDING.name} partner login. Contact Pikl support if you
         need help recovering access.
       </p>
+      </>
+      ) : null}
     </div>
   )
 }
