@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   CalendarClock,
   CalendarRange,
+  ChevronRight,
   Clock,
   Coins,
   Download,
@@ -30,6 +31,7 @@ import {
 
 import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
 import { CancellationsReletsDashboard } from "@/components/cancellations-releats-dashboard"
+import { DualDataWidget } from "@/components/dual-data-widget"
 import { FcValueLoopExplore } from "@/components/fc-value-loop-explore"
 import { InsightsMetricHeatmap } from "@/components/insights-metric-heatmap"
 import { OccupancyInsightsDashboard } from "@/components/occupancy-insights-dashboard"
@@ -38,7 +40,6 @@ import {
   MiniBarChart,
   Sparkline,
 } from "@/components/sykes/sykes-visual-primitives"
-import { Button } from "@/components/ui/button"
 import {
   Tooltip,
   TooltipContent,
@@ -57,6 +58,7 @@ import {
   GROSS_BOOKINGS_TREND,
   MARGIN_EARNED_FC_DATA,
   MARKET_COMPARISON_VALUES,
+  PARTNER_IMPACT_HERO,
   PARTNER_REVENUE,
   TOTAL_PRODUCTS_SUMMARY,
   formatAttachmentValuePerPp,
@@ -1502,9 +1504,9 @@ function AttachmentOpportunityCard({
 
 function FcValueLoopScorecard() {
   return (
-    <div className={cn(PANEL, "p-5")}>
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+    <div className={cn(PANEL, "p-5 sm:p-6")}>
+      <div className="flex flex-col gap-1">
+        <div className="min-w-0">
           <p className={MONO_LABEL}>Max revenue loop</p>
           <div className="mt-1 flex items-center gap-1.5">
             <h3 className="text-sm font-semibold text-foreground">{FC_VALUE_LOOP.title}</h3>
@@ -1513,33 +1515,40 @@ function FcValueLoopScorecard() {
               helpText={FC_VALUE_LOOP.story}
             />
           </div>
-          <p className="mt-1 max-w-2xl text-xs text-muted-foreground">{FC_VALUE_LOOP.story}</p>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+            {FC_VALUE_LOOP.story}
+          </p>
         </div>
-        <p className="text-[11px] text-muted-foreground sm:max-w-[15rem] sm:text-right">
-          Conversion · margin · cancels managed · strong re-let
-        </p>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch xl:gap-0">
         {FC_VALUE_LOOP.steps.map((step, index) => (
-          <div
-            key={step.id}
-            className="relative rounded-xl border border-border/70 bg-muted/20 px-4 py-3"
-          >
-            {index < FC_VALUE_LOOP.steps.length - 1 ? (
-              <span
-                className="pointer-events-none absolute top-1/2 -right-2 hidden h-px w-4 -translate-y-1/2 bg-border xl:block"
-                aria-hidden
-              />
-            ) : null}
-            <div className="flex items-center gap-1.5">
-              <p className="text-[13px] leading-snug text-muted-foreground">{step.label}</p>
-              <MeasureHelpButton title={step.label} helpText={step.help} />
+          <div key={step.id} className="flex min-w-0 flex-1 items-stretch">
+            <div className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5">
+              <div className="flex items-center gap-2">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-semibold tabular-nums text-primary-foreground">
+                  {index + 1}
+                </span>
+                <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
+                  {step.label}
+                </p>
+                <MeasureHelpButton title={step.label} helpText={step.help} />
+              </div>
+              <p className="mt-4 text-[28px] font-bold tracking-tight tabular-nums text-foreground">
+                {step.value}
+              </p>
+              <p className="mt-auto pt-3 text-[11px] leading-snug text-muted-foreground">
+                {step.hint}
+              </p>
             </div>
-            <p className="mt-2 text-2xl font-bold tracking-tight tabular-nums text-foreground">
-              {step.value}
-            </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">{step.hint}</p>
+            {index < FC_VALUE_LOOP.steps.length - 1 ? (
+              <div
+                className="hidden w-8 shrink-0 items-center justify-center xl:flex"
+                aria-hidden
+              >
+                <ChevronRight className="size-4 text-border" strokeWidth={2} />
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -2259,7 +2268,7 @@ export function PartnerLandingPage({ onOpenInsights }: { onOpenInsights?: () => 
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-6">
+      <header className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <span className={cn(MONO_LABEL, "block")}>Partner Dashboard</span>
           <h1 className="mt-1.5 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
@@ -2270,12 +2279,23 @@ export function PartnerLandingPage({ onOpenInsights }: { onOpenInsights?: () => 
           </p>
         </div>
 
-        {onOpenInsights ? (
-          <Button onClick={onOpenInsights} className="h-10 shrink-0 gap-2 px-4">
-            <BarChart3 className="size-4" />
-            Open insights
-          </Button>
-        ) : null}
+        <DualDataWidget
+          className="h-auto w-full max-w-xl shrink-0 shadow-xs"
+          primaryTitle="Your impact"
+          helpText={`${PARTNER_IMPACT_HERO.generatedHint}. ${PARTNER_IMPACT_HERO.availableHint}.`}
+          datasetA={{
+            title: PARTNER_IMPACT_HERO.generatedLabel,
+            value: PARTNER_IMPACT_HERO.generated,
+            clarification: "Margin, conversion uplift, and re-let benefit",
+            valueClassName: "text-[28px] leading-none text-primary",
+          }}
+          datasetB={{
+            title: PARTNER_IMPACT_HERO.availableLabel,
+            value: PARTNER_IMPACT_HERO.available,
+            clarification: "If Flexible Cancellation attachment rises 1pp",
+            valueClassName: "text-[24px] leading-none text-foreground",
+          }}
+        />
       </header>
 
       <div className="flex w-full items-center gap-1 rounded-xl bg-muted p-1">

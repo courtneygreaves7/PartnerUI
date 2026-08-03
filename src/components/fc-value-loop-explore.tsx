@@ -16,9 +16,11 @@ import {
   HEAT_BANDS,
   HEAT_DIMENSION_OPTIONS,
   buildFcLoopMatrix,
+  describeFcLoopBehaviour,
   formatCurrency,
   getFcLoopOpportunities,
   getFilterDimension,
+  type FcLoopBehaviourKind,
   type FcLoopCellMetrics,
   type FcLoopOpportunity,
   type HeatDimension,
@@ -110,6 +112,19 @@ function heatBackground(value: number, min: number, max: number) {
   return `color-mix(in oklab, var(--color-primary) ${pct}%, var(--color-card))`
 }
 
+function behaviourBadgeClass(kind: FcLoopBehaviourKind) {
+  if (kind === "high-cancel-soft-fill") {
+    return "bg-amber-500/15 text-amber-900 dark:text-amber-200"
+  }
+  if (kind === "strong-fill-weak-cover") {
+    return "bg-primary/15 text-primary"
+  }
+  if (kind === "low-cancel-strong-fill" || kind === "value-beat") {
+    return "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
+  }
+  return "bg-foreground/5 text-foreground/70"
+}
+
 function MatrixCellCard({
   cell,
   title,
@@ -125,6 +140,7 @@ function MatrixCellCard({
   const notRelet = Math.round((100 - relet) * 10) / 10
   const heatT = colourMax <= colourMin ? 0.5 : (relet - colourMin) / (colourMax - colourMin)
   const borderAlpha = 0.35 + heatT * 0.45
+  const behaviour = describeFcLoopBehaviour(cell)
 
   return (
     <div
@@ -133,25 +149,30 @@ function MatrixCellCard({
         backgroundColor: heatBackground(relet, colourMin, colourMax),
         borderColor: `color-mix(in oklab, var(--color-primary) ${Math.round(borderAlpha * 100)}%, var(--color-border))`,
       }}
-      title={title}
+      title={`${title} — ${behaviour.read}`}
     >
       <div
         className="flex h-2 w-full overflow-hidden rounded-full bg-background/80"
         aria-label={`Relet ${relet}% · Not relet ${notRelet}%`}
       >
-        <div
-          className="h-full bg-primary"
-          style={{ width: `${relet}%` }}
-        />
-        <div
-          className="h-full bg-foreground/15"
-          style={{ width: `${notRelet}%` }}
-        />
+        <div className="h-full bg-primary" style={{ width: `${relet}%` }} />
+        <div className="h-full bg-foreground/15" style={{ width: `${notRelet}%` }} />
       </div>
-      <div className="mt-2 space-y-2">
-        <p className="text-lg font-bold leading-none tabular-nums tracking-tight text-foreground">
-          {relet.toFixed(1)}%
-        </p>
+      <div className="mt-2 space-y-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-lg font-bold leading-none tabular-nums tracking-tight text-foreground">
+            {relet.toFixed(1)}%
+          </p>
+          <span
+            className={cn(
+              "max-w-[7.5rem] rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight",
+              behaviourBadgeClass(behaviour.kind)
+            )}
+          >
+            {behaviour.badge}
+          </span>
+        </div>
+        <p className="text-[10px] leading-snug text-foreground/70">{behaviour.read}</p>
         <div className="space-y-0.5 text-[10px] leading-tight tabular-nums">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold tracking-wide text-foreground/55">ATT</span>
@@ -162,7 +183,12 @@ function MatrixCellCard({
             <span className="font-medium text-foreground">{cell.cancel.toFixed(1)}%</span>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold tracking-wide text-foreground/55">REC</span>
+            <span
+              className="font-semibold tracking-wide text-foreground/55"
+              title="Value kept vs cancelled booking value — can exceed 100%"
+            >
+              REC
+            </span>
             <span className="font-medium text-foreground">{cell.recoveredPct.toFixed(1)}%</span>
           </div>
         </div>
@@ -223,8 +249,8 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
               </h3>
               <MeasureHelp title="By bedrooms and travel dates" help={FC_LOOP_MATRIX_HELP} />
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Relet vs not on top. ATT, CXL, and REC underneath.
+            <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
+              Relet vs not on top. Behaviour badge reads cancel vs fill. ATT, CXL, REC underneath.
             </p>
           </div>
 
@@ -323,13 +349,15 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-primary" />
-              Relet
+              Re-let rate (volume filled)
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-foreground/20" />
-              Not relet
+              Not re-let
             </span>
-            <span className="text-muted-foreground/80">ATT attachment · CXL cancel · REC recovered</span>
+            <span className="text-muted-foreground/80">
+              ATT attachment · CXL cancel rate · REC value kept (may exceed 100%)
+            </span>
           </div>
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
             <span>Lower relet</span>
@@ -439,7 +467,8 @@ function ActSignalsPanel({
             <MeasureHelp title="Where to run the business" help={FC_LOOP_OPPORTUNITIES_HELP} />
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Raise conversion where re-let is strong, fix recovery gaps, and copy what already pays.
+            Raise conversion where re-let is strong, fix recovery gaps, watch soft regions, and
+            copy what already pays.
           </p>
         </div>
       </div>
@@ -487,8 +516,33 @@ function ActSignalsPanel({
                     <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                       {item.title}
                     </span>
+                    {item.regionLabel ? (
+                      <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        Region
+                      </span>
+                    ) : null}
+                    {item.behaviour ? (
+                      <span
+                        className={cn(
+                          "rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
+                          behaviourBadgeClass(item.behaviour.kind)
+                        )}
+                      >
+                        {item.behaviour.badge}
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-sm leading-snug text-foreground">{item.detail}</p>
+                  {item.openRisk ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {item.openRisk.count} open cancel
+                        {item.openRisk.count === 1 ? "" : "s"}
+                      </span>
+                      {" · "}
+                      {formatCurrency(item.openRisk.value)} at risk
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex w-[9.5rem] shrink-0 flex-col justify-between border-l border-border/70 px-3.5 py-3 sm:w-[11rem]">
                   <div className="space-y-1">

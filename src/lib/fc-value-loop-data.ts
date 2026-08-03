@@ -19,7 +19,12 @@ import {
   formatReletFillLabel,
   getRecoveredValue,
   isSplitRelet,
+  type LiveCancellationBooking,
 } from "@/lib/cancellations-releats-data"
+import {
+  REGION_RECOVERY_PROFILES,
+  getRegionRecoveryOpportunities,
+} from "@/lib/region-recovery-data"
 
 export { HEAT_DIMENSION_OPTIONS, HEAT_BANDS, getFilterDimension }
 export type { HeatDimension, HeatBand }
@@ -210,11 +215,31 @@ export function fcLoopColourIntensity(
 
 export type FcLoopActionTarget = "releats" | "ask-ai"
 
+export type FcLoopBehaviourKind =
+  | "high-cancel-soft-fill"
+  | "low-cancel-strong-fill"
+  | "strong-fill-weak-cover"
+  | "value-beat"
+  | "balanced"
+
+export type FcLoopBehaviourRead = {
+  kind: FcLoopBehaviourKind
+  /** Short chip for matrix cards. */
+  badge: string
+  /** One plain-English sentence for partners. */
+  read: string
+}
+
+export type FcLoopOpenRisk = {
+  count: number
+  value: number
+}
+
 export type FcLoopOpportunity = {
   id: string
   title: string
   detail: string
-  kind: "leak" | "undersold" | "split"
+  kind: "leak" | "undersold" | "split" | "region"
   /** Partner-facing signal for filters and card chrome. */
   signal: "risk" | "opportunity" | "success"
   metrics: string
@@ -226,6 +251,54 @@ export type FcLoopOpportunity = {
   departureLabel: string
   /** Prompt the AI coworker can answer for a deeper cut of this slice. */
   askPrompt: string
+  /** CXL vs relet relationship read. */
+  behaviour?: FcLoopBehaviourRead
+  /** Open cancels still awaiting re-let (illustrative tie to live list). */
+  openRisk?: FcLoopOpenRisk
+  /** Region chip when the signal comes from region recovery. */
+  regionLabel?: string
+}
+
+const PORTFOLIO_AVG = averageMetrics(FC_LOOP_CELLS)!
+
+/** Plain-English cancel vs re-let relationship for a booking-type cell. */
+export function describeFcLoopBehaviour(
+  cell: Pick<FcLoopCellMetrics, "sales" | "cancel" | "relet" | "recoveredPct">,
+  ref: Pick<FcLoopCellMetrics, "sales" | "cancel" | "relet"> = PORTFOLIO_AVG
+): FcLoopBehaviourRead {
+  if (cell.cancel >= ref.cancel + 1.5 && cell.relet <= ref.relet - 5) {
+    return {
+      kind: "high-cancel-soft-fill",
+      badge: "High CXL · soft fill",
+      read: "Cancels outpace re-lets — revenue at risk if stays stay empty.",
+    }
+  }
+  if (cell.relet >= 70 && cell.sales <= ref.sales - 1.5) {
+    return {
+      kind: "strong-fill-weak-cover",
+      badge: "Strong fill · low ATT",
+      read: "Re-let demand is strong — room to sell more cover here.",
+    }
+  }
+  if (cell.cancel <= ref.cancel && cell.relet >= ref.relet + 5) {
+    return {
+      kind: "low-cancel-strong-fill",
+      badge: "Low CXL · strong fill",
+      read: "Cancels are contained and fills are holding — a healthy slice.",
+    }
+  }
+  if (cell.recoveredPct >= 110) {
+    return {
+      kind: "value-beat",
+      badge: "Value beat",
+      read: `Re-lets kept ${Math.round(cell.recoveredPct)}% of cancelled value — more than you lost.`,
+    }
+  }
+  return {
+    kind: "balanced",
+    badge: "Steady",
+    read: "Cover, cancels, and fills are broadly in line with the book.",
+  }
 }
 
 function askPromptFor(
@@ -234,7 +307,7 @@ function askPromptFor(
   departure: string
 ) {
   const slice = `${bedroom} · ${departure}`
-  if (kind === "leak") {
+  if (kind === "leak" || kind === "region") {
     return `Drill into ${slice} — cancel vs re-let by lead time`
   }
   if (kind === "undersold") {
@@ -244,7 +317,7 @@ function askPromptFor(
 }
 
 function signalFor(kind: FcLoopOpportunity["kind"]): FcLoopOpportunity["signal"] {
-  if (kind === "leak") return "risk"
+  if (kind === "leak" || kind === "region") return "risk"
   if (kind === "undersold") return "opportunity"
   return "success"
 }
@@ -253,7 +326,7 @@ function actionFor(kind: FcLoopOpportunity["kind"]): {
   label: string
   target: FcLoopActionTarget
 } {
-  if (kind === "leak") {
+  if (kind === "leak" || kind === "region") {
     return { label: "Open cancellations", target: "releats" }
   }
   if (kind === "undersold") {
@@ -262,7 +335,94 @@ function actionFor(kind: FcLoopOpportunity["kind"]): {
   return { label: "See re-let bookings", target: "releats" }
 }
 
-/** Ranked prompts partners can act on — derived from cube extremes. */
+/** Assign awaiting live cancels to risk signals (mock slice link). */
+function attachOpenRisk(
+  opportunities: FcLoopOpportunity[],
+  bookings: LiveCancellationBooking[] = LIVE_CANCELLATIONS
+): FcLoopOpportunity[] {
+  const awaiting = bookings.filter((booking) => booking.reletStatus === "awaiting")
+  const riskIndexes = opportunities
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.signal === "risk")
+
+  if (riskIndexes.length === 0 || awaiting.length === 0) return opportunities
+
+  const buckets = riskIndexes.map(() => [] as LiveCancellationBooking[])
+  awaiting.forEach((booking, i) => {
+    buckets[i % buckets.length]!.push(booking)
+  })
+
+  return opportunities.map((item) => {
+    const riskPos = riskIndexes.findIndex(({ item: risk }) => risk.id === item.id)
+    if (riskPos < 0) return item
+    const picks = buckets[riskPos] ?? []
+    if (picks.length === 0) return item
+    return {
+      ...item,
+      openRisk: {
+        count: picks.length,
+        value: picks.reduce((sum, booking) => sum + booking.value, 0),
+      },
+    }
+  })
+}
+
+function regionOpportunitiesAsAct(): FcLoopOpportunity[] {
+  return getRegionRecoveryOpportunities()
+    .slice(0, 2)
+    .map((region) => {
+      const kind: FcLoopOpportunity["kind"] =
+        region.kind === "strong" ? "split" : region.kind === "leak" ? "leak" : "region"
+      const signal: FcLoopOpportunity["signal"] =
+        region.kind === "strong" ? "success" : region.kind === "leak" ? "risk" : "opportunity"
+      const action =
+        signal === "opportunity"
+          ? { label: "Ask AI", target: "ask-ai" as const }
+          : actionFor(kind === "split" ? "split" : "leak")
+      const profile = REGION_RECOVERY_PROFILES.find((row) => row.id === region.id)
+      return {
+        id: `region-${region.id}`,
+        title: region.label,
+        detail: region.detail,
+        kind: "region" as const,
+        signal,
+        metrics: region.metrics,
+        metricsList: [
+          { label: "Re-let rate", value: `${profile?.latest.reletRate ?? "—"}%` },
+          {
+            label: "Value kept",
+            value: `${profile?.latest.recoveryRate ?? "—"}%`,
+          },
+        ],
+        actionLabel: action.label,
+        actionTarget: action.target,
+        bedroomLabel: "",
+        departureLabel: "",
+        askPrompt: region.askPrompt,
+        regionLabel: region.label,
+        behaviour:
+          signal === "risk"
+            ? {
+                kind: "high-cancel-soft-fill" as const,
+                badge: "Soft regional fill",
+                read: region.detail,
+              }
+            : signal === "success"
+              ? {
+                  kind: "value-beat" as const,
+                  badge: "Regional playbook",
+                  read: region.detail,
+                }
+              : {
+                  kind: "balanced" as const,
+                  badge: "Watch region",
+                  read: region.detail,
+                },
+      } satisfies FcLoopOpportunity
+    })
+}
+
+/** Ranked prompts partners can act on — cube extremes + top region signals. */
 export function getFcLoopOpportunities(): FcLoopOpportunity[] {
   const byBedroomDeparture = new Map<string, FcLoopCellMetrics[]>()
   for (const cell of FC_LOOP_CELLS) {
@@ -291,106 +451,120 @@ export function getFcLoopOpportunities(): FcLoopOpportunity[] {
 
   if (leak) {
     const action = actionFor("leak")
+    const behaviour = describeFcLoopBehaviour(leak)
     opportunities.push({
       id: "leak",
       title: `${leak.bedroom} · ${leak.departure}`,
-      detail: "More guests cancelling, but fewer re-lets — revenue at risk here.",
+      detail: behaviour.read,
       kind: "leak",
       signal: signalFor("leak"),
       metrics: `Cancelled ${leak.cancel}% · Re-let ${leak.relet}%`,
       metricsList: [
-        { label: "Cancelled", value: `${leak.cancel}%` },
-        { label: "Re-let", value: `${leak.relet}%` },
+        { label: "Cancel rate", value: `${leak.cancel}%` },
+        { label: "Re-let rate", value: `${leak.relet}%` },
       ],
       actionLabel: action.label,
       actionTarget: action.target,
       bedroomLabel: leak.bedroom,
       departureLabel: leak.departure,
       askPrompt: askPromptFor("leak", leak.bedroom, leak.departure),
+      behaviour,
     })
   }
   if (undersold) {
     const action = actionFor("undersold")
+    const behaviour = describeFcLoopBehaviour(undersold)
     opportunities.push({
       id: "undersold",
       title: `${undersold.bedroom} · ${undersold.departure}`,
-      detail: "Strong re-let demand, but fewer guests buy Flexible Cancellation — room to sell more cover.",
+      detail: behaviour.read,
       kind: "undersold",
       signal: signalFor("undersold"),
       metrics: `Cover ${undersold.sales}% · Re-let ${undersold.relet}%`,
       metricsList: [
         { label: "Attachment", value: `${undersold.sales}%` },
-        { label: "Re-let", value: `${undersold.relet}%` },
+        { label: "Re-let rate", value: `${undersold.relet}%` },
       ],
       actionLabel: action.label,
       actionTarget: action.target,
       bedroomLabel: undersold.bedroom,
       departureLabel: undersold.departure,
       askPrompt: askPromptFor("undersold", undersold.bedroom, undersold.departure),
+      behaviour,
     })
   }
   if (strong) {
     const action = actionFor("split")
+    const behaviour = describeFcLoopBehaviour(strong)
     opportunities.push({
       id: "strong",
       title: `${strong.bedroom} · ${strong.departure}`,
-      detail: "Re-lets are worth more than the cancelled stays — clear proof this is working.",
+      detail: behaviour.read,
       kind: "split",
       signal: signalFor("split"),
-      metrics: `Value kept ${strong.recoveredPct}%`,
+      metrics: `Value kept ${strong.recoveredPct}% · Re-let ${strong.relet}%`,
       metricsList: [
-        { label: "Recovered", value: `${strong.recoveredPct}%` },
-        { label: "Re-let", value: `${strong.relet}%` },
+        { label: "Value kept", value: `${strong.recoveredPct}%` },
+        { label: "Re-let rate", value: `${strong.relet}%` },
       ],
       actionLabel: action.label,
       actionTarget: action.target,
       bedroomLabel: strong.bedroom,
       departureLabel: strong.departure,
       askPrompt: askPromptFor("split", strong.bedroom, strong.departure),
+      behaviour,
     })
   }
   if (softRelet) {
     const action = actionFor("leak")
+    const behaviour = describeFcLoopBehaviour(softRelet)
     opportunities.push({
       id: "soft-relet",
       title: `${softRelet.bedroom} · ${softRelet.departure}`,
-      detail: "Lowest re-let rate here — worth ops attention.",
+      detail: behaviour.read,
       kind: "leak",
       signal: signalFor("leak"),
       metrics: `Re-let ${softRelet.relet}% · Cancelled ${softRelet.cancel}%`,
       metricsList: [
-        { label: "Re-let", value: `${softRelet.relet}%` },
-        { label: "Cancelled", value: `${softRelet.cancel}%` },
+        { label: "Re-let rate", value: `${softRelet.relet}%` },
+        { label: "Cancel rate", value: `${softRelet.cancel}%` },
       ],
       actionLabel: action.label,
       actionTarget: action.target,
       bedroomLabel: softRelet.bedroom,
       departureLabel: softRelet.departure,
       askPrompt: askPromptFor("leak", softRelet.bedroom, softRelet.departure),
+      behaviour,
     })
   }
   if (peakSales) {
     const action = actionFor("undersold")
+    const behaviour = describeFcLoopBehaviour(peakSales)
     opportunities.push({
       id: "peak-sales",
       title: `${peakSales.bedroom} · ${peakSales.departure}`,
-      detail: "Highest Flexible Cancellation take-up — keep offer quality and stay ready to re-let.",
+      detail:
+        behaviour.kind === "balanced"
+          ? "Highest Flexible Cancellation take-up — keep offer quality and stay ready to re-let."
+          : behaviour.read,
       kind: "undersold",
       signal: signalFor("undersold"),
       metrics: `Cover ${peakSales.sales}% · Re-let ${peakSales.relet}%`,
       metricsList: [
         { label: "Attachment", value: `${peakSales.sales}%` },
-        { label: "Re-let", value: `${peakSales.relet}%` },
+        { label: "Re-let rate", value: `${peakSales.relet}%` },
       ],
       actionLabel: action.label,
       actionTarget: action.target,
       bedroomLabel: peakSales.bedroom,
       departureLabel: peakSales.departure,
       askPrompt: askPromptFor("undersold", peakSales.bedroom, peakSales.departure),
+      behaviour,
     })
   }
 
-  return opportunities.slice(0, 5)
+  const withRegions = [...opportunities.slice(0, 4), ...regionOpportunitiesAsAct()].slice(0, 6)
+  return attachOpenRisk(withRegions)
 }
 
 export type FcLoopSliceDetail = {
@@ -506,10 +680,10 @@ export const FC_LOOP_PROOF = {
 } as const
 
 export const FC_LOOP_MATRIX_HELP =
-  "Each card is a booking type. The top bar shows relet vs not relet. Below: ATT attachment, CXL cancel rate, REC recovered %. Use rows, columns, and filter to change the cut."
+  "Each card is a booking type. The top bar is re-let rate (volume filled). A behaviour badge reads cancel vs fill. ATT = attachment, CXL = cancel rate, REC = value kept vs cancelled booking value (can exceed 100%)."
 
 export const FC_LOOP_OPPORTUNITIES_HELP =
-  "Where to run the business harder for max revenue: weak re-let recovery, under-sold cover where demand is strong, and proof points that show the loop already pays."
+  "Where to run the business harder for max revenue: weak re-let recovery, soft regions, under-sold cover where demand is strong, and proof points that show the loop already pays. Risk cards link to open cancels still awaiting a re-let."
 
 export function formatCurrency(n: number) {
   return `£${Math.round(n).toLocaleString("en-GB")}`

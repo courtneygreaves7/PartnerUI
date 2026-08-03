@@ -18,6 +18,8 @@ export const PHASING_BANNER_TITLE =
 
 export const PARTNER_REVENUE = {
   headline: "£1.8m",
+  /** Precise partner revenue for hero / impact surfaces. */
+  headlineExact: "£1,877,784.37",
   headlineNote: "(net of insurance premium rate + IPT)",
   drivers: [
     { label: "Attachment (average)", value: "14%" },
@@ -29,6 +31,16 @@ export const PARTNER_REVENUE = {
     },
     { label: "Total", value: "£1,800k", highlight: true },
   ],
+} as const
+
+/** Home hero: generated impact vs upside still available. */
+export const PARTNER_IMPACT_HERO = {
+  generated: PARTNER_REVENUE.headlineExact,
+  generatedLabel: "Generated with Pikl'd Stays",
+  generatedHint: "Margin, conversion uplift, and re-let benefit — net of premium + IPT",
+  available: "£900,000",
+  availableLabel: "Still on the table",
+  availableHint: "Estimated value of +1pp more Flexible Cancellation attachment",
 } as const
 
 export const ADDITIONAL_PARTNER_REVENUE = {

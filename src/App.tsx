@@ -440,12 +440,12 @@ function App() {
                       : activeSection === "ai-coworker"
                         ? "overflow-hidden px-6 py-5 xl:px-10 xl:py-6"
                         : activeSection === "insights" && insightsView === "detail"
-                          ? "overflow-y-auto py-10 xl:py-14"
+                          ? "overflow-y-auto"
                           : "overflow-y-auto px-10 py-10 xl:px-16 xl:py-14"
                   )}
                 >
                   {activeSection === "insights" && insightsView === "detail" ? (
-                    <div className="mb-8 px-10 xl:px-16">
+                    <div className="px-10 pt-10 pb-8 xl:px-16 xl:pt-14">
                       <h1 className="text-[22px] font-semibold tracking-tight">Insights</h1>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Detailed Pikl&apos;d Stays performance for {PARTNER_BRANDING.name}
@@ -485,11 +485,14 @@ function App() {
                   ) : SHOW_INSIGHTS_CONTENT ? (
                     <SykesPartnerDashboardPage filters={activeFilters} />
                   ) : (
-                    <div className="space-y-10">
-                      <div className="px-10 xl:px-16">
+                    <div>
+                      <div className="px-10 pb-10 xl:px-16">
                         <InsightsTopCards />
                       </div>
-                      <div className="sticky top-0 z-20 border-b border-border/50 bg-[var(--panel-bg)]">
+                      <div
+                        className="sticky top-0 z-30 isolate border-b border-border/50"
+                        style={{ backgroundColor: "var(--panel-bg)" }}
+                      >
                         <div className="flex w-full items-center gap-3 px-10 py-3 xl:px-16">
                           <div className="min-w-0 flex-1">
                             <InsightsProductTabs
@@ -500,7 +503,7 @@ function App() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-9 shrink-0 gap-1.5"
+                            className="h-9 shrink-0 gap-1.5 bg-[var(--panel-bg)]"
                             onClick={() => setInsightsView("map")}
                           >
                             <Map className="size-3.5" />
@@ -511,7 +514,7 @@ function App() {
                           ) : null}
                         </div>
                       </div>
-                      <div className="px-10 xl:px-16">
+                      <div className="px-10 pt-10 pb-10 xl:px-16 xl:pb-14">
                         {insightsProduct === "cal" ? (
                           <InsightsCalPanel
                             onOpenRelets={() => setInsightsProduct("performance")}
