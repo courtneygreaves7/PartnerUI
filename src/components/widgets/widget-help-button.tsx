@@ -31,7 +31,9 @@ export function WidgetHelpButton({ title, helpText }: WidgetHelpButtonProps) {
           {icon}
         </button>
       </TooltipTrigger>
-      <TooltipContent variant="plain">{helpText}</TooltipContent>
+      <TooltipContent side="top" className="max-w-64">
+        {helpText}
+      </TooltipContent>
     </Tooltip>
   )
 }

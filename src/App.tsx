@@ -524,7 +524,12 @@ function App() {
                             }}
                           />
                         ) : insightsProduct === "ddl" ? (
-                          <InsightsDdlPanel />
+                          <InsightsDdlPanel
+                            onAskAi={(prompt) => {
+                              setAiPendingPrompt(prompt)
+                              setActiveSection("ai-coworker")
+                            }}
+                          />
                         ) : insightsProduct === "occupancy" ? (
                           <InsightsOccupancyPanel />
                         ) : (

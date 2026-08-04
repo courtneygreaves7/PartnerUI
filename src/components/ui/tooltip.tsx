@@ -73,8 +73,8 @@ function TooltipContent({
         className={cn(
           "z-50 max-w-56 text-xs animate-in fade-in-0 zoom-in-95",
           variant === "plain"
-            ? "bg-transparent p-0 text-muted-foreground shadow-none"
-            : "rounded-md bg-[var(--tooltip)] px-3 py-1.5 text-[var(--tooltip-foreground)]",
+            ? "rounded-md border border-border/60 bg-card px-3 py-1.5 text-foreground shadow-md"
+            : "rounded-md bg-[var(--tooltip)] px-3 py-1.5 text-[var(--tooltip-foreground)] shadow-md",
           className
         )}
         {...props}

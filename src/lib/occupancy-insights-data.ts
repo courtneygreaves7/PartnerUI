@@ -163,41 +163,67 @@ export function summariseOccupancy() {
 
 export const OCCUPANCY_SUMMARY = summariseOccupancy()
 
+function performanceVerdict(gapPp: number) {
+  if (gapPp >= 3) return "Well ahead of market"
+  if (gapPp > 0.5) return "Ahead of market"
+  if (gapPp >= -0.5) return "In line with market"
+  if (gapPp > -3) return "Slightly behind market"
+  return "Behind market"
+}
+
 export const OCCUPANCY_KPI_CARDS = [
   {
     id: "partner-occ",
     label: "Partner occupancy",
     value: formatOccupancyPct(OCCUPANCY_SUMMARY.partnerAvg),
     help: OCCUPANCY_METHOD_HELP,
-    delta: `${OCCUPANCY_SUMMARY.gapPp > 0 ? "+" : ""}${OCCUPANCY_SUMMARY.gapPp}pp vs market`,
-    higherIsBetter: true,
+    verdict: performanceVerdict(OCCUPANCY_SUMMARY.gapPp),
+    gapLabel: `${OCCUPANCY_SUMMARY.gapPp > 0 ? "+" : ""}${OCCUPANCY_SUMMARY.gapPp}pp vs market`,
+    gapPositive: OCCUPANCY_SUMMARY.gapPp >= 0,
+    against: {
+      label: "Market benchmark",
+      value: formatOccupancyPct(OCCUPANCY_SUMMARY.marketAvg),
+    },
     context: [
       formatDaysRatio(OCCUPANCY_SUMMARY.partnerBooked, OCCUPANCY_SUMMARY.partnerAvailable),
-      `Peak ${OCCUPANCY_SUMMARY.peakWeek.weekLabel} · ${formatOccupancyPct(OCCUPANCY_SUMMARY.peakWeek.partner)}`,
+      `Peak ${OCCUPANCY_SUMMARY.peakWeek.weekLabel} · ${formatOccupancyPct(OCCUPANCY_SUMMARY.peakWeek.partner)} (market ${formatOccupancyPct(OCCUPANCY_SUMMARY.peakWeek.market)})`,
     ],
   },
   {
     id: "market-occ",
     label: "Market occupancy",
     value: formatOccupancyPct(OCCUPANCY_SUMMARY.marketAvg),
-    help: "Market average occupancy for the same departure weeks, on the same days booked ÷ days available basis. Used as the partner benchmark.",
-    delta: "Benchmark",
-    higherIsBetter: true,
-    context: ["Same weeks · same regions"],
+    help: "Market average occupancy for the same departure weeks, on the same days booked ÷ days available basis. Used as the partner benchmark — this is what you are up against.",
+    verdict: "What you are up against",
+    gapLabel: `Partner ${formatOccupancyPct(OCCUPANCY_SUMMARY.partnerAvg)} · ${OCCUPANCY_SUMMARY.gapPp > 0 ? "+" : ""}${OCCUPANCY_SUMMARY.gapPp}pp`,
+    gapPositive: OCCUPANCY_SUMMARY.gapPp >= 0,
+    against: {
+      label: "Your occupancy",
+      value: formatOccupancyPct(OCCUPANCY_SUMMARY.partnerAvg),
+    },
+    context: [
+      "Same departure weeks · same regions",
+      "Beat this bar and you are outperforming the market book",
+    ],
   },
   {
     id: "best-bedroom",
     label: "Best bedroom gap",
     value: `${OCCUPANCY_SUMMARY.bestBedroom.bedrooms}`,
-    help: "Bedroom band where partner occupancy beats the market by the largest margin. Useful for mix and pricing focus.",
-    delta: `+${occupancyGapPp(OCCUPANCY_SUMMARY.bestBedroom.partner, OCCUPANCY_SUMMARY.bestBedroom.market)}pp vs market`,
-    higherIsBetter: true,
+    help: "Bedroom band where partner occupancy beats the market by the largest margin. Useful for mix and pricing focus — and contrast with the weakest band.",
+    verdict: "Strongest vs market",
+    gapLabel: `+${occupancyGapPp(OCCUPANCY_SUMMARY.bestBedroom.partner, OCCUPANCY_SUMMARY.bestBedroom.market)}pp vs market`,
+    gapPositive: true,
+    against: {
+      label: "Market in this band",
+      value: formatOccupancyPct(OCCUPANCY_SUMMARY.bestBedroom.market),
+    },
     context: [
-      formatDaysRatio(
+      `Partner ${formatOccupancyPct(OCCUPANCY_SUMMARY.bestBedroom.partner)} · ${formatDaysRatio(
         OCCUPANCY_SUMMARY.bestBedroom.partnerBooked,
         OCCUPANCY_SUMMARY.bestBedroom.partnerAvailable
-      ),
-      `Partner ${formatOccupancyPct(OCCUPANCY_SUMMARY.bestBedroom.partner)} · Market ${formatOccupancyPct(OCCUPANCY_SUMMARY.bestBedroom.market)}`,
+      )}`,
+      `Weakest: ${OCCUPANCY_SUMMARY.weakestBedroom.bedrooms} · ${occupancyGapPp(OCCUPANCY_SUMMARY.weakestBedroom.partner, OCCUPANCY_SUMMARY.weakestBedroom.market) > 0 ? "+" : ""}${occupancyGapPp(OCCUPANCY_SUMMARY.weakestBedroom.partner, OCCUPANCY_SUMMARY.weakestBedroom.market)}pp vs market (${formatOccupancyPct(OCCUPANCY_SUMMARY.weakestBedroom.partner)} / ${formatOccupancyPct(OCCUPANCY_SUMMARY.weakestBedroom.market)})`,
     ],
   },
 ] as const

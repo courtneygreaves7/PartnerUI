@@ -33,6 +33,7 @@ import {
   FLEXIBLE_CANCELLATION_GRID,
   PERFORMANCE_METRICS_GRID,
 } from "@/lib/sykes-dashboard-data"
+import { PORTFOLIO, formatGbp } from "@/lib/mock-portfolio"
 import { cn } from "@/lib/utils"
 
 type SykesPartnerDashboardPageProps = {
@@ -176,7 +177,7 @@ export function SykesPartnerDashboardPage({ filters }: SykesPartnerDashboardPage
             { label: "FC guest price avg", value: "10%", tone: "bg-muted/40" },
             { label: "Insurance premium rate avg", value: "6.35%", tone: "bg-muted/40" },
             { label: "Out of test conversion", value: "1.0%", tone: "bg-muted/50" },
-            { label: "Conversion benefit", value: "1% = £900,000", tone: "bg-muted/50" },
+            { label: "Conversion benefit", value: `1% = ${formatGbp(PORTFOLIO.conversionUplift, "exact")}`, tone: "bg-muted/50" },
           ]}
           table={
             <CollapsibleDataTable title="View full flexible cancellation table">

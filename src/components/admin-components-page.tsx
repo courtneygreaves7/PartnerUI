@@ -9,6 +9,7 @@ import { GraphWidget } from "@/components/widgets/graph-widget"
 import { HeadlineDataWidget } from "@/components/widgets/headline-data-widget"
 import { StackedDataWidget } from "@/components/widgets/stacked-data-widget"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
+import { PORTFOLIO, formatGbp, formatPct } from "@/lib/mock-portfolio"
 
 const MONO_LABEL =
   "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
@@ -98,7 +99,7 @@ export function AdminComponentsPage() {
             helpText="CAL and DDL attachment for the current filter set."
             datasetA={{
               title: "Flexible cancellation",
-              value: "14%",
+              value: formatPct(PORTFOLIO.attachmentPct, 1),
               clarification: "of offered bookings",
             }}
             datasetB={{
@@ -138,16 +139,16 @@ export function AdminComponentsPage() {
         <div className="max-w-2xl">
           <BreakdownDataWidget
             title="Partner revenue"
-            primaryValue="£1.8m"
+            primaryValue={formatGbp(PORTFOLIO.generated, "compact")}
             primaryLabel="net of premium + IPT"
             subdataA={{
               label: "Margin (ex. VAT)",
-              value: "£900k",
+              value: formatGbp(PORTFOLIO.fcMargin, "thousands"),
               helpText: "Partner margin excluding VAT.",
             }}
             subdataB={{
               label: "Website conversion",
-              value: "£800k",
+              value: formatGbp(PORTFOLIO.conversionUplift, "thousands"),
             }}
           />
         </div>

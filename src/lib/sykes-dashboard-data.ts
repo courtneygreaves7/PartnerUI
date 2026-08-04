@@ -1,3 +1,12 @@
+import {
+  PORTFOLIO,
+  splitByChannel,
+  formatGbp,
+  formatPct,
+  formatVolume,
+  formatPp,
+} from "@/lib/mock-portfolio"
+
 export const SYKES_MONTHS = [
   "Jan",
   "Feb",
@@ -16,87 +25,97 @@ export const SYKES_MONTHS = [
 export const PHASING_BANNER_TITLE =
   "Phasing of Margin earned from Flexible Cancellation; When people are travelling; cancellation/relet rate"
 
+const FC_BOOKINGS_SPLIT = splitByChannel(PORTFOLIO.fcBookings)
+const FC_MARGIN_SPLIT = splitByChannel(PORTFOLIO.fcMargin)
+const FC_INCREMENTAL_SPLIT = splitByChannel(PORTFOLIO.incrementalTotal)
+
 export const PARTNER_REVENUE = {
-  headline: "£1.8m",
-  /** Precise partner revenue for hero / impact surfaces. */
-  headlineExact: "£1,877,784.37",
+  headline: formatGbp(PORTFOLIO.generated, "compact"),
+  headlineExact: formatGbp(PORTFOLIO.generated, "exact"),
   headlineNote: "(net of insurance premium rate + IPT)",
   drivers: [
-    { label: "Attachment (average)", value: "14%" },
-    { label: "Margin (ex. VAT) £m", value: "£900k" },
-    { label: "Incremental cancellations & relets", value: "£100k" },
+    { label: "Attachment (average)", value: formatPct(PORTFOLIO.attachmentPct, 1) },
+    { label: "Margin (ex. VAT) £m", value: formatGbp(PORTFOLIO.fcMargin, "thousands") },
+    {
+      label: "Incremental cancellations & relets",
+      value: formatGbp(PORTFOLIO.incrementalTotal, "thousands"),
+    },
     {
       label: "Website conversion*",
-      value: "£800k p/a",
+      value: `${formatGbp(PORTFOLIO.conversionUplift, "thousands")} p/a`,
     },
-    { label: "Total", value: "£1,800k", highlight: true },
+    {
+      label: "Total",
+      value: formatGbp(PORTFOLIO.generated, "thousands"),
+      highlight: true,
+    },
   ],
 } as const
 
 /** Home hero: generated impact vs upside still available. */
 export const PARTNER_IMPACT_HERO = {
-  generated: PARTNER_REVENUE.headlineExact,
+  generated: formatGbp(PORTFOLIO.generated, "exact"),
   generatedLabel: "Generated with Pikl'd Stays",
   generatedHint: "Margin, conversion uplift, and re-let benefit — net of premium + IPT",
-  available: "£900,000",
+  available: formatGbp(PORTFOLIO.valuePerAttachmentPp, "exact"),
   availableLabel: "Still on the table",
   availableHint: "Estimated value of +1pp more Flexible Cancellation attachment",
 } as const
 
 export const ADDITIONAL_PARTNER_REVENUE = {
-  headline: "£1.2m",
+  headline: formatGbp(PORTFOLIO.fcMargin + PORTFOLIO.incrementalTotal, "compact"),
   drivers: [
     {
       label: "Gross bookings",
-      value: "690k",
-      trend: "+500",
+      value: formatVolume(PORTFOLIO.bookings),
+      trend: "+420",
       versus: null,
-      /** Volume context only. Not incremental bookings from Flexible Cancellation. */
       role: "volume" as const,
-      side: "Volume base · 65% product available",
+      side: `Volume base · ${Math.round(PORTFOLIO.offerRate * 100)}% product available`,
     },
     {
       label: "Average lead time",
-      value: "125 days",
-      trend: "+15",
-      versus: "110 days without Flexible Cancellation",
+      value: `${PORTFOLIO.profile.leadTimeDays} days`,
+      trend: `+${PORTFOLIO.profile.leadTimeDays - PORTFOLIO.profile.leadTimeWithoutFc}`,
+      versus: `${PORTFOLIO.profile.leadTimeWithoutFc} days without Flexible Cancellation`,
       role: "profile" as const,
       side: null,
     },
     {
       label: "Average length of stay",
-      value: "6.1 days",
-      trend: "+0.5",
-      versus: "5.6 days without Flexible Cancellation",
+      value: `${PORTFOLIO.profile.losDays} days`,
+      trend: `+${(PORTFOLIO.profile.losDays - PORTFOLIO.profile.losWithoutFc).toFixed(1)}`,
+      versus: `${PORTFOLIO.profile.losWithoutFc} days without Flexible Cancellation`,
       role: "profile" as const,
       side: null,
     },
     {
       label: "Avg spend per booking",
-      value: "£899",
-      trend: "+£3",
-      versus: "£896 without Flexible Cancellation",
+      value: `£${PORTFOLIO.profile.spendPerBooking}`,
+      trend: `+£${PORTFOLIO.profile.spendPerBooking - PORTFOLIO.profile.spendWithoutFc}`,
+      versus: `£${PORTFOLIO.profile.spendWithoutFc} without Flexible Cancellation`,
       role: "profile" as const,
       side: null,
     },
     {
       label: "Average Pikl'd Stay IPB",
-      value: "£4.0",
-      trend: "+£1",
-      versus: "£3.0 without Flexible Cancellation",
+      value: `£${PORTFOLIO.profile.ipb.toFixed(1)}`,
+      trend: `+£${(PORTFOLIO.profile.ipb - PORTFOLIO.profile.ipbWithoutFc).toFixed(1)}`,
+      versus: `£${PORTFOLIO.profile.ipbWithoutFc.toFixed(1)} without Flexible Cancellation`,
       role: "profile" as const,
       side: null,
     },
   ],
 } as const
 
+/** Monthly bookings (000s) — scales to annual portfolio bookings. */
 export const GROSS_BOOKINGS_TREND = [
-  { label: "Jan", value: 520 },
-  { label: "Feb", value: 545 },
-  { label: "Mar", value: 580 },
-  { label: "Apr", value: 610 },
-  { label: "May", value: 640 },
-  { label: "Jun", value: 690 },
+  { label: "Jan", value: 38 },
+  { label: "Feb", value: 40 },
+  { label: "Mar", value: 42 },
+  { label: "Apr", value: 44 },
+  { label: "May", value: 46 },
+  { label: "Jun", value: 50 },
 ] as const
 
 export const MARKET_COMPARISON_METRICS = [
@@ -114,116 +133,116 @@ export const MARKET_COMPARISON_VALUES = [
   {
     metric: "Cancellation rate",
     chartLabel: "Cancel rate",
-    value: "8.3%",
-    partner: 8.3,
-    market: 8.9,
-    marketLabel: "8.9%",
-    trend: "-0.6pp",
+    value: formatPct(PORTFOLIO.fcCancelPct, 1),
+    partner: PORTFOLIO.fcCancelPct,
+    market: PORTFOLIO.market.cancelPct,
+    marketLabel: formatPct(PORTFOLIO.market.cancelPct, 1),
+    trend: formatPp(PORTFOLIO.fcCancelPct - PORTFOLIO.market.cancelPct),
     tone: "up" as const,
-    side: "Market 8.9%",
+    side: `Market ${formatPct(PORTFOLIO.market.cancelPct, 1)}`,
   },
   {
     metric: "Attachment rate",
     chartLabel: "Attachment",
-    value: "14%",
-    partner: 14,
-    market: 12,
-    marketLabel: "12%",
-    trend: "+2.0pp",
+    value: formatPct(PORTFOLIO.attachmentPct, 1),
+    partner: PORTFOLIO.attachmentPct,
+    market: PORTFOLIO.market.attachmentPct,
+    marketLabel: formatPct(PORTFOLIO.market.attachmentPct, 1),
+    trend: formatPp(PORTFOLIO.attachmentPct - PORTFOLIO.market.attachmentPct),
     tone: "up" as const,
-    side: "Market 12%",
+    side: `Market ${formatPct(PORTFOLIO.market.attachmentPct, 1)}`,
   },
   {
     metric: "Relet rate",
     chartLabel: "Relet rate",
-    value: "60%",
-    partner: 60,
-    market: 54,
-    marketLabel: "54%",
-    trend: "+6.0pp",
+    value: formatPct(PORTFOLIO.reletPct, 1),
+    partner: PORTFOLIO.reletPct,
+    market: PORTFOLIO.market.reletPct,
+    marketLabel: formatPct(PORTFOLIO.market.reletPct, 1),
+    trend: formatPp(PORTFOLIO.reletPct - PORTFOLIO.market.reletPct),
     tone: "up" as const,
-    side: "Market 54%",
+    side: `Market ${formatPct(PORTFOLIO.market.reletPct, 1)}`,
   },
   {
     metric: "Rebookability rate",
     chartLabel: "Rebook rate",
-    value: "58%",
-    partner: 58,
-    market: 55,
-    marketLabel: "55%",
-    trend: "+2.1pp",
+    value: formatPct(PORTFOLIO.market.rebookabilityPct + 3, 0),
+    partner: PORTFOLIO.market.rebookabilityPct + 3,
+    market: PORTFOLIO.market.rebookabilityPct,
+    marketLabel: formatPct(PORTFOLIO.market.rebookabilityPct, 0),
+    trend: "+3.0pp",
     tone: "up" as const,
-    side: "Market 55%",
+    side: `Market ${formatPct(PORTFOLIO.market.rebookabilityPct, 0)}`,
   },
   {
     metric: "Rebookability average value",
     chartLabel: "Rebook value",
-    value: "£830",
-    partner: 830,
-    market: 790,
-    marketLabel: "£790",
-    trend: "+£40",
+    value: `£${PORTFOLIO.market.rebookabilityValue + 25}`,
+    partner: PORTFOLIO.market.rebookabilityValue + 25,
+    market: PORTFOLIO.market.rebookabilityValue,
+    marketLabel: `£${PORTFOLIO.market.rebookabilityValue}`,
+    trend: "+£25",
     tone: "up" as const,
-    side: "Market £790",
+    side: `Market £${PORTFOLIO.market.rebookabilityValue}`,
   },
   {
     metric: "Average lead time",
     chartLabel: "Lead time",
-    value: "125 days",
-    partner: 125,
-    market: 110,
-    marketLabel: "110 days",
-    trend: "+15",
+    value: `${PORTFOLIO.profile.leadTimeDays} days`,
+    partner: PORTFOLIO.profile.leadTimeDays,
+    market: PORTFOLIO.market.leadTimeDays,
+    marketLabel: `${PORTFOLIO.market.leadTimeDays} days`,
+    trend: `+${PORTFOLIO.profile.leadTimeDays - PORTFOLIO.market.leadTimeDays}`,
     tone: "up" as const,
-    side: "Market 110 days",
+    side: `Market ${PORTFOLIO.market.leadTimeDays} days`,
   },
   {
     metric: "Average length of stay",
     chartLabel: "Length of stay",
-    value: "6.1 days",
-    partner: 6.1,
-    market: 5.6,
-    marketLabel: "5.6 days",
-    trend: "+0.5",
+    value: `${PORTFOLIO.profile.losDays} days`,
+    partner: PORTFOLIO.profile.losDays,
+    market: PORTFOLIO.market.losDays,
+    marketLabel: `${PORTFOLIO.market.losDays} days`,
+    trend: `+${(PORTFOLIO.profile.losDays - PORTFOLIO.market.losDays).toFixed(1)}`,
     tone: "up" as const,
-    side: "Market 5.6 days",
+    side: `Market ${PORTFOLIO.market.losDays} days`,
   },
 ] as const
 
 export const TOTAL_PRODUCTS_SUMMARY = [
   {
     label: "Total bookings",
-    value: "690k",
+    value: formatVolume(PORTFOLIO.bookings),
     detail: "All brands · current period",
-    trend: "+500",
+    trend: "+420",
     tone: "up" as const,
   },
   {
     label: "Bookings offered a product",
-    value: "65%",
+    value: formatPct(PORTFOLIO.offerRate * 100, 0),
     detail: "Share of bookings shown a product",
-    trend: "+2.1pp",
+    trend: "+1.8pp",
     tone: "up" as const,
   },
   {
     label: "Bookings offered product",
-    value: "448,500",
+    value: PORTFOLIO.offeredBookings.toLocaleString("en-GB"),
     detail: "Volume offered a Pikl product",
-    trend: "+12.4k",
+    trend: "+9.8k",
     tone: "up" as const,
   },
   {
     label: "Total margin earned",
-    value: "800k",
+    value: formatVolume(PORTFOLIO.fcMargin),
     detail: "Partner margin across products",
-    trend: "+£40k",
+    trend: `+${formatGbp(38_000, "thousands")}`,
     tone: "up" as const,
   },
   {
     label: "Income per booking",
-    value: "4.01",
+    value: PORTFOLIO.incomePerBooking.toFixed(2),
     detail: "Average income per booking",
-    trend: "+0.18",
+    trend: "+0.14",
     tone: "up" as const,
   },
 ] as const
@@ -365,32 +384,50 @@ function metricRow(
   }
 }
 /**
- * Channel mock figures are derived so Direct = Website+App+Offline and Total = Direct+OTA.
- * Anchors from partner summaries: 690k bookings, 14% attachment, £900k FC margin, £100k incremental benefit.
+ * Channel mock figures from mock-portfolio anchors.
+ * Direct = Website+App+Offline; Total = Direct+OTA.
  */
 export const FLEXIBLE_CANCELLATION_GRID: ChannelGridRow[] = [
-  // 14% of 690k ≈ 96.6k FC bookings
-  volumeRow("FC Bookings", { website: 48300, app: 19320, offline: 9660, ota: 19320 }),
-  attachmentRow("FC Attachment", { website: 16, app: 12, offline: 8, ota: 11 }, 14.5, 14),
-  flatRateRow("FC Guest Price Avg %", "10%"),
-  flatRateRow("FC Insurance Premium Rate Avg %", "6.35%"),
-  // Aligns to PARTNER_REVENUE Margin (ex. VAT) £900k
-  moneyRow("FC Partner Margin £", { website: 520000, app: 180000, offline: 80000, ota: 120000 }),
-  // Aligns to PARTNER_REVENUE Incremental Cancellations & Relets £100k
+  volumeRow("FC Bookings", {
+    website: FC_BOOKINGS_SPLIT.website,
+    app: FC_BOOKINGS_SPLIT.app,
+    offline: FC_BOOKINGS_SPLIT.offline,
+    ota: FC_BOOKINGS_SPLIT.ota,
+  }),
+  attachmentRow(
+    "FC Attachment",
+    { website: 14.5, app: 12, offline: 9, ota: 11 },
+    13.2,
+    PORTFOLIO.attachmentPct
+  ),
+  flatRateRow("FC Guest Price Avg %", "9.5%"),
+  flatRateRow("FC Insurance Premium Rate Avg %", "6.1%"),
+  moneyRow("FC Partner Margin £", {
+    website: FC_MARGIN_SPLIT.website,
+    app: FC_MARGIN_SPLIT.app,
+    offline: FC_MARGIN_SPLIT.offline,
+    ota: FC_MARGIN_SPLIT.ota,
+  }),
   moneyRow("Incremental Cancellations & Relets", {
-    website: 55000,
-    app: 20000,
-    offline: 10000,
-    ota: 15000,
+    website: FC_INCREMENTAL_SPLIT.website,
+    app: FC_INCREMENTAL_SPLIT.app,
+    offline: FC_INCREMENTAL_SPLIT.offline,
+    ota: FC_INCREMENTAL_SPLIT.ota,
   }),
   {
-    label: "Out of Test Conversion Benefit (1% = £900,000)",
-    website: { value: "1.0%", variant: "rate" },
+    label: `Out of Test Conversion Benefit (1% ≈ ${formatGbp(PORTFOLIO.conversionUplift, "thousands")})`,
+    website: { value: "0.8%", variant: "rate" },
     app: { value: "N/A", variant: "empty" },
     offline: { value: "N/A", variant: "empty" },
     ota: { value: "N/A", variant: "empty" },
-    direct: { value: "£900k", variant: "direct" },
-    total: { value: "£900k", variant: "total" },
+    direct: {
+      value: formatGbp(PORTFOLIO.conversionUplift, "thousands"),
+      variant: "direct",
+    },
+    total: {
+      value: formatGbp(PORTFOLIO.conversionUplift, "thousands"),
+      variant: "total",
+    },
   },
 ]
 
@@ -544,7 +581,7 @@ function channelFromRatio(
  * - Relet volume = cancellation volume FC × re-let %
  * - Relet volume FC = cancellation volume FC × re-let FC %
  * - Re-let value avg = incremental cancellation benefit ÷ relet volume
- * - Lead times / holiday values scale with FC attachment vs portfolio baseline (14%)
+ * - Lead times / holiday values scale with FC attachment vs portfolio baseline
  */
 export function buildContributionToPerformanceGrid(
   fcGrid: ChannelGridRow[] = FLEXIBLE_CANCELLATION_GRID,
@@ -843,39 +880,48 @@ export type MonthlyTripleSeries = {
   relets: number
 }
 
+function tripleFromBookings(month: string, bookings: number): MonthlyTripleSeries {
+  const cancellations = Math.round(bookings * PORTFOLIO.fcCancelRate)
+  const relets = Math.round(cancellations * PORTFOLIO.reletRate)
+  return { month, bookings, cancellations, relets }
+}
+
 export const MARGIN_EARNED_FC_DATA = SYKES_MONTHS.map((month, index) => {
-  const values = [1000, 800, 700, 600, 600, 600, 600, 600, 600, 600, 600, 600]
-  return { month, value: values[index] }
+  const shares = [0.09, 0.08, 0.075, 0.07, 0.07, 0.075, 0.09, 0.11, 0.08, 0.07, 0.06, 0.07]
+  return {
+    month,
+    value: Math.round((PORTFOLIO.fcMargin * (shares[index] ?? 0.08)) / 1000),
+  }
 })
 
 export const EVENTS_BY_DATE_SUMMER_DATA: MonthlyTripleSeries[] = [
-  { month: "Jan", bookings: 200, cancellations: 20, relets: 12 },
-  { month: "Feb", bookings: 200, cancellations: 20, relets: 12 },
-  { month: "Mar", bookings: 400, cancellations: 40, relets: 24 },
-  { month: "Apr", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "May", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Jun", bookings: 800, cancellations: 80, relets: 48 },
-  { month: "Jul", bookings: 1500, cancellations: 150, relets: 90 },
-  { month: "Aug", bookings: 2000, cancellations: 200, relets: 120 },
-  { month: "Sep", bookings: 800, cancellations: 80, relets: 48 },
-  { month: "Oct", bookings: 400, cancellations: 40, relets: 24 },
-  { month: "Nov", bookings: 200, cancellations: 20, relets: 12 },
-  { month: "Dec", bookings: 250, cancellations: 25, relets: 15 },
+  tripleFromBookings("Jan", 2200),
+  tripleFromBookings("Feb", 2400),
+  tripleFromBookings("Mar", 3800),
+  tripleFromBookings("Apr", 4800),
+  tripleFromBookings("May", 5200),
+  tripleFromBookings("Jun", 6200),
+  tripleFromBookings("Jul", 7800),
+  tripleFromBookings("Aug", 9200),
+  tripleFromBookings("Sep", 5800),
+  tripleFromBookings("Oct", 3600),
+  tripleFromBookings("Nov", 2400),
+  tripleFromBookings("Dec", 2600),
 ]
 
 export const EVENTS_BY_DATE_DECLINING_DATA: MonthlyTripleSeries[] = [
-  { month: "Jan", bookings: 1000, cancellations: 100, relets: 60 },
-  { month: "Feb", bookings: 800, cancellations: 80, relets: 48 },
-  { month: "Mar", bookings: 700, cancellations: 70, relets: 42 },
-  { month: "Apr", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "May", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Jun", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Jul", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Aug", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Sep", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Oct", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Nov", bookings: 600, cancellations: 60, relets: 36 },
-  { month: "Dec", bookings: 600, cancellations: 60, relets: 36 },
+  tripleFromBookings("Jan", 7200),
+  tripleFromBookings("Feb", 6400),
+  tripleFromBookings("Mar", 5800),
+  tripleFromBookings("Apr", 5200),
+  tripleFromBookings("May", 5000),
+  tripleFromBookings("Jun", 4800),
+  tripleFromBookings("Jul", 4600),
+  tripleFromBookings("Aug", 4500),
+  tripleFromBookings("Sep", 4400),
+  tripleFromBookings("Oct", 4300),
+  tripleFromBookings("Nov", 4200),
+  tripleFromBookings("Dec", 4100),
 ]
 
 export const DEPARTURES_BY_DATE_DATA = EVENTS_BY_DATE_SUMMER_DATA
@@ -1002,6 +1048,12 @@ export const FC_BOOKINGS_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => ({
   value: row.bookings,
 }))
 
+/** DDL bookings by departure — same seasonality shape, scaled to DDL volume. */
+export const DDL_BOOKINGS_BY_DEPARTURE = FC_BOOKINGS_BY_DEPARTURE.map((row) => ({
+  month: row.month,
+  value: Math.round(row.value * 0.4),
+}))
+
 /** Cancel rate (%) by departure month — cancellations ÷ FC bookings on departure date. */
 export const FC_CANCEL_RATE_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => ({
   month: row.month,
@@ -1013,27 +1065,8 @@ export const FC_CANCEL_RATE_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => 
 
 /**
  * FC value loop — sales → cancel → re-let → incremental £.
- * Uses figures already shown elsewhere on Insights so Stage B invents no new truth.
+ * Figures come from mock-portfolio anchors (same truth as Home / grids).
  */
-const FC_LOOP_CANCEL_AVG =
-  FC_CANCEL_RATE_BY_DEPARTURE.length > 0
-    ? Math.round(
-        (FC_CANCEL_RATE_BY_DEPARTURE.reduce((sum, row) => sum + row.value, 0) /
-          FC_CANCEL_RATE_BY_DEPARTURE.length) *
-          10
-      ) / 10
-    : 0
-
-const FC_LOOP_ATTACHMENT =
-  PARTNER_REVENUE.drivers.find((d) => d.label === "Attachment (average)")?.value ?? "14%"
-
-const FC_LOOP_INCREMENTAL =
-  PARTNER_REVENUE.drivers.find((d) => d.label === "Incremental cancellations & relets")
-    ?.value ?? "£100k"
-
-const FC_LOOP_RELET =
-  MARKET_COMPARISON_VALUES.find((d) => d.metric === "Relet rate")?.value ?? "60%"
-
 export const FC_VALUE_LOOP = {
   title: "How Flexible Cancellation drives max revenue",
   story:
@@ -1042,15 +1075,15 @@ export const FC_VALUE_LOOP = {
     {
       id: "sales",
       label: "Cover take-up",
-      value: FC_LOOP_ATTACHMENT,
+      value: formatPct(PORTFOLIO.attachmentPct, 1),
       hint: "Conversion onto Flexible Cancellation",
       goodWhen: "higher" as const,
       help: "Share of bookings where the guest bought Flexible Cancellation. This is booking conversion onto cover — the start of the revenue loop. Calculation: Flexible Cancellation bookings ÷ all bookings.",
     },
     {
       id: "cancel",
-      label: "Guests cancelled",
-      value: `${FC_LOOP_CANCEL_AVG}%`,
+      label: "Cancel",
+      value: formatPct(PORTFOLIO.fcCancelPct, 1),
       hint: "Expected when guests have cover",
       goodWhen: "context" as const,
       help: "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next. Calculation: cancellations ÷ Flexible Cancellation bookings.",
@@ -1058,7 +1091,7 @@ export const FC_VALUE_LOOP = {
     {
       id: "relet",
       label: "Re-let",
-      value: FC_LOOP_RELET,
+      value: formatPct(PORTFOLIO.reletPct, 1),
       hint: "Cancelled stays filled again",
       goodWhen: "higher" as const,
       help: "Share of cancelled stays that were re-let to another guest. This is how cancelled holidays turn back into revenue — and why the product is operational, not optional. Calculation: re-lets ÷ cancellations.",
@@ -1066,10 +1099,51 @@ export const FC_VALUE_LOOP = {
     {
       id: "incremental",
       label: "Extra revenue",
-      value: FC_LOOP_INCREMENTAL,
+      value: formatGbp(PORTFOLIO.incrementalTotal, "thousands"),
       hint: "Proof the loop is working",
       goodWhen: "higher" as const,
       help: "Extra revenue from re-letting cancelled Flexible Cancellation stays. The commercial proof that cover + ops is a necessity for max revenue, not an ancillary add-on.",
+    },
+  ],
+} as const
+
+/** DDL value loop — offer → attach → margin → conversion benefit. */
+export const DDL_VALUE_LOOP = {
+  title: "How Damage Waiver drives incremental margin",
+  story:
+    "Damage Waiver replaces a cash deposit with a paid product: guests take it up, you earn partner margin, and stronger conversion on direct channels lifts the book. Follow the loop to see where attachment is soft and where margin already pays.",
+  steps: [
+    {
+      id: "offered",
+      label: "Product available",
+      value: formatPct(PORTFOLIO.offerRate * 100, 0),
+      hint: "Share of bookings shown the waiver",
+      goodWhen: "higher" as const,
+      help: "Share of bookings where Damage Waiver was available to the guest. Calculation: bookings offered Damage Waiver ÷ total bookings.",
+    },
+    {
+      id: "attach",
+      label: "Waiver take-up",
+      value: DAMAGE_DEPOSIT_WAIVER_GRID[1].total.value,
+      hint: "Conversion onto Damage Waiver",
+      goodWhen: "higher" as const,
+      help: "Share of eligible bookings that attached Damage Waiver. Calculation: DDL bookings ÷ bookings offered Damage Waiver.",
+    },
+    {
+      id: "margin",
+      label: "Partner margin",
+      value: DAMAGE_DEPOSIT_WAIVER_GRID[4].total.value,
+      hint: "Earnings from waiver attachments",
+      goodWhen: "higher" as const,
+      help: "Partner margin earned from Damage Waiver by channel, net of premium.",
+    },
+    {
+      id: "conversion",
+      label: "Conversion benefit",
+      value: DAMAGE_DEPOSIT_WAIVER_GRID[5].total.value,
+      hint: "Proof the product lifts the book",
+      goodWhen: "higher" as const,
+      help: "Estimated partner margin from conversion lift linked to Damage Waiver on direct channels.",
     },
   ],
 } as const

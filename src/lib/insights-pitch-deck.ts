@@ -12,6 +12,7 @@ import {
   PARTNER_REVENUE,
   TOTAL_PRODUCTS_SUMMARY,
 } from "@/lib/sykes-dashboard-data"
+import { PORTFOLIO } from "@/lib/mock-portfolio"
 
 const COLORS = {
   blue: "006BFF",
@@ -607,7 +608,12 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
     })
 
     const driverLabels = ["Incremental", "Website conv.", "Margin", "Total"]
-    const driverValues = [100, 800, 900, 1800]
+    const driverValues = [
+      PORTFOLIO.incrementalTotal / 1000,
+      PORTFOLIO.conversionUplift / 1000,
+      PORTFOLIO.fcMargin / 1000,
+      PORTFOLIO.generated / 1000,
+    ]
     slide.addChart(
       ChartType.bar,
       [
@@ -625,7 +631,7 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
         barDir: "col",
         chartColors: [COLORS.blueDark, COLORS.accent, COLORS.blue, COLORS.charcoal],
         showLegend: false,
-        valAxisMaxVal: 2000,
+        valAxisMaxVal: Math.ceil(PORTFOLIO.generated / 1000 / 100) * 100,
         catAxisLabelFontSize: 9,
         dataLabelFontSize: 9,
         dataLabelPosition: "outEnd",

@@ -16,12 +16,14 @@ import {
   GROSS_BOOKINGS_TREND,
   MARKET_COMPARISON_VALUES,
   PARTNER_REVENUE,
+  TOTAL_PRODUCTS_SUMMARY,
 } from "@/lib/sykes-dashboard-data"
+import { PORTFOLIO, formatGbp, formatPct, formatVolume } from "@/lib/mock-portfolio"
 
 const REVENUE_SPLIT = [
-  { name: "Margin (ex. VAT)", value: 900, color: "#006BFF" },
-  { name: "Website conversion", value: 800, color: "#3389FF" },
-  { name: "Incremental canx & relets", value: 100, color: "#99C4FF" },
+  { name: "Margin (ex. VAT)", value: PORTFOLIO.fcMargin / 1000, color: "#006BFF" },
+  { name: "Website conversion", value: PORTFOLIO.conversionUplift / 1000, color: "#3389FF" },
+  { name: "Incremental canx & relets", value: PORTFOLIO.incrementalTotal / 1000, color: "#99C4FF" },
 ]
 
 const CHANNEL_COLORS = {
@@ -105,6 +107,9 @@ function RevenueDonutCard() {
 }
 
 function AttachmentGaugeCard() {
+  const attach = PORTFOLIO.attachmentPct
+  const offerPct = Math.round(PORTFOLIO.offerRate * 100)
+
   return (
     <VisualCard
       title="Product attachment"
@@ -123,16 +128,16 @@ function AttachmentGaugeCard() {
               stroke="#006BFF"
               strokeWidth="10"
               strokeLinecap="round"
-              strokeDasharray={`${14 * 3.01} ${(100 - 14) * 3.01}`}
+              strokeDasharray={`${attach * 3.01} ${(100 - attach) * 3.01}`}
             />
           </svg>
           <div className="absolute text-center">
-            <p className="text-3xl font-bold tabular-nums">14%</p>
+            <p className="text-3xl font-bold tabular-nums">{formatPct(attach, 1)}</p>
             <p className="text-[10px] text-muted-foreground">Attachment</p>
           </div>
         </div>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          65% of bookings offered a product
+          {offerPct}% of bookings offered a product
         </p>
       </div>
     </VisualCard>
@@ -178,11 +183,11 @@ export function RevenueOverviewVisual() {
         <MetricTrendWidget
           insightLayout
           title="Gross bookings trend"
-          value="690k"
-          trendLabel="+500"
+          value={formatVolume(PORTFOLIO.bookings)}
+          trendLabel={ADDITIONAL_PARTNER_REVENUE.drivers[0]?.trend ?? "+420"}
           trend="up"
           comparisonLabel="vs prior period"
-          scopeLabel="65% product availability"
+          scopeLabel={`${Math.round(PORTFOLIO.offerRate * 100)}% product availability`}
           rateLabel="Bookings with product offered"
           chartData={[...GROSS_BOOKINGS_TREND]}
           className="h-auto"
@@ -214,17 +219,22 @@ export function RevenueOverviewVisual() {
 }
 
 export function TotalProductsVisual() {
-  const offeredPercent = 65
+  const offeredPercent = Math.round(PORTFOLIO.offerRate * 100)
+  const bookings = TOTAL_PRODUCTS_SUMMARY[0]
+  const offeredShare = TOTAL_PRODUCTS_SUMMARY[1]
+  const offeredVolume = TOTAL_PRODUCTS_SUMMARY[2]
+  const margin = TOTAL_PRODUCTS_SUMMARY[3]
+  const income = TOTAL_PRODUCTS_SUMMARY[4]
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[
-          { label: "Total bookings", value: "690k", trend: "+5%" },
-          { label: "Offered a product", value: "65%", trend: undefined },
-          { label: "Bookings offered", value: "448,500", trend: undefined },
-          { label: "Total margin earned", value: "800k", trend: "+8%" },
-          { label: "Income per booking", value: "4.01", trend: "+2%" },
+          { label: bookings.label, value: bookings.value, trend: bookings.trend },
+          { label: "Offered a product", value: offeredShare.value, trend: undefined },
+          { label: "Bookings offered", value: offeredVolume.value, trend: undefined },
+          { label: margin.label, value: margin.value, trend: margin.trend },
+          { label: income.label, value: income.value, trend: income.trend },
         ].map((item) => (
           <KpiTile
             key={item.label}
@@ -238,17 +248,19 @@ export function TotalProductsVisual() {
       <VisualCard title="Product offer funnel" subtitle="From total bookings to margin earned">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:items-center">
           <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-            <p className="text-2xl font-bold tabular-nums">690k</p>
+            <p className="text-2xl font-bold tabular-nums">{bookings.value}</p>
             <p className="mt-1 text-xs text-muted-foreground">Total bookings</p>
           </div>
           <TrendPill value={`${offeredPercent}%`} trend="up" />
           <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-            <p className="text-2xl font-bold tabular-nums">448,500</p>
+            <p className="text-2xl font-bold tabular-nums">{offeredVolume.value}</p>
             <p className="mt-1 text-xs text-muted-foreground">Offered a product</p>
           </div>
           <span className="hidden text-muted-foreground lg:block">→</span>
           <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-            <p className="text-2xl font-bold tabular-nums text-foreground">800k</p>
+            <p className="text-2xl font-bold tabular-nums text-foreground">
+              {formatGbp(PORTFOLIO.fcMargin, "thousands").replace("£", "")}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">Margin earned</p>
           </div>
         </div>
@@ -259,7 +271,8 @@ export function TotalProductsVisual() {
           />
         </div>
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          {offeredPercent}% of bookings are offered a Pikl product · £4.01 income per booking
+          {offeredPercent}% of bookings are offered a Pikl product · £
+          {PORTFOLIO.incomePerBooking.toFixed(2)} income per booking
         </p>
       </VisualCard>
     </div>

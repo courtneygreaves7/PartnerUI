@@ -159,13 +159,13 @@ function buildHistory(id: RegionRecoveryId): RegionRecoveryMonth[] {
     const progress = index / (n - 1)
     // Mild structural improvement in re-let / recovery into 2026
     const reletRate = round1(
-      clamp(52 + meta.reletBias + season * 10 + progress * 3.5 + Math.sin(index * 0.7) * 1.2, 28, 92)
+      clamp(55 + meta.reletBias + season * 9 + progress * 3.2 + Math.sin(index * 0.7) * 1.1, 26, 88)
     )
     const cancelRate = round1(
-      clamp(10.4 + meta.cancelBias - progress * 0.7 + (1 - season) * 0.4, 6, 16)
+      clamp(9.2 + meta.cancelBias - progress * 0.65 + (1 - season) * 0.35, 5.5, 15)
     )
     const recoveryRate = round1(
-      clamp(88 + meta.recoveryBias + season * 8 + progress * 4 + (reletRate - 60) * 0.25, 62, 128)
+      clamp(94 + meta.recoveryBias + season * 7 + progress * 3.5 + (reletRate - 55) * 0.3, 64, 124)
     )
     const baseCancels = Math.round((120 + season * 180) * meta.volume)
     const cancellations = Math.max(8, baseCancels + Math.round(Math.sin(index + meta.volume) * 8))

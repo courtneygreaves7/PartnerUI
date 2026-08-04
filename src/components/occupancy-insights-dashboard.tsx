@@ -77,31 +77,45 @@ function OccupancyKpiCards() {
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {OCCUPANCY_KPI_CARDS.map((card) => (
-        <div key={card.id} className={cn(PANEL, "flex flex-col gap-3")}>
+        <div key={card.id} className={cn(PANEL, "flex flex-col gap-3 p-4")}>
           <div className="flex items-center gap-1.5">
             <p className={MONO_LABEL}>{card.label}</p>
             <MeasureHelp title={card.label} help={card.help} />
           </div>
+
           <div>
             <p className={cn("font-bold tracking-tight tabular-nums text-foreground", FIGURE_24PX_CLASS)}>
               {card.value}
             </p>
+            <p className="mt-1 text-xs font-medium text-foreground">{card.verdict}</p>
             <p
               className={cn(
-                "mt-1 text-xs font-medium tabular-nums",
-                card.higherIsBetter && card.delta.startsWith("+")
+                "mt-0.5 text-xs font-medium tabular-nums",
+                card.gapPositive
                   ? "text-emerald-700 dark:text-emerald-400"
-                  : "text-muted-foreground"
+                  : "text-rose-700 dark:text-rose-400"
               )}
             >
-              {card.delta}
+              {card.gapLabel}
             </p>
           </div>
-          {card.context.map((line) => (
-            <p key={line} className="mt-auto text-[11px] text-muted-foreground">
-              {line}
+
+          <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+            <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+              {card.against.label}
             </p>
-          ))}
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
+              {card.against.value}
+            </p>
+          </div>
+
+          <div className="mt-auto space-y-0.5">
+            {card.context.map((line) => (
+              <p key={line} className="text-[11px] leading-snug text-muted-foreground">
+                {line}
+              </p>
+            ))}
+          </div>
         </div>
       ))}
     </div>

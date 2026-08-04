@@ -1,7 +1,7 @@
 /**
  * FC value loop — booking-type matrix, opportunities, and proof.
  * Built from the same dimensional bands as Insights heatmaps.
- * Illustrative mocks aligned to portfolio loop anchors (14% / ~10% / 60% / £100k).
+ * Centres from mock-portfolio anchors (attachment / cancel / relet).
  */
 
 import {
@@ -25,6 +25,7 @@ import {
   REGION_RECOVERY_PROFILES,
   getRegionRecoveryOpportunities,
 } from "@/lib/region-recovery-data"
+import { PORTFOLIO } from "@/lib/mock-portfolio"
 
 export { HEAT_DIMENSION_OPTIONS, HEAT_BANDS, getFilterDimension }
 export type { HeatDimension, HeatBand }
@@ -54,6 +55,9 @@ function clamp(n: number, min: number, max: number) {
 /** Dense cube so Bedroom × Departure (+ lead filter) has shape without a second truth source. */
 function buildLoopCube(): FcLoopCellMetrics[] {
   const cells: FcLoopCellMetrics[] = []
+  const attachBase = PORTFOLIO.attachmentPct
+  const cancelBase = PORTFOLIO.fcCancelPct
+  const reletBase = PORTFOLIO.reletPct
 
   HEAT_LEAD_TIME_BANDS.forEach((lead, li) => {
     HEAT_BEDROOM_BANDS.forEach((bedroom, bi) => {
@@ -63,16 +67,32 @@ function buildLoopCube(): FcLoopCellMetrics[] {
         const shortLead = li === 0 ? 1 : 0
 
         const sales = round1(
-          clamp(14 + li * 1.2 + bi * 0.4 + demand * 1.5 - shortLead * 2 + Math.sin(bi + di) * 0.4, 6, 28)
+          clamp(
+            attachBase + li * 1.1 + bi * 0.35 + demand * 1.4 - shortLead * 1.8 + Math.sin(bi + di) * 0.35,
+            5,
+            26
+          )
         )
         const cancel = round1(
-          clamp(10 + shortLead * 3.5 - li * 0.8 + bi * 0.3 + Math.cos(di) * 0.5, 4, 22)
+          clamp(
+            cancelBase + shortLead * 3.2 - li * 0.7 + bi * 0.25 + Math.cos(di) * 0.45,
+            4,
+            20
+          )
         )
         const relet = round1(
-          clamp(58 + demand * 12 + largeHome * 6 - shortLead * 10 + li * 2 + Math.sin(bi * di) * 1.2, 28, 92)
+          clamp(
+            reletBase + demand * 10 + largeHome * 5 - shortLead * 9 + li * 1.8 + Math.sin(bi * di) * 1.1,
+            26,
+            88
+          )
         )
         const recoveredPct = round1(
-          clamp(92 + demand * 8 + largeHome * 10 - shortLead * 12 + (relet - 60) * 0.35, 70, 130)
+          clamp(
+            90 + demand * 7 + largeHome * 9 - shortLead * 11 + (relet - reletBase) * 0.35,
+            68,
+            125
+          )
         )
 
         cells.push({
@@ -680,7 +700,7 @@ export const FC_LOOP_PROOF = {
 } as const
 
 export const FC_LOOP_MATRIX_HELP =
-  "Each card is a booking type. The top bar is re-let rate (volume filled). A behaviour badge reads cancel vs fill. ATT = attachment, CXL = cancel rate, REC = value kept vs cancelled booking value (can exceed 100%)."
+  "Each card is a booking type. The top bar is re-let rate (volume filled). The subheading flags standout cancel vs fill behaviour (or ‘Re-let rate’ when steady). ATT = attachment, CXL = cancel rate, REC = value kept vs cancelled booking value (can exceed 100%)."
 
 export const FC_LOOP_OPPORTUNITIES_HELP =
   "Where to run the business harder for max revenue: weak re-let recovery, soft regions, under-sold cover where demand is strong, and proof points that show the loop already pays. Risk cards link to open cancels still awaiting a re-let."

@@ -90,8 +90,10 @@ export const METRIC_HELP: Record<string, string> = {
     "Conversion lift from the product outside test cohorts. Calculation: live conversion rate − baseline conversion rate.",
   "Conversion benefit":
     "Estimated partner margin from that conversion lift. Shown as the value of about 1 percentage point of conversion.",
-  "Out of Test Conversion Benefit (1% = £900,000)":
-    "Estimated partner margin from conversion lift outside test. Website shows the lift rate. Direct and Total show the value of about 1 percentage point (here £900k).",
+  "Out of Test Conversion Benefit (1% ≈ £520k)":
+    "Estimated partner margin from conversion lift outside test. Website shows the lift rate. Direct and Total show the value of about 1 percentage point (here £520k).",
+  "Out of Test Conversion Benefit (1% = £520,000)":
+    "Estimated partner margin from conversion lift outside test. Website shows the lift rate. Direct and Total show the value of about 1 percentage point (here £520k).",
   "Out of Test Conversion Benefit":
     "Estimated partner margin from conversion lift outside test. Website shows the lift rate. Direct and Total show the estimated cash value of that lift.",
 
@@ -179,9 +181,9 @@ export const METRIC_HELP: Record<string, string> = {
   "Partner occupancy":
     "Occupancy from the booking feed. Calculation: days booked ÷ total days available. Owner stays are not in the feed, so they are not counted as booked and are not removed from available days.",
   "Market occupancy":
-    "Market average occupancy for the same departure weeks, on the same days booked ÷ days available basis.",
+    "Market average occupancy for the same departure weeks, on the same days booked ÷ days available basis. This is the benchmark you are measured against.",
   "Best bedroom gap":
-    "Bedroom band where partner occupancy beats the market by the largest margin.",
+    "Bedroom band where partner occupancy beats the market by the largest margin. Contrast with the weakest band to see where mix or pricing needs work.",
   "Partner vs market by departure week":
     "Partner occupancy compared with the market for each departure week. Calculation: days booked ÷ total days available for stays departing that week. Owner bookings are not in the feed.",
   "Occupancy by bedrooms":
@@ -199,6 +201,8 @@ export const METRIC_HELP: Record<string, string> = {
   "Cover take-up":
     "Share of bookings where the guest bought Flexible Cancellation — conversion onto cover, the start of the revenue loop. Calculation: Flexible Cancellation bookings ÷ all bookings.",
   "Cancel rate":
+    "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next.",
+  "Cancel":
     "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next.",
   "Guests cancelled":
     "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next.",

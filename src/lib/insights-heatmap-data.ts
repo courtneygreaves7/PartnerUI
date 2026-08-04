@@ -1,8 +1,10 @@
 /**
  * Filterable metric heatmaps for attachment, cancellation rate, and re-let rate.
  * Dimensions: lead time, bedrooms, departure month.
- * Values are illustrative mocks until the full booking cube is wired.
+ * Bases come from mock-portfolio anchors.
  */
+
+import { PORTFOLIO } from "@/lib/mock-portfolio"
 
 export type HeatDimension = "leadTime" | "bedroom" | "departure"
 
@@ -105,25 +107,25 @@ function buildCube(args: {
 }
 
 export const ATTACHMENT_HEAT_CELLS = buildCube({
-  base: 14,
-  leadLift: [-3.5, -0.5, 2.5, 4],
-  bedroomLift: [1.5, 2, 0.5, -1, -2.5],
-  departureLift: [-1, 1.5, 2.5, 0],
+  base: PORTFOLIO.attachmentPct,
+  leadLift: [-3.2, -0.4, 2.2, 3.6],
+  bedroomLift: [1.4, 1.8, 0.4, -0.9, -2.2],
+  departureLift: [-0.9, 1.3, 2.2, 0],
 })
 
 export const CANCELLATION_HEAT_CELLS = buildCube({
-  base: 9.5,
-  leadLift: [4, 1.5, -1, -2.5],
-  bedroomLift: [-0.5, 0, 0.5, 1, 1.5],
-  departureLift: [-1, 0.5, 2, 1],
+  base: PORTFOLIO.fcCancelPct,
+  leadLift: [3.6, 1.4, -0.9, -2.2],
+  bedroomLift: [-0.4, 0, 0.4, 0.9, 1.3],
+  departureLift: [-0.9, 0.4, 1.8, 0.9],
   jitter: 0.25,
 })
 
 export const RELET_HEAT_CELLS = buildCube({
-  base: 58,
-  leadLift: [-6, -2, 3, 5],
-  bedroomLift: [2, 3, 1, -2, -4],
-  departureLift: [-2, 1, 3, 0],
+  base: PORTFOLIO.reletPct,
+  leadLift: [-5.5, -1.8, 2.6, 4.5],
+  bedroomLift: [1.8, 2.6, 0.9, -1.8, -3.5],
+  departureLift: [-1.8, 0.9, 2.6, 0],
   jitter: 0.8,
 })
 

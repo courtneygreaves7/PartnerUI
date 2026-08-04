@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   ArrowDown,
   ArrowUp,
@@ -6,16 +6,13 @@ import {
   Ban,
   BarChart3,
   CalendarCheck,
-  CalendarClock,
   CalendarRange,
   ChevronRight,
   Clock,
   Coins,
-  Download,
   FileText,
   Gauge,
   Info,
-  LifeBuoy,
   MousePointerClick,
   Package,
   Percent,
@@ -31,10 +28,11 @@ import {
 
 import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
 import { CancellationsReletsDashboard } from "@/components/cancellations-releats-dashboard"
-import { DualDataWidget } from "@/components/dual-data-widget"
 import { FcValueLoopExplore } from "@/components/fc-value-loop-explore"
-import { InsightsMetricHeatmap } from "@/components/insights-metric-heatmap"
+import { DdlValueLoopExplore } from "@/components/ddl-value-loop-explore"
 import { OccupancyInsightsDashboard } from "@/components/occupancy-insights-dashboard"
+import { PartnerImpactHero } from "@/components/partner-impact-hero"
+import { InsightsSection } from "@/components/insights-section"
 import {
   CollapsibleDataTable,
   MiniBarChart,
@@ -51,6 +49,8 @@ import {
   ADDITIONAL_PARTNER_REVENUE,
   DAMAGE_DEPOSIT_WAIVER_GRID,
   DDL_ATTACHMENT_VALUE_PER_PP,
+  DDL_BOOKINGS_BY_DEPARTURE,
+  DDL_VALUE_LOOP,
   FC_ATTACHMENT_VALUE_PER_PP,
   FC_BOOKINGS_BY_DEPARTURE,
   FC_VALUE_LOOP,
@@ -58,13 +58,20 @@ import {
   GROSS_BOOKINGS_TREND,
   MARGIN_EARNED_FC_DATA,
   MARKET_COMPARISON_VALUES,
-  PARTNER_IMPACT_HERO,
   PARTNER_REVENUE,
   TOTAL_PRODUCTS_SUMMARY,
   formatAttachmentValuePerPp,
   type AttachmentValueChannel,
 } from "@/lib/sykes-dashboard-data"
-import { PARTNER_BRANDING } from "@/lib/partner-branding"
+import {
+  PORTFOLIO,
+  formatGbp,
+  formatPct,
+  formatVolume,
+  homeMetricsForPeriod,
+  type HomePeriodMetrics,
+  type ImpactPeriodId,
+} from "@/lib/mock-portfolio"
 import type { ActiveFilters } from "@/lib/chart-data"
 
 const MONO_LABEL =
@@ -83,9 +90,6 @@ function parseNumeric(value: string): number {
   return Number(value.replace(/[^0-9.]/g, "")) || 0
 }
 
-const TOTAL_DRIVER = PARTNER_REVENUE.drivers.find((d) => d.label === "Total")
-const REVENUE_TOTAL = TOTAL_DRIVER ? parseNumeric(TOTAL_DRIVER.value) : 1800
-
 const GROSS_BOOKINGS_DRIVER = ADDITIONAL_PARTNER_REVENUE.drivers.find(
   (d) => d.label === "Gross bookings"
 )
@@ -95,8 +99,12 @@ const ATTACHMENT_DRIVER = PARTNER_REVENUE.drivers.find((d) =>
 
 const PRODUCT_AVAILABLE_PCT = GROSS_BOOKINGS_DRIVER
   ? parseNumeric(GROSS_BOOKINGS_DRIVER.side)
-  : 65
-const ATTACHMENT_PCT = ATTACHMENT_DRIVER ? parseNumeric(ATTACHMENT_DRIVER.value) : 14
+  : Math.round(PORTFOLIO.offerRate * 100)
+const ATTACHMENT_PCT = ATTACHMENT_DRIVER
+  ? parseNumeric(ATTACHMENT_DRIVER.value)
+  : PORTFOLIO.attachmentPct
+
+const REVENUE_TOTAL = PORTFOLIO.generated / 1000
 
 /**
  * Benchmark index scores (100 = market average) derived from partner vs market figures.
@@ -283,41 +291,6 @@ function LabelWithHelp({
   )
 }
 
-/** Section divider for Insights product tabs — keeps the page story easy to scan. */
-function InsightsSection({
-  eyebrow,
-  title,
-  description,
-  children,
-  showTopRule = true,
-}: {
-  eyebrow: string
-  title: string
-  description: string
-  children: React.ReactNode
-  /** Divider above the heading (skip on the first section). */
-  showTopRule?: boolean
-}) {
-  return (
-    <section className="space-y-5">
-      <div className={cn(showTopRule && "border-t border-border/50 pt-12")}>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-          <div className="min-w-0 shrink-0">
-            <p className={MONO_LABEL}>{eyebrow}</p>
-            <h3 className="mt-1 text-base font-semibold tracking-tight text-foreground">
-              {title}
-            </h3>
-          </div>
-          <p className="max-w-xl text-sm leading-snug text-muted-foreground sm:text-right">
-            {description}
-          </p>
-        </div>
-      </div>
-      <div className="space-y-6">{children}</div>
-    </section>
-  )
-}
-
 function MonoPill({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <span
@@ -469,9 +442,24 @@ function TrendChip({
 }
 
 const REVENUE_MIX = [
-  { label: "Margin", value: 900, display: "£900k", opacity: 0.9 },
-  { label: "Website", value: 800, display: "£800k", opacity: 0.6 },
-  { label: "Incremental", value: 100, display: "£100k", opacity: 0.3 },
+  {
+    label: "Margin",
+    value: PORTFOLIO.fcMargin / 1000,
+    display: formatGbp(PORTFOLIO.fcMargin, "thousands"),
+    opacity: 0.9,
+  },
+  {
+    label: "Website",
+    value: PORTFOLIO.conversionUplift / 1000,
+    display: formatGbp(PORTFOLIO.conversionUplift, "thousands"),
+    opacity: 0.6,
+  },
+  {
+    label: "Incremental",
+    value: PORTFOLIO.incrementalTotal / 1000,
+    display: formatGbp(PORTFOLIO.incrementalTotal, "thousands"),
+    opacity: 0.3,
+  },
 ] as const
 
 const OFFER_CONVERSION_PCT = Math.round((ATTACHMENT_PCT / PRODUCT_AVAILABLE_PCT) * 100)
@@ -554,33 +542,37 @@ function KpiStatTile({
   )
 }
 
+const MARGIN_SHARE = Math.round((PORTFOLIO.fcMargin / PORTFOLIO.generated) * 100)
+const INCREMENTAL_SHARE = Math.round((PORTFOLIO.incrementalTotal / PORTFOLIO.generated) * 100)
+const CONVERSION_SHARE = Math.round((PORTFOLIO.conversionUplift / PORTFOLIO.generated) * 100)
+
 const DRIVER_BREAKDOWN = [
   {
     label: "Attachment",
-    value: "14%",
-    corner: "14%",
+    value: formatPct(PORTFOLIO.attachmentPct, 1),
+    corner: formatPct(PORTFOLIO.attachmentPct, 1),
     percent: ATTACHMENT_PCT,
     footnote: `${PRODUCT_AVAILABLE_PCT}% product available`,
   },
   {
     label: "Margin (ex. VAT)",
-    value: "£900k",
-    corner: "50%",
-    percent: 50,
+    value: formatGbp(PORTFOLIO.fcMargin, "thousands"),
+    corner: `${MARGIN_SHARE}%`,
+    percent: MARGIN_SHARE,
     footnote: "Ex. VAT",
   },
   {
     label: "Incremental cancellations & relets",
-    value: "£100k",
-    corner: "6%",
-    percent: 6,
-    footnote: "6% share",
+    value: formatGbp(PORTFOLIO.incrementalTotal, "thousands"),
+    corner: `${INCREMENTAL_SHARE}%`,
+    percent: INCREMENTAL_SHARE,
+    footnote: `${INCREMENTAL_SHARE}% share`,
   },
   {
     label: "Website conversion",
-    value: "£800k p/a",
-    corner: "44%",
-    percent: 44,
+    value: `${formatGbp(PORTFOLIO.conversionUplift, "thousands")} p/a`,
+    corner: `${CONVERSION_SHARE}%`,
+    percent: CONVERSION_SHARE,
     footnote: "+1% in testing · annualised",
   },
 ] as const
@@ -655,7 +647,11 @@ function PiklStaysTab() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiStatTile label="Gross bookings" value="690k" chip="+125k">
+        <KpiStatTile
+          label="Gross bookings"
+          value={formatVolume(PORTFOLIO.bookings)}
+          chip={GROSS_BOOKINGS_DRIVER?.trend ?? "+420"}
+        >
           <Sparkline data={sparkData} showAxis={false} className="h-10 text-foreground/60" />
         </KpiStatTile>
         <KpiStatTile
@@ -735,7 +731,7 @@ function PiklEffectTab() {
           <PanelEyebrow label="Gross bookings trend" sub="Monthly volume" helpTitle="Gross bookings trend" />
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
             <p className="text-5xl font-bold tracking-tight tabular-nums text-foreground">
-              {GROSS_BOOKINGS_DRIVER?.value ?? "690k"}
+              {GROSS_BOOKINGS_DRIVER?.value ?? formatVolume(PORTFOLIO.bookings)}
             </p>
             <MonoPill>{GROSS_BOOKINGS_DRIVER?.trend ?? "+500"}</MonoPill>
           </div>
@@ -759,7 +755,7 @@ function PiklEffectTab() {
             />
             <ProgressRow
               label="Attachment (average)"
-              value={ATTACHMENT_DRIVER?.value ?? "14%"}
+              value={ATTACHMENT_DRIVER?.value ?? formatPct(PORTFOLIO.attachmentPct, 1)}
               percent={ATTACHMENT_PCT}
               strong={false}
             />
@@ -935,28 +931,45 @@ const TAB_EMPTY_COPY: Record<TabId, { title: string; description: string }> = {
   },
 }
 
-function driverAmount(labelIncludes: string): number {
-  const driver = PARTNER_REVENUE.drivers.find((d) => d.label.includes(labelIncludes))
-  return driver ? parseNumeric(driver.value) : 0
-}
+function PiklStaysDriverCards({
+  onOpenInsights,
+  metrics,
+}: {
+  onOpenInsights?: () => void
+  metrics: HomePeriodMetrics
+}) {
+  const drivers = [
+    {
+      label: "Attachment (average)",
+      value: metrics.stays.attachmentLabel,
+      support: metrics.stays.support.attachment,
+    },
+    {
+      label: "Margin (ex. VAT) £m",
+      value: metrics.stays.marginLabel,
+      support: metrics.stays.support.margin,
+    },
+    {
+      label: "Incremental cancellations & relets",
+      value: metrics.stays.incrementalLabel,
+      support: metrics.stays.support.incremental,
+    },
+    {
+      label: "Website conversion*",
+      value: metrics.stays.conversionLabel,
+      support: metrics.stays.support.conversion,
+    },
+    {
+      label: "Total",
+      value: metrics.stays.generatedLabel,
+      support: metrics.stays.support.total,
+      highlight: true as const,
+    },
+  ]
 
-const MARGIN_SHARE_PCT = Math.round((driverAmount("Margin") / REVENUE_TOTAL) * 100)
-const INCREMENTAL_SHARE_PCT = Math.round(
-  (driverAmount("Incremental Cancellations") / REVENUE_TOTAL) * 100
-)
-
-const STAYS_CARD_SUPPORT: Record<string, string> = {
-  "Attachment (average)": `vs ${PRODUCT_AVAILABLE_PCT}% product availability`,
-  "Margin (ex. VAT) £m": `${MARGIN_SHARE_PCT}% of total partner revenue`,
-  "Incremental cancellations & relets": `${INCREMENTAL_SHARE_PCT}% of total partner revenue`,
-  "Website conversion*": "Website conversion uplift",
-  Total: PARTNER_REVENUE.headlineNote,
-}
-
-function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void }) {
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
-      {PARTNER_REVENUE.drivers.map((driver) => {
+      {drivers.map((driver) => {
         const highlight = "highlight" in driver && driver.highlight
 
         return (
@@ -995,7 +1008,7 @@ function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void 
                   highlight ? "text-primary-foreground" : "text-foreground"
                 )}
               >
-                {driver.label === "Total" ? PARTNER_REVENUE.headline : driver.value}
+                {driver.label === "Total" ? metrics.stays.headline : driver.value}
               </p>
             </div>
             <p
@@ -1004,7 +1017,7 @@ function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void 
                 highlight ? "text-primary-foreground/75" : "text-muted-foreground"
               )}
             >
-              {STAYS_CARD_SUPPORT[driver.label]}
+              {driver.support}
             </p>
           </div>
         )
@@ -1013,10 +1026,59 @@ function PiklStaysDriverCards({ onOpenInsights }: { onOpenInsights?: () => void 
   )
 }
 
-function PiklEffectDriverCards({ onOpenInsights }: { onOpenInsights?: () => void }) {
+function PiklEffectDriverCards({
+  onOpenInsights,
+  metrics,
+}: {
+  onOpenInsights?: () => void
+  metrics: HomePeriodMetrics
+}) {
+  const drivers = [
+    {
+      label: "Gross bookings",
+      value: metrics.effect.bookingsLabel,
+      trend: metrics.effect.bookingsTrend,
+      role: "volume" as const,
+      side: `Volume base · ${metrics.effect.offerPct}% product available`,
+      versus: null as string | null,
+    },
+    {
+      label: "Average lead time",
+      value: metrics.effect.leadLabel,
+      trend: metrics.effect.leadTrend,
+      role: "profile" as const,
+      side: null as string | null,
+      versus: metrics.effect.leadVersus,
+    },
+    {
+      label: "Average length of stay",
+      value: metrics.effect.losLabel,
+      trend: metrics.effect.losTrend,
+      role: "profile" as const,
+      side: null as string | null,
+      versus: metrics.effect.losVersus,
+    },
+    {
+      label: "Avg spend per booking",
+      value: metrics.effect.spendLabel,
+      trend: metrics.effect.spendTrend,
+      role: "profile" as const,
+      side: null as string | null,
+      versus: metrics.effect.spendVersus,
+    },
+    {
+      label: "Average Pikl'd Stay IPB",
+      value: metrics.effect.ipbLabel,
+      trend: metrics.effect.ipbTrend,
+      role: "profile" as const,
+      side: null as string | null,
+      versus: metrics.effect.ipbVersus,
+    },
+  ]
+
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
-      {ADDITIONAL_PARTNER_REVENUE.drivers.map((driver) => (
+      {drivers.map((driver) => (
         <div
           key={driver.label}
           className={cn(PANEL, "relative flex flex-col gap-4 p-5")}
@@ -1053,27 +1115,53 @@ function PiklEffectDriverCards({ onOpenInsights }: { onOpenInsights?: () => void
   )
 }
 
-function PiklMarketDriverCards({ onOpenInsights }: { onOpenInsights?: () => void }) {
+function PiklMarketDriverCards({
+  onOpenInsights,
+  metrics,
+}: {
+  onOpenInsights?: () => void
+  metrics: HomePeriodMetrics
+}) {
+  const score = Math.round(
+    (metrics.market.reduce((sum, item) => sum + item.partner / Math.max(item.market, 0.01), 0) /
+      metrics.market.length) *
+      100
+  )
+
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {MARKET_COMPARISON_VALUES.map((item) => (
-        <div key={item.metric} className={cn(PANEL, "relative flex flex-col gap-4 p-5")}>
-          <CardCornerLink title={item.metric} onOpenInsights={onOpenInsights} />
-          <div>
-            <TileIcon label={item.metric} />
-          </div>
-          <div className="space-y-1">
-            <LabelWithHelp title={item.metric} />
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
-                {item.value}
-              </p>
-              <TrendChip value={item.trend} tone={item.tone} label={item.metric} />
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)] lg:items-stretch">
+      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 content-start">
+        {metrics.market.map((item) => (
+          <div key={item.metric} className={cn(PANEL, "relative flex flex-col gap-4 p-5")}>
+            <CardCornerLink title={item.metric} onOpenInsights={onOpenInsights} />
+            <div>
+              <TileIcon label={item.metric} />
             </div>
+            <div className="space-y-1">
+              <LabelWithHelp title={item.metric} />
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+                  {item.value}
+                </p>
+                <TrendChip value={item.trend} tone={item.tone} label={item.metric} />
+              </div>
+            </div>
+            <p className="mt-auto text-xs text-muted-foreground">{item.side}</p>
           </div>
-          <p className="mt-auto text-xs text-muted-foreground">{item.side}</p>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      <ChartRowCard
+        eyebrow="Partner vs Market"
+        sub="Benchmark by metric"
+        value={`${score}`}
+        trend={`${score >= 100 ? "+" : ""}${score - 100}`}
+        className="h-full min-h-0"
+        contentClassName="mt-0 flex min-h-0 flex-1 flex-col pt-4"
+        onOpenInsights={onOpenInsights}
+      >
+        <PartnerVsMarketBullets items={metrics.market} fillHeight />
+      </ChartRowCard>
     </div>
   )
 }
@@ -1123,70 +1211,63 @@ function ChartRowCard({
   )
 }
 
-const QUICK_ACTIONS: Array<{
-  label: string
-  description: string
-  icon: LucideIcon
-  action: "insights" | "none"
-}> = [
-  { label: "Open insights", description: "Full performance detail", icon: BarChart3, action: "insights" },
-  { label: "Export report", description: "Download a snapshot", icon: Download, action: "none" },
-  { label: "Schedule report", description: "Set a recurring send", icon: CalendarClock, action: "none" },
-  { label: "Get support", description: "Contact the partner team", icon: LifeBuoy, action: "none" },
-]
+const STAYS_MARGIN_TREND_ALL = MARGIN_EARNED_FC_DATA.map((point) => ({
+  label: point.month,
+  value: point.value,
+}))
 
-function QuickActionsCard({
-  onOpenInsights,
-  className,
-}: {
-  onOpenInsights?: () => void
-  className?: string
-}) {
-  return (
-    <div className={cn(PANEL, "flex flex-col", className)}>
-      <PanelEyebrow label="Quick Actions" />
-      <div className="mt-4 grid flex-1 gap-3 sm:grid-cols-2">
-        {QUICK_ACTIONS.map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            onClick={item.action === "insights" ? onOpenInsights : undefined}
-            className="group flex min-w-0 flex-col justify-between gap-3 rounded-xl border border-border/50 bg-muted/25 p-4 text-left transition-colors hover:border-border hover:bg-muted/50"
-          >
-            <div className="flex w-full items-start justify-between gap-2">
-              <item.icon className="size-4 shrink-0 text-muted-foreground" />
-              <ArrowUpRight className="size-4 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-foreground" />
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-sm font-semibold text-foreground">{item.label}</p>
-              <p className="text-xs text-muted-foreground">{item.description}</p>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
+const EFFECT_CHANNEL_ATTACH = (
+  [
+    { key: "website" as const, label: "Web" },
+    { key: "app" as const, label: "App" },
+    { key: "offline" as const, label: "Off" },
+    { key: "ota" as const, label: "OTA" },
+  ] as const
+).map(({ key, label }) => ({
+  label,
+  value: Number(FLEXIBLE_CANCELLATION_GRID[1][key].value.replace(/[^0-9.]/g, "")) || 0,
+}))
+
+function slicePeriodTrend(
+  data: Array<{ label: string; value: number }>,
+  period: ImpactPeriodId,
+  monthCount: number
+) {
+  if (period === "all") return data
+  const end = Math.min(6, data.length - 1)
+  const start = Math.max(0, end - monthCount + 1)
+  return data.slice(start, end + 1)
 }
 
-const STAYS_DRIVER_BARS = [
-  { label: "Incremental", width: "28%", color: "#0054CC", value: "£100k" },
-  { label: "Website", width: "72%", color: "#3389FF", value: "£800k" },
-  { label: "Margin", width: "100%", color: "#99C4FF", value: "£900k" },
-] as const
+function round1(n: number) {
+  return Math.round(n * 10) / 10
+}
 
-function StaysSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
+function StaysSecondRow({
+  onOpenInsights,
+  metrics,
+}: {
+  onOpenInsights?: () => void
+  metrics: HomePeriodMetrics
+}) {
+  const marginTrend = slicePeriodTrend(
+    STAYS_MARGIN_TREND_ALL,
+    metrics.period,
+    metrics.monthCount
+  )
+
   return (
     <div className="grid gap-6 xl:grid-cols-5">
       <ChartRowCard
         eyebrow="Revenue Drivers"
         sub="Contribution by driver (£k)"
-        value={PARTNER_REVENUE.headline}
+        value={metrics.stays.headline}
         className="xl:col-span-3"
         contentClassName="mt-0 flex min-h-0 flex-1 flex-col justify-center py-3"
         onOpenInsights={onOpenInsights}
       >
         <div className="space-y-2.5">
-          {STAYS_DRIVER_BARS.map((bar) => (
+          {metrics.stays.driverBars.map((bar) => (
             <div key={bar.label} className="space-y-1">
               <div className="flex items-center justify-between gap-3">
                 <div
@@ -1202,36 +1283,85 @@ function StaysSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
           ))}
         </div>
       </ChartRowCard>
-      <QuickActionsCard onOpenInsights={onOpenInsights} className="xl:col-span-2" />
+      <ChartRowCard
+        eyebrow="FC margin by month"
+        sub="Partner margin (£k)"
+        value={metrics.stays.marginLabel}
+        className="xl:col-span-2"
+        onOpenInsights={onOpenInsights}
+      >
+        <Sparkline
+          data={marginTrend}
+          valueFormatter={(v) => `£${v}k`}
+          className="h-36 text-primary/80"
+        />
+      </ChartRowCard>
     </div>
   )
 }
 
-function EffectSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
+function EffectSecondRow({
+  onOpenInsights,
+  metrics,
+}: {
+  onOpenInsights?: () => void
+  metrics: HomePeriodMetrics
+}) {
+  const bookingsTrend = slicePeriodTrend(
+    GROSS_BOOKINGS_TREND.map((point) => ({ ...point })),
+    metrics.period,
+    metrics.monthCount
+  )
+  const channelAttach = EFFECT_CHANNEL_ATTACH.map((item) => ({
+    ...item,
+    value: Math.max(
+      0,
+      round1(item.value + (metrics.stays.attachmentPct - PORTFOLIO.attachmentPct))
+    ),
+  }))
+
   return (
     <div className="grid gap-6 xl:grid-cols-5">
       <ChartRowCard
         eyebrow="Gross bookings trend"
         sub="Monthly volume"
-        value={GROSS_BOOKINGS_DRIVER?.value ?? "690k"}
-        trend={GROSS_BOOKINGS_DRIVER?.trend ?? "+500"}
+        value={metrics.effect.bookingsLabel}
+        trend={metrics.effect.bookingsTrend}
         className="xl:col-span-3"
         onOpenInsights={onOpenInsights}
       >
         <Sparkline
-          data={GROSS_BOOKINGS_TREND.map((point) => ({ ...point }))}
+          data={bookingsTrend}
           valueFormatter={(v) => `${v}k`}
           className="h-36 text-primary/80"
         />
       </ChartRowCard>
-      <QuickActionsCard onOpenInsights={onOpenInsights} className="xl:col-span-2" />
+      <ChartRowCard
+        eyebrow="FC attachment by channel"
+        sub="Take-up %"
+        value={metrics.stays.attachmentLabel}
+        className="xl:col-span-2"
+        onOpenInsights={onOpenInsights}
+      >
+        <MiniBarChart
+          data={channelAttach}
+          valueFormatter={(v) => `${v}%`}
+          className="h-36 text-primary/80"
+        />
+      </ChartRowCard>
     </div>
   )
 }
 
-function PartnerVsMarketBullets() {
+function PartnerVsMarketBullets({
+  items,
+  fillHeight = false,
+}: {
+  items: HomePeriodMetrics["market"]
+  fillHeight?: boolean
+}) {
   return (
-    <div className="pb-1">
+    <div className={cn("pb-1", fillHeight && "flex min-h-0 flex-1 flex-col")}>
       <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
         <span className="inline-flex items-center justify-end gap-1.5">
           <span className="size-1.5 rounded-full bg-primary" />
@@ -1244,72 +1374,59 @@ function PartnerVsMarketBullets() {
         </span>
       </div>
 
-      {MARKET_COMPARISON_VALUES.map((item) => {
-        const max = Math.max(item.partner, item.market, 1)
-        const partnerWidth = `${(item.partner / max) * 100}%`
-        const marketWidth = `${(item.market / max) * 100}%`
+      <div className={cn(fillHeight && "flex min-h-0 flex-1 flex-col")}>
+        {items.map((item) => {
+          const max = Math.max(item.partner, item.market, 1)
+          const partnerWidth = `${(item.partner / max) * 100}%`
+          const marketWidth = `${(item.market / max) * 100}%`
 
-        return (
-          <div
-            key={item.metric}
-            className="border-b border-border/60 py-3 last:border-b-0"
-          >
-            <p className="mb-2 text-xs text-muted-foreground">{item.metric}</p>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <p className="w-[4.25rem] shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
-                  {item.value}
-                </p>
-                <div className="h-2 min-w-0 flex-1 rounded-full bg-muted">
-                  <div
-                    className="ml-auto h-2 rounded-full bg-primary"
-                    style={{ width: partnerWidth }}
-                  />
+          return (
+            <div
+              key={item.metric}
+              className={cn(
+                "border-b border-border/60 py-3 last:border-b-0",
+                fillHeight && "flex flex-1 flex-col justify-center"
+              )}
+            >
+              <p className="mb-2 text-xs text-muted-foreground">{item.metric}</p>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <p className="w-[4.25rem] shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+                    {item.value}
+                  </p>
+                  <div className="h-2 min-w-0 flex-1 rounded-full bg-muted">
+                    <div
+                      className="ml-auto h-2 rounded-full bg-primary"
+                      style={{ width: partnerWidth }}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="h-5 w-px bg-border" aria-hidden />
+                <div className="h-5 w-px bg-border" aria-hidden />
 
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="h-2 min-w-0 flex-1 rounded-full bg-muted">
-                  <div
-                    className="h-2 rounded-full bg-slate-400"
-                    style={{ width: marketWidth }}
-                  />
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="h-2 min-w-0 flex-1 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-slate-400"
+                      style={{ width: marketWidth }}
+                    />
+                  </div>
+                  <p className="w-[4.25rem] shrink-0 text-sm tabular-nums text-muted-foreground">
+                    {item.marketLabel}
+                  </p>
                 </div>
-                <p className="w-[4.25rem] shrink-0 text-sm tabular-nums text-muted-foreground">
-                  {item.marketLabel}
-                </p>
               </div>
             </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function MarketSecondRow({ onOpenInsights }: { onOpenInsights?: () => void }) {
-  return (
-    <div className="grid gap-6 xl:grid-cols-5">
-      <ChartRowCard
-        eyebrow="Partner vs Market"
-        sub="Benchmark by metric"
-        value="92"
-        trend="-8"
-        className="xl:col-span-3"
-        onOpenInsights={onOpenInsights}
-      >
-        <PartnerVsMarketBullets />
-      </ChartRowCard>
-      <QuickActionsCard onOpenInsights={onOpenInsights} className="xl:col-span-2" />
+          )
+        })}
+      </div>
     </div>
   )
 }
 
 const INSIGHTS_PRODUCT_TABS = [
   { id: "cal", label: "Flexible Cancellation" },
-  { id: "ddl", label: "Damage Deposit Waiver" },
+  { id: "ddl", label: "Damage Waiver" },
   { id: "occupancy", label: "Occupancy" },
   { id: "performance", label: "Cancellations & re-lets" },
 ] as const
@@ -1375,8 +1492,8 @@ const CAL_RATE_CARDS: Array<{
   },
   {
     label: "Conversion benefit",
-    value: "1% = £900k",
-    trend: "+£50k",
+    value: `1% = ${formatGbp(PORTFOLIO.conversionUplift, "thousands")}`,
+    trend: "+£35k",
     tone: "up",
   },
 ]
@@ -1502,27 +1619,28 @@ function AttachmentOpportunityCard({
   )
 }
 
-function FcValueLoopScorecard() {
+function ProductValueLoopScorecard({
+  loop,
+}: {
+  loop: typeof FC_VALUE_LOOP | typeof DDL_VALUE_LOOP
+}) {
   return (
     <div className={cn(PANEL, "p-5 sm:p-6")}>
       <div className="flex flex-col gap-1">
         <div className="min-w-0">
           <p className={MONO_LABEL}>Max revenue loop</p>
           <div className="mt-1 flex items-center gap-1.5">
-            <h3 className="text-sm font-semibold text-foreground">{FC_VALUE_LOOP.title}</h3>
-            <MeasureHelpButton
-              title={FC_VALUE_LOOP.title}
-              helpText={FC_VALUE_LOOP.story}
-            />
+            <h3 className="text-sm font-semibold text-foreground">{loop.title}</h3>
+            <MeasureHelpButton title={loop.title} helpText={loop.story} />
           </div>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-            {FC_VALUE_LOOP.story}
+            {loop.story}
           </p>
         </div>
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch xl:gap-0">
-        {FC_VALUE_LOOP.steps.map((step, index) => (
+        {loop.steps.map((step, index) => (
           <div key={step.id} className="flex min-w-0 flex-1 items-stretch">
             <div className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5">
               <div className="flex items-center gap-2">
@@ -1541,7 +1659,7 @@ function FcValueLoopScorecard() {
                 {step.hint}
               </p>
             </div>
-            {index < FC_VALUE_LOOP.steps.length - 1 ? (
+            {index < loop.steps.length - 1 ? (
               <div
                 className="hidden w-8 shrink-0 items-center justify-center xl:flex"
                 aria-hidden
@@ -1554,6 +1672,14 @@ function FcValueLoopScorecard() {
       </div>
     </div>
   )
+}
+
+function FcValueLoopScorecard() {
+  return <ProductValueLoopScorecard loop={FC_VALUE_LOOP} />
+}
+
+function DdlValueLoopScorecard() {
+  return <ProductValueLoopScorecard loop={DDL_VALUE_LOOP} />
 }
 
 /** CAL Flexible Cancellation analytics — channel volume, rates, margin, and full breakdown. */
@@ -1609,12 +1735,13 @@ export function InsightsCalPanel({
   )
 
   return (
-    <div className="space-y-14">
+    <div className="flex flex-col">
       <InsightsSection
         eyebrow="1 · How are we doing?"
         title="Commercial performance"
-        description="Pricing, conversion, booking volume, attachment, and margin — the current health of Flexible Cancellation."
-        showTopRule={false}
+        description="See whether Flexible Cancellation is priced right, converting guests, and earning margin — plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and ops."
+        badge={{ icon: BarChart3, label: "Health check" }}
+        showDivider={false}
       >
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {CAL_RATE_CARDS.map((card) => (
@@ -1667,7 +1794,8 @@ export function InsightsCalPanel({
                   {bookingsRow.total.value}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Direct + OTA · 14% of 690k bookings
+                  Direct + OTA · {formatPct(PORTFOLIO.attachmentPct, 1)} of{" "}
+                  {formatVolume(PORTFOLIO.bookings)} bookings
                 </p>
               </div>
             </div>
@@ -1833,7 +1961,8 @@ export function InsightsCalPanel({
       <InsightsSection
         eyebrow="2 · The story"
         title="How Flexible Cancellation pays"
-        description="If you want to do better, start with the loop: cover sold → cancels → re-lets → extra revenue."
+        description="Flexible Cancellation is not just cover sold. Guests convert onto it, some cancel (that is expected), ops re-lets the stay, and you keep — or even grow — the revenue. Follow that loop to see where money is made or lost."
+        badge={{ icon: RefreshCcw, label: "Value loop" }}
       >
         <FcValueLoopScorecard />
       </InsightsSection>
@@ -1842,6 +1971,7 @@ export function InsightsCalPanel({
         eyebrow="3 · Where to act"
         title="What is driving the results?"
         description="Use bedrooms, travel dates, and lead time to find where attachment is weak, cancels are high, or relets need work — then act on the shortlist."
+        badge={{ icon: MousePointerClick, label: "Signals" }}
       >
         <FcValueLoopExplore onOpenRelets={onOpenRelets} onAskAi={onAskAi} />
       </InsightsSection>
@@ -1850,6 +1980,7 @@ export function InsightsCalPanel({
         eyebrow="4 · Growth opportunity"
         title="What happens if we sell a bit more?"
         description="Value of raising attachment by 1 percentage point, plus when travelling guests booked cover by departure month."
+        badge={{ icon: TrendingUp, label: "Upside" }}
       >
         <AttachmentOpportunityCard
           productLabel="Flexible Cancellation"
@@ -1882,6 +2013,7 @@ export function InsightsCalPanel({
         eyebrow="5 · Full detail"
         title="Channel breakdown"
         description="Same metrics as above, row by row across Website, App, Offline, OTA, Direct, and Total. Open when you need the audit view."
+        badge={{ icon: FileText, label: "Audit" }}
       >
         <CollapsibleDataTable title="View full channel breakdown" defaultOpen={false}>
           <ChannelGridTable rows={FLEXIBLE_CANCELLATION_GRID} className="border-0 shadow-none" />
@@ -1925,8 +2057,12 @@ const DDL_RATE_CARDS: Array<{
   },
 ]
 
-/** DDL Damage Deposit Waiver analytics — same layout as CAL, driven by DDL grid data. */
-export function InsightsDdlPanel() {
+/** DDL Damage Waiver analytics — same story structure as FC Insights. */
+export function InsightsDdlPanel({
+  onAskAi,
+}: {
+  onAskAi?: (prompt: string) => void
+} = {}) {
   const bookingsRow = DAMAGE_DEPOSIT_WAIVER_GRID[0]
   const attachmentRowData = DAMAGE_DEPOSIT_WAIVER_GRID[1]
   const marginRow = DAMAGE_DEPOSIT_WAIVER_GRID[4]
@@ -1961,234 +2097,293 @@ export function InsightsDdlPanel() {
     label: point.month,
     value: Math.round(point.value * 0.4),
   }))
+  const ddlBookingsByDeparture = DDL_BOOKINGS_BY_DEPARTURE.map((point) => ({
+    label: point.month,
+    value: point.value,
+  }))
+  const departureBookingsTotal = DDL_BOOKINGS_BY_DEPARTURE.reduce(
+    (sum, point) => sum + point.value,
+    0
+  )
 
   return (
-    <div className="space-y-12">
-      <div>
-        <p className={MONO_LABEL}>Product</p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-          Damage Deposit Waiver
-        </h2>
-      </div>
-
-      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-        {DDL_RATE_CARDS.map((card) => (
-          <div key={card.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
-            <div>
-              <TileIcon label={card.label} />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5">
-                <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
-                <MeasureHelpButton title={card.label} />
+    <div className="flex flex-col">
+      <InsightsSection
+        eyebrow="1 · How are we doing?"
+        title="Commercial performance"
+        description="See whether Damage Waiver is priced right, converting guests, and earning margin — plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and growth."
+        badge={{ icon: BarChart3, label: "Health check" }}
+        showDivider={false}
+      >
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {DDL_RATE_CARDS.map((card) => (
+            <div key={card.label} className={cn(PANEL, "flex flex-col gap-4 p-5")}>
+              <div>
+                <TileIcon label={card.label} />
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
-                  {card.value}
-                </p>
-                <TrendChip value={card.trend} tone={card.tone} label={card.label} />
-              </div>
-            </div>
-            {card.detail ? (
-              <p className="mt-auto text-xs text-muted-foreground">{card.detail}</p>
-            ) : null}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className={MONO_LABEL}>Volume</p>
-              <HeadingWithHelp className="mt-1" title="DDL Bookings by channel" />
-            </div>
-            <TrendChip value="+3.1%" tone="up" label="DDL Bookings by channel" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-              <p className="text-xs text-muted-foreground">Direct</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                {bookingsRow.direct.value}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Website + App + Offline · {directShare}% of total
-              </p>
-            </div>
-            <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                {bookingsRow.total.value}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Direct + OTA · 6.8% attachment overall
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex h-3 overflow-hidden rounded-full bg-muted">
-              {bookingChannels.map((channel) => (
-                <div
-                  key={channel.label}
-                  className="h-full first:rounded-l-full last:rounded-r-full"
-                  style={{
-                    width: `${channelShare(channel.value, bookingsTotal)}%`,
-                    backgroundColor: channel.color,
-                  }}
-                  title={`${channel.label}: ${channel.value}`}
-                />
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {bookingChannels.map((channel) => (
-                <span
-                  key={channel.label}
-                  className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"
-                >
-                  <span
-                    className="size-2 rounded-full"
-                    style={{ backgroundColor: channel.color }}
-                  />
-                  {channel.label} {channelShare(channel.value, bookingsTotal)}%
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {bookingChannels.map((channel) => {
-              const share = channelShare(channel.value, bookingsTotal)
-              return (
-                <div key={channel.label} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-foreground">{channel.label}</span>
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {channel.value}
-                      <span className="ml-2 text-xs font-medium text-muted-foreground">
-                        {share}%
-                      </span>
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${share}%`, backgroundColor: channel.color }}
-                    />
-                  </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[13px] leading-snug text-muted-foreground">{card.label}</p>
+                  <MeasureHelpButton title={card.label} />
                 </div>
-              )
-            })}
-          </div>
-
-          <div className="border-t border-border/60 pt-4">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">DDL bookings made · monthly</p>
-              <p className="text-xs font-semibold tabular-nums text-foreground">
-                {bookingsDirect.toLocaleString("en-GB")} direct
-              </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+                    {card.value}
+                  </p>
+                  <TrendChip value={card.trend} tone={card.tone} label={card.label} />
+                </div>
+              </div>
+              {card.detail ? (
+                <p className="mt-auto text-xs text-muted-foreground">{card.detail}</p>
+              ) : null}
             </div>
-            <Sparkline
-              data={ddlBookingsTrend}
-              valueFormatter={(v) => v.toLocaleString("en-GB")}
-              className="h-20 text-primary/70"
-            />
-          </div>
+          ))}
         </div>
 
-        <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
-          <div>
-            <p className={MONO_LABEL}>Commercial</p>
-            <HeadingWithHelp
-              className="mt-1"
-              title="Attachment & margin"
-              helpTitle="DDL Attachment & margin"
-            />
-          </div>
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className={MONO_LABEL}>Volume</p>
+                <HeadingWithHelp className="mt-1" title="DDL Bookings by channel" />
+              </div>
+              <TrendChip value="+3.1%" tone="up" label="DDL Bookings by channel" />
+            </div>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
-              <div className="min-w-0">
-                <LabelWithHelp title="DDL Attachment" />
-                <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
-                  {attachmentRowData.total.value}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                <p className="text-xs text-muted-foreground">Direct</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {bookingsRow.direct.value}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Direct {attachmentRowData.direct.value} · Total {attachmentRowData.total.value}
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Website + App + Offline · {directShare}% of total
                 </p>
               </div>
-              <AttachmentDonut percent={parseDisplayValue(attachmentRowData.total.value)} />
+              <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                  {bookingsRow.total.value}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Direct + OTA · {attachmentRowData.total.value} attachment overall
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <LabelWithHelp title="DDL Partner Margin" />
-              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
-                {marginRow.total.value}
-              </p>
-              <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-muted">
-                {marginChannels.map((channel) => (
+
+            <div className="space-y-2">
+              <div className="flex h-3 overflow-hidden rounded-full bg-muted">
+                {bookingChannels.map((channel) => (
                   <div
                     key={channel.label}
                     className="h-full first:rounded-l-full last:rounded-r-full"
                     style={{
-                      width: `${channelShare(channel.value, marginTotal)}%`,
+                      width: `${channelShare(channel.value, bookingsTotal)}%`,
                       backgroundColor: channel.color,
                     }}
                     title={`${channel.label}: ${channel.value}`}
                   />
                 ))}
               </div>
-              <div className="mt-3 grid grid-cols-4 gap-2">
-                {marginChannels.map((channel) => (
-                  <div
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {bookingChannels.map((channel) => (
+                  <span
                     key={channel.label}
-                    className="rounded-lg border border-border/60 bg-card px-3 py-2"
+                    className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"
                   >
-                    <p className="text-[11px] text-muted-foreground">{channel.label}</p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
-                      {channel.value}
-                    </p>
-                  </div>
+                    <span
+                      className="size-2 rounded-full"
+                      style={{ backgroundColor: channel.color }}
+                    />
+                    {channel.label} {channelShare(channel.value, bookingsTotal)}%
+                  </span>
                 ))}
               </div>
             </div>
-            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <LabelWithHelp
-                title="Out of test conversion benefit"
-                helpTitle="Out of Test Conversion Benefit"
-              />
-              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
-                {conversionRow.total.value}
-              </p>
-              <div className="mt-3 grid grid-cols-4 gap-2">
-                {conversionChannels.map((channel) => (
-                  <div
-                    key={channel.label}
-                    className="rounded-lg border border-border/60 bg-card px-3 py-2"
-                  >
-                    <p className="text-[11px] text-muted-foreground">{channel.label}</p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
-                      {channel.value}
-                    </p>
+
+            <div className="space-y-3">
+              {bookingChannels.map((channel) => {
+                const share = channelShare(channel.value, bookingsTotal)
+                return (
+                  <div key={channel.label} className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-foreground">{channel.label}</span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {channel.value}
+                        <span className="ml-2 text-xs font-medium text-muted-foreground">
+                          {share}%
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${share}%`, backgroundColor: channel.color }}
+                      />
+                    </div>
                   </div>
-                ))}
+                )
+              })}
+            </div>
+
+            <div className="border-t border-border/60 pt-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">DDL bookings made · monthly</p>
+                <p className="text-xs font-semibold tabular-nums text-foreground">
+                  {bookingsDirect.toLocaleString("en-GB")} direct
+                </p>
+              </div>
+              <Sparkline
+                data={ddlBookingsTrend}
+                valueFormatter={(v) => v.toLocaleString("en-GB")}
+                className="h-20 text-primary/70"
+              />
+            </div>
+          </div>
+
+          <div className={cn(PANEL, "flex flex-col gap-5 p-5")}>
+            <div>
+              <p className={MONO_LABEL}>Commercial</p>
+              <HeadingWithHelp
+                className="mt-1"
+                title="Attachment & margin"
+                helpTitle="DDL Attachment & margin"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
+                <div className="min-w-0">
+                  <LabelWithHelp title="DDL Attachment" />
+                  <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
+                    {attachmentRowData.total.value}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Direct {attachmentRowData.direct.value} · Total {attachmentRowData.total.value}
+                  </p>
+                </div>
+                <AttachmentDonut percent={parseDisplayValue(attachmentRowData.total.value)} />
+              </div>
+              <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                <LabelWithHelp title="DDL Partner Margin" />
+                <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                  {marginRow.total.value}
+                </p>
+                <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-muted">
+                  {marginChannels.map((channel) => (
+                    <div
+                      key={channel.label}
+                      className="h-full first:rounded-l-full last:rounded-r-full"
+                      style={{
+                        width: `${channelShare(channel.value, marginTotal)}%`,
+                        backgroundColor: channel.color,
+                      }}
+                      title={`${channel.label}: ${channel.value}`}
+                    />
+                  ))}
+                </div>
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {marginChannels.map((channel) => (
+                    <div
+                      key={channel.label}
+                      className="rounded-lg border border-border/60 bg-card px-3 py-2"
+                    >
+                      <p className="text-[11px] text-muted-foreground">{channel.label}</p>
+                      <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
+                        {channel.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                <LabelWithHelp
+                  title="Out of test conversion benefit"
+                  helpTitle="Out of Test Conversion Benefit"
+                />
+                <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                  {conversionRow.total.value}
+                </p>
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {conversionChannels.map((channel) => (
+                    <div
+                      key={channel.label}
+                      className="rounded-lg border border-border/60 bg-card px-3 py-2"
+                    >
+                      <p className="text-[11px] text-muted-foreground">{channel.label}</p>
+                      <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
+                        {channel.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </InsightsSection>
 
-      <AttachmentOpportunityCard
-        productLabel="Damage Deposit Waiver"
-        channels={DDL_ATTACHMENT_VALUE_PER_PP}
-        colors={CAL_CHANNEL_COLORS}
-      />
+      <InsightsSection
+        eyebrow="2 · The story"
+        title="How Damage Waiver pays"
+        description="Damage Waiver is not just a deposit alternative. Guests convert onto it, you earn partner margin, and stronger take-up on direct channels lifts the book. Follow that loop to see where money is made or left behind."
+        badge={{ icon: RefreshCcw, label: "Value loop" }}
+      >
+        <DdlValueLoopScorecard />
+      </InsightsSection>
 
-      <InsightsMetricHeatmap metricId="attachment" eyebrow="CAL attachment" />
+      <InsightsSection
+        eyebrow="3 · Where to act"
+        title="What is driving the results?"
+        description="Use bedrooms, travel dates, and lead time to find where attachment is weak — then act on the shortlist of channel and segment signals."
+        badge={{ icon: MousePointerClick, label: "Signals" }}
+      >
+        <DdlValueLoopExplore onAskAi={onAskAi} />
+      </InsightsSection>
 
-      <CollapsibleDataTable title="View full channel breakdown" defaultOpen>
-        <ChannelGridTable rows={DAMAGE_DEPOSIT_WAIVER_GRID} className="border-0 shadow-none" />
-      </CollapsibleDataTable>
+      <InsightsSection
+        eyebrow="4 · Growth opportunity"
+        title="What happens if we sell a bit more?"
+        description="Value of raising Damage Waiver attachment by 1 percentage point, plus when travelling guests booked the waiver by departure month."
+        badge={{ icon: TrendingUp, label: "Upside" }}
+      >
+        <AttachmentOpportunityCard
+          productLabel="Damage Waiver"
+          channels={DDL_ATTACHMENT_VALUE_PER_PP}
+          colors={CAL_CHANNEL_COLORS}
+        />
+
+        <div className={cn(PANEL, "flex flex-col gap-4 p-5")}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className={MONO_LABEL}>Timing</p>
+              <HeadingWithHelp className="mt-1" title="Departure period booked with DDL" />
+              <p className="mt-1 text-xs text-muted-foreground">
+                When travelling guests booked with Damage Waiver · by departure month
+              </p>
+            </div>
+            <p className="text-xs font-semibold tabular-nums text-foreground">
+              {departureBookingsTotal.toLocaleString("en-GB")}
+            </p>
+          </div>
+          <Sparkline
+            data={ddlBookingsByDeparture}
+            valueFormatter={(v) => v.toLocaleString("en-GB")}
+            className="h-28 text-primary/70"
+          />
+        </div>
+      </InsightsSection>
+
+      <InsightsSection
+        eyebrow="5 · Full detail"
+        title="Channel breakdown"
+        description="Same metrics as above, row by row across Website, App, Offline, OTA, Direct, and Total. Open when you need the audit view."
+        badge={{ icon: FileText, label: "Audit" }}
+      >
+        <CollapsibleDataTable title="View full channel breakdown" defaultOpen={false}>
+          <ChannelGridTable rows={DAMAGE_DEPOSIT_WAIVER_GRID} className="border-0 shadow-none" />
+        </CollapsibleDataTable>
+      </InsightsSection>
     </div>
   )
 }
@@ -2256,47 +2451,18 @@ export function TabEmptyState({ tabId }: { tabId: TabId }) {
   )
 }
 
-function timeOfDayGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return "Good morning"
-  if (hour < 18) return "Good afternoon"
-  return "Good evening"
-}
-
 export function PartnerLandingPage({ onOpenInsights }: { onOpenInsights?: () => void }) {
   const [activeTab, setActiveTab] = useState<TabId>("pikl-stays")
+  const [period, setPeriod] = useState<ImpactPeriodId>("ytd")
+  const metrics = useMemo(() => homeMetricsForPeriod(period), [period])
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <span className={cn(MONO_LABEL, "block")}>Partner Dashboard</span>
-          <h1 className="mt-1.5 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
-            {timeOfDayGreeting()}, {PARTNER_BRANDING.userDisplayName}
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-            Review stays performance, product effect, and market benchmarks.
-          </p>
-        </div>
-
-        <DualDataWidget
-          className="h-auto w-full max-w-xl shrink-0 shadow-xs"
-          primaryTitle="Your impact"
-          helpText={`${PARTNER_IMPACT_HERO.generatedHint}. ${PARTNER_IMPACT_HERO.availableHint}.`}
-          datasetA={{
-            title: PARTNER_IMPACT_HERO.generatedLabel,
-            value: PARTNER_IMPACT_HERO.generated,
-            clarification: "Margin, conversion uplift, and re-let benefit",
-            valueClassName: "text-[28px] leading-none text-primary",
-          }}
-          datasetB={{
-            title: PARTNER_IMPACT_HERO.availableLabel,
-            value: PARTNER_IMPACT_HERO.available,
-            clarification: "If Flexible Cancellation attachment rises 1pp",
-            valueClassName: "text-[24px] leading-none text-foreground",
-          }}
-        />
-      </header>
+      <PartnerImpactHero
+        onOpenInsights={onOpenInsights}
+        period={period}
+        onPeriodChange={setPeriod}
+      />
 
       <div className="flex w-full items-center gap-1 rounded-xl bg-muted p-1">
         {TABS.map((tab) => (
@@ -2323,45 +2489,22 @@ export function PartnerLandingPage({ onOpenInsights }: { onOpenInsights?: () => 
           {activeTab === "pikl-market" ? <PiklMarketTab /> : null}
         </>
       ) : (
-        /* All tab contents are stacked in the same grid cell so the row height
-           always matches the tallest tab, preventing layout shift on switch. */
-        <div className="grid">
-          {(
-            [
-              [
-                "pikl-stays",
-                <>
-                  <PiklStaysDriverCards onOpenInsights={onOpenInsights} />
-                  <StaysSecondRow onOpenInsights={onOpenInsights} />
-                </>,
-              ],
-              [
-                "pikl-effect",
-                <>
-                  <PiklEffectDriverCards onOpenInsights={onOpenInsights} />
-                  <EffectSecondRow onOpenInsights={onOpenInsights} />
-                </>,
-              ],
-              [
-                "pikl-market",
-                <>
-                  <PiklMarketDriverCards onOpenInsights={onOpenInsights} />
-                  <MarketSecondRow onOpenInsights={onOpenInsights} />
-                </>,
-              ],
-            ] as Array<[TabId, React.ReactNode]>
-          ).map(([tabId, content]) => (
-            <div
-              key={tabId}
-              aria-hidden={activeTab !== tabId}
-              className={cn(
-                "col-start-1 row-start-1 space-y-6",
-                activeTab !== tabId && "invisible"
-              )}
-            >
-              {content}
-            </div>
-          ))}
+        <div className="space-y-6">
+          {activeTab === "pikl-stays" ? (
+            <>
+              <PiklStaysDriverCards onOpenInsights={onOpenInsights} metrics={metrics} />
+              <StaysSecondRow onOpenInsights={onOpenInsights} metrics={metrics} />
+            </>
+          ) : null}
+          {activeTab === "pikl-effect" ? (
+            <>
+              <PiklEffectDriverCards onOpenInsights={onOpenInsights} metrics={metrics} />
+              <EffectSecondRow onOpenInsights={onOpenInsights} metrics={metrics} />
+            </>
+          ) : null}
+          {activeTab === "pikl-market" ? (
+            <PiklMarketDriverCards onOpenInsights={onOpenInsights} metrics={metrics} />
+          ) : null}
         </div>
       )}
 

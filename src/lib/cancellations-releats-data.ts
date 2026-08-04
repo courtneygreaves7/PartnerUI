@@ -1,6 +1,7 @@
 /** Channel roll-up: Direct = A+B+C, Total = A+B+C+D (content schema). */
 
 import { MARKET_COMPARISON_VALUES } from "@/lib/sykes-dashboard-data"
+import { PORTFOLIO, julOpsVolumes } from "@/lib/mock-portfolio"
 
 export type ChannelKey = "website" | "app" | "offline" | "ota"
 
@@ -56,61 +57,74 @@ function weightedAvg(
   return { direct, total }
 }
 
-/** Content-image metrics — Jul 2026 actuals & forecasts from design refs. */
+const JUL = julOpsVolumes()
+
+/** Jul ops actuals — ~1/12 of annual portfolio cancels/relets at shared rates. */
 export const CANCEL_VOLUME = withRollups({
-  website: 342,
-  app: 198,
-  offline: 87,
-  ota: 423,
+  website: JUL.cancels.website,
+  app: JUL.cancels.app,
+  offline: JUL.cancels.offline,
+  ota: JUL.cancels.ota,
 })
 
 export const CANCEL_VOLUME_FC = withRollups({
-  website: 310,
-  app: 185,
-  offline: 92,
-  ota: 380,
+  website: JUL.cancelsFc.website,
+  app: JUL.cancelsFc.app,
+  offline: JUL.cancelsFc.offline,
+  ota: JUL.cancelsFc.ota,
 })
 
-export const CANCEL_RATE: ChannelBreakdown = {
-  website: 8.4,
-  app: 6.2,
-  offline: 12.1,
-  ota: 15.3,
-  direct: 8.9,
-  total: 11.2,
-}
+export const CANCEL_RATE: ChannelBreakdown = (() => {
+  const rates = { website: 8.4, app: 7.1, offline: 10.8, ota: 11.2 }
+  const { direct } = weightedAvg(rates, CANCEL_VOLUME)
+  return {
+    ...rates,
+    direct: round1(direct),
+    total: round1(PORTFOLIO.fcCancelPct),
+  }
+})()
 
-export const CANCEL_RATE_FC: ChannelBreakdown = {
-  website: 7.8,
-  app: 5.9,
-  offline: 11.5,
-  ota: 14.1,
-  direct: 8.3,
-  total: 10.6,
-}
+export const CANCEL_RATE_FC: ChannelBreakdown = (() => {
+  const rates = { website: 8.0, app: 6.8, offline: 10.2, ota: 10.6 }
+  const { direct, total } = weightedAvg(rates, CANCEL_VOLUME_FC)
+  return {
+    ...rates,
+    direct: round1(direct),
+    total: round1(total),
+  }
+})()
 
 export const RELET_VOLUME = withRollups({
-  website: 289,
-  app: 171,
-  offline: 63,
-  ota: 358,
+  website: JUL.relets.website,
+  app: JUL.relets.app,
+  offline: JUL.relets.offline,
+  ota: JUL.relets.ota,
 })
 
 export const RELET_VOLUME_FC = withRollups({
-  website: 320,
-  app: 180,
-  offline: 70,
-  ota: 370,
+  website: JUL.reletsFc.website,
+  app: JUL.reletsFc.app,
+  offline: JUL.reletsFc.offline,
+  ota: JUL.reletsFc.ota,
 })
 
 export const RELET_RATE: ChannelBreakdown = (() => {
-  const rates = { website: 84.5, app: 86.4, offline: 72.4, ota: 84.6 }
-  const { direct, total } = weightedAvg(rates, RELET_VOLUME)
-  return { ...rates, direct: round1(direct), total: round1(total) }
+  const rates = { website: 57.2, app: 56.0, offline: 49.5, ota: 54.8 }
+  const { direct } = weightedAvg(rates, RELET_VOLUME)
+  return {
+    ...rates,
+    direct: round1(direct),
+    total: round1(PORTFOLIO.reletPct),
+  }
 })()
 
 export const RELET_VALUE_AVG: ChannelBreakdown = (() => {
-  const values = { website: 1240, app: 985, offline: 1560, ota: 890 }
+  const values = {
+    website: PORTFOLIO.avgReletValue + 80,
+    app: PORTFOLIO.avgReletValue - 40,
+    offline: PORTFOLIO.avgReletValue + 160,
+    ota: PORTFOLIO.avgReletValue - 90,
+  }
   const { direct, total } = weightedAvg(values, RELET_VOLUME)
   return {
     ...values,
@@ -278,6 +292,19 @@ export const KPI_CARDS = [
   },
 ] as const
 
+/** Unreleted cancel value in the ops month — already lost, not still open. */
+const LOST_REVENUE_ACTUAL = Math.round(
+  CANCEL_VOLUME.total * (1 - PORTFOLIO.reletRate) * PORTFOLIO.avgCancelValue
+)
+const LOST_REVENUE_TARGET = Math.round(LOST_REVENUE_ACTUAL * 0.88)
+const LOST_REVENUE = {
+  actual: LOST_REVENUE_ACTUAL,
+  target: LOST_REVENUE_TARGET,
+  status: (LOST_REVENUE_ACTUAL <= LOST_REVENUE_TARGET ? "On track" : "Above target") as
+    | "On track"
+    | "Above target",
+}
+
 export const TARGET_CARDS = [
   {
     id: "cancel-volume-target",
@@ -312,6 +339,17 @@ export const TARGET_CARDS = [
     status: "On track" as const,
     lowerIsBetter: false,
   },
+  {
+    id: "lost-revenue-target",
+    label: "Lost revenue",
+    value: formatCurrency(LOST_REVENUE.actual),
+    targetLabel: `vs ${formatCurrency(LOST_REVENUE.target)} target`,
+    help: "Cancelled booking value that was not re-let in the period — money already lost, not value still open on the live list. Lower is better.",
+    actual: LOST_REVENUE.actual,
+    target: LOST_REVENUE.target,
+    status: LOST_REVENUE.status,
+    lowerIsBetter: true,
+  },
 ] as const
 
 export const VOLUME_TREND = [
@@ -329,21 +367,21 @@ export const VOLUME_TREND = [
 
 export const CHANNEL_MIX = [
   { key: "website" as const, label: "Website", share: 45 },
-  { key: "app" as const, label: "Direct App", share: 28 },
-  { key: "ota" as const, label: "OTA", share: 18 },
-  { key: "offline" as const, label: "Offline", share: 9 },
+  { key: "app" as const, label: "Direct App", share: 20 },
+  { key: "offline" as const, label: "Offline", share: 15 },
+  { key: "ota" as const, label: "OTA", share: 20 },
 ]
 
-export const CHANNEL_MIX_DIRECT_SHARE = 82
+export const CHANNEL_MIX_DIRECT_SHARE = 80
 
 export const WEEKLY_CANCEL_RELET = [
-  { day: "Mon", cancel: 42, relet: 58 },
-  { day: "Tue", cancel: 38, relet: 72 },
-  { day: "Wed", cancel: 55, relet: 64 },
-  { day: "Thu", cancel: 48, relet: 88 },
-  { day: "Fri", cancel: 62, relet: 70 },
-  { day: "Sat", cancel: 78, relet: 52 },
-  { day: "Sun", cancel: 44, relet: 60 },
+  { day: "Mon", cancel: 48, relet: 52 },
+  { day: "Tue", cancel: 44, relet: 56 },
+  { day: "Wed", cancel: 50, relet: 54 },
+  { day: "Thu", cancel: 46, relet: 58 },
+  { day: "Fri", cancel: 52, relet: 51 },
+  { day: "Sat", cancel: 58, relet: 48 },
+  { day: "Sun", cancel: 45, relet: 55 },
 ]
 
 export const VOLUME_TREND_HELP =
@@ -351,13 +389,19 @@ export const VOLUME_TREND_HELP =
 
 export const RELET_RATE_STAT = {
   label: "Re-let % avg",
-  value: "63.5%",
+  value: `${PORTFOLIO.reletPct}%`,
   unit: "Rate",
-  delta: "+2.3%",
+  delta: "+1.8pp",
   deltaLabel: "vs prev. month",
-  help: "Re-let % Avg. Change vs prev. month.",
-  bars: [38, 44, 52, 61, 68, 74],
-}
+  help: "Average re-let rate across channels, with channel breakdown vs the market peer average.",
+  marketPct: PORTFOLIO.market.reletPct,
+  channels: CHANNEL_META.map((channel) => ({
+    key: channel.key,
+    label: channel.label,
+    rate: RELET_RATE[channel.key],
+    color: channel.color,
+  })),
+} as const
 
 export const CHANNEL_MIX_HELP =
   "Share of bookings by channel. Direct (A+B+C) is Website + App + Offline."
@@ -414,157 +458,155 @@ export type LiveCancellationBooking = {
 
 /**
  * Booking-level live cancellations for ops focus.
- * Values sit within the Jul channel averages already used on this page.
+ * Values sit near portfolio avg cancel/relet £ from mock-portfolio.
  */
 export const LIVE_CANCELLATIONS: LiveCancellationBooking[] = [
   {
-    id: "BK-20481",
+    id: "BK-31820",
     property: "Willowcroft House",
     brand: "Sykes",
     channel: "website",
     cancelledAt: "29 Jul 2026",
     checkIn: "8 Aug 2026",
     nights: 7,
-    value: 1280,
+    value: 1120,
     hasFlexibleCancellation: true,
     reletStatus: "awaiting",
     daysOpen: 3,
   },
   {
-    id: "BK-20474",
+    id: "BK-31814",
     property: "Harbour House",
     brand: "Hoseasons",
     channel: "ota",
     cancelledAt: "28 Jul 2026",
     checkIn: "2 Aug 2026",
     nights: 4,
-    value: 890,
+    value: 780,
     hasFlexibleCancellation: false,
     reletStatus: "awaiting",
     daysOpen: 4,
   },
   {
-    id: "BK-20466",
+    id: "BK-31808",
     property: "The Old Mill",
     brand: "Sykes",
     channel: "app",
     cancelledAt: "27 Jul 2026",
     checkIn: "14 Aug 2026",
     nights: 5,
-    value: 1040,
+    value: 940,
     hasFlexibleCancellation: true,
     reletStatus: "awaiting",
     daysOpen: 5,
   },
   {
-    id: "BK-20459",
+    id: "BK-31801",
     property: "Stone Barn",
     brand: "Hoseasons",
     channel: "offline",
     cancelledAt: "26 Jul 2026",
     checkIn: "5 Aug 2026",
     nights: 3,
-    value: 1560,
+    value: 1280,
     hasFlexibleCancellation: true,
     reletStatus: "awaiting",
     daysOpen: 6,
   },
   {
-    id: "BK-20451",
+    id: "BK-31794",
     property: "Lakeside Retreat",
     brand: "Sykes",
     channel: "website",
     cancelledAt: "25 Jul 2026",
     checkIn: "22 Aug 2026",
     nights: 7,
-    value: 1420,
+    value: 1190,
     hasFlexibleCancellation: true,
     reletStatus: "awaiting",
     daysOpen: 7,
   },
   {
-    id: "BK-20442",
+    id: "BK-31788",
     property: "Meadow View",
     brand: "Sykes",
     channel: "ota",
     cancelledAt: "24 Jul 2026",
     checkIn: "1 Aug 2026",
     nights: 6,
-    value: 760,
+    value: 710,
     hasFlexibleCancellation: false,
     reletStatus: "awaiting",
     daysOpen: 8,
   },
   {
-    id: "BK-20438",
+    id: "BK-31781",
     property: "Hillcrest Lodge",
     brand: "Hoseasons",
     channel: "website",
     cancelledAt: "23 Jul 2026",
     checkIn: "12 Aug 2026",
     nights: 4,
-    value: 1180,
+    value: 980,
     hasFlexibleCancellation: true,
     reletStatus: "relet",
     daysOpen: 0,
-    reletRef: "BK-20502",
+    reletRef: "BK-31910",
     reletFills: [
-      { ref: "BK-20502", nights: 4, value: 1180, overlapStart: 0, overlapNights: 4 },
+      { ref: "BK-31910", nights: 4, value: 990, overlapStart: 0, overlapNights: 4 },
     ],
   },
   {
-    id: "BK-20430",
+    id: "BK-31774",
     property: "Riverside Cottage",
     brand: "Sykes",
     channel: "app",
     cancelledAt: "22 Jul 2026",
     checkIn: "30 Jul 2026",
     nights: 3,
-    value: 920,
+    value: 840,
     hasFlexibleCancellation: true,
     reletStatus: "relet",
     daysOpen: 0,
-    reletRef: "BK-20495",
+    reletRef: "BK-31902",
     reletFills: [
-      { ref: "BK-20495", nights: 3, value: 940, overlapStart: 0, overlapNights: 3 },
+      { ref: "BK-31902", nights: 3, value: 860, overlapStart: 0, overlapNights: 3 },
     ],
   },
   {
-    id: "BK-20421",
+    id: "BK-31766",
     property: "Oak Tree Farm",
     brand: "Hoseasons",
     channel: "offline",
     cancelledAt: "21 Jul 2026",
     checkIn: "9 Aug 2026",
     nights: 7,
-    value: 1680,
+    value: 1540,
     hasFlexibleCancellation: false,
     reletStatus: "relet",
     daysOpen: 0,
-    reletRef: "BK-20488",
-    /** Classic split: 7n cancel filled as 3n + 4n, recovering more than one 7n rebook. */
+    reletRef: "BK-31890",
     reletFills: [
-      { ref: "BK-20488", nights: 3, value: 980, overlapStart: 0, overlapNights: 3 },
-      { ref: "BK-20491", nights: 4, value: 1120, overlapStart: 3, overlapNights: 4 },
+      { ref: "BK-31890", nights: 3, value: 860, overlapStart: 0, overlapNights: 3 },
+      { ref: "BK-31895", nights: 4, value: 1030, overlapStart: 3, overlapNights: 4 },
     ],
   },
   {
-    id: "BK-20412",
+    id: "BK-31758",
     property: "Garden Cottage",
     brand: "Sykes",
     channel: "ota",
     cancelledAt: "20 Jul 2026",
     checkIn: "16 Aug 2026",
     nights: 5,
-    value: 845,
+    value: 790,
     hasFlexibleCancellation: true,
     reletStatus: "relet",
     daysOpen: 0,
-    reletRef: "BK-20479",
-    /** Split with a 1-night gap in the middle of the cancelled stay. */
+    reletRef: "BK-31882",
     reletFills: [
-      { ref: "BK-20479", nights: 2, value: 420, overlapStart: 0, overlapNights: 2 },
-      { ref: "BK-20482", nights: 3, value: 560, overlapStart: 3, overlapNights: 2 },
+      { ref: "BK-31882", nights: 2, value: 380, overlapStart: 0, overlapNights: 2 },
+      { ref: "BK-31886", nights: 3, value: 510, overlapStart: 3, overlapNights: 2 },
     ],
   },
 ]
@@ -684,15 +726,15 @@ export function summariseLiveCancellations(bookings: LiveCancellationBooking[]) 
 
 /** Illustrative portfolio snapshot for split vs single re-let recovery. */
 export const PARTIAL_RELETS_INSIGHT = {
-  splitSharePct: 28,
-  splitRecoveredPct: 118,
-  singleRecoveredPct: 96,
-  avgOverlapPct: 94,
+  splitSharePct: 26,
+  splitRecoveredPct: 112,
+  singleRecoveredPct: 94,
+  avgOverlapPct: 92,
   example: {
     cancelledNights: 7,
-    cancelledValue: 1680,
+    cancelledValue: 1540,
     fillsLabel: "3n + 4n",
-    recoveredValue: 2100,
+    recoveredValue: 1890,
     overlappingNights: 7,
   },
 } as const
@@ -716,6 +758,51 @@ export const VALUE_AT_RISK_CARD = {
 } as const
 
 export const TOP_KPI_CARDS = [...KPI_CARDS, VALUE_AT_RISK_CARD] as const
+
+/** Ops value loop — cancel → re-let → recovered £ → still open. */
+export const OPS_VALUE_LOOP = {
+  title: "How cancellations still pay when you re-let",
+  story:
+    "Some guests cancel — that is normal when they have cover. The commercial question is recovery: re-let the stay, keep the revenue, and shrink the open book still waiting to fill.",
+  steps: [
+    {
+      id: "cancels",
+      label: "Cancels this month",
+      value: formatVolume(CANCEL_VOLUME.total),
+      hint: "Jul ops volume across channels",
+      badge: "Ops volume",
+      badgeTone: "neutral" as const,
+      help: "Cancelled stays in the current ops month (Jul). Includes Flexible Cancellation and other cancellations in the live ops slice.",
+    },
+    {
+      id: "relet-rate",
+      label: "Re-let rate",
+      value: `${PORTFOLIO.reletPct}%`,
+      hint: "Share of cancels filled again",
+      badge: "Higher is better",
+      badgeTone: "positive" as const,
+      help: "Share of cancelled stays that were re-let to another guest. Calculation: re-lets ÷ cancellations.",
+    },
+    {
+      id: "relets",
+      label: "Re-lets",
+      value: formatVolume(RELET_VOLUME.total),
+      hint: "Stays filled after a cancel",
+      badge: "Recovered",
+      badgeTone: "positive" as const,
+      help: "Volume of cancelled stays successfully re-let in the period.",
+    },
+    {
+      id: "at-risk",
+      label: "Still open",
+      value: formatCurrency(LIVE_CANCEL_SUMMARY.valueAtRisk),
+      hint: "Cancelled value not yet re-let",
+      badge: "At risk",
+      badgeTone: "attention" as const,
+      help: "Sum of cancelled booking values still awaiting a re-let on the live list.",
+    },
+  ],
+} as const
 
 function round1(n: number) {
   return Math.round(n * 10) / 10

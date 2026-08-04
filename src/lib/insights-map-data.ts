@@ -61,7 +61,7 @@ function enrichRegionRecovery(region: RawMapRegion): MapRegion {
     Math.round(
       Math.min(
         92,
-        Math.max(28, 56 + (seed % 29) - region.cancellationRate * 0.9 + (seed % 7) * 0.3)
+        Math.max(26, 55 + (seed % 27) - region.cancellationRate * 0.85 + (seed % 7) * 0.3)
       ) * 10
     ) / 10
   const recoveryRate =

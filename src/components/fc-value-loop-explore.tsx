@@ -125,6 +125,24 @@ function behaviourBadgeClass(kind: FcLoopBehaviourKind) {
   return "bg-foreground/5 text-foreground/70"
 }
 
+function behaviourSubheadingClass(kind: FcLoopBehaviourKind) {
+  if (kind === "high-cancel-soft-fill") {
+    return "text-amber-900 dark:text-amber-200"
+  }
+  if (kind === "strong-fill-weak-cover") {
+    return "text-primary"
+  }
+  if (kind === "low-cancel-strong-fill" || kind === "value-beat") {
+    return "text-emerald-800 dark:text-emerald-300"
+  }
+  return "text-foreground/55"
+}
+
+function behaviourSubheading(kind: FcLoopBehaviourKind, badge: string) {
+  if (kind === "balanced") return "Re-let rate"
+  return badge
+}
+
 function MatrixCellCard({
   cell,
   title,
@@ -141,6 +159,7 @@ function MatrixCellCard({
   const heatT = colourMax <= colourMin ? 0.5 : (relet - colourMin) / (colourMax - colourMin)
   const borderAlpha = 0.35 + heatT * 0.45
   const behaviour = describeFcLoopBehaviour(cell)
+  const subheading = behaviourSubheading(behaviour.kind, behaviour.badge)
 
   return (
     <div
@@ -149,7 +168,7 @@ function MatrixCellCard({
         backgroundColor: heatBackground(relet, colourMin, colourMax),
         borderColor: `color-mix(in oklab, var(--color-primary) ${Math.round(borderAlpha * 100)}%, var(--color-border))`,
       }}
-      title={`${title} — ${behaviour.read}`}
+      title={title}
     >
       <div
         className="flex h-2 w-full overflow-hidden rounded-full bg-background/80"
@@ -159,20 +178,17 @@ function MatrixCellCard({
         <div className="h-full bg-foreground/15" style={{ width: `${notRelet}%` }} />
       </div>
       <div className="mt-2 space-y-1.5">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-lg font-bold leading-none tabular-nums tracking-tight text-foreground">
-            {relet.toFixed(1)}%
-          </p>
-          <span
-            className={cn(
-              "max-w-[7.5rem] rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight",
-              behaviourBadgeClass(behaviour.kind)
-            )}
-          >
-            {behaviour.badge}
-          </span>
-        </div>
-        <p className="text-[10px] leading-snug text-foreground/70">{behaviour.read}</p>
+        <p
+          className={cn(
+            "text-[10px] font-semibold leading-tight tracking-wide",
+            behaviourSubheadingClass(behaviour.kind)
+          )}
+        >
+          {subheading}
+        </p>
+        <p className="text-lg font-bold leading-none tabular-nums tracking-tight text-foreground">
+          {relet.toFixed(1)}%
+        </p>
         <div className="space-y-0.5 text-[10px] leading-tight tabular-nums">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold tracking-wide text-foreground/55">ATT</span>
@@ -250,7 +266,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
               <MeasureHelp title="By bedrooms and travel dates" help={FC_LOOP_MATRIX_HELP} />
             </div>
             <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-              Relet vs not on top. Behaviour badge reads cancel vs fill. ATT, CXL, REC underneath.
+              Relet vs not on top. Subheading flags standout behaviour. ATT, CXL, REC underneath.
             </p>
           </div>
 
@@ -492,7 +508,7 @@ function ActSignalsPanel({
         ))}
       </div>
 
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-4 max-h-[calc(3.5*(6.25rem+0.625rem)-0.625rem)] space-y-2.5 overflow-y-auto overscroll-contain pr-1">
         {visible.map((item) => {
           const meta = signalMeta(item.signal)
           const Icon = meta.Icon
