@@ -45,10 +45,10 @@ function refreshedLabel() {
     .toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
-      year: "numeric",
+      year: "2-digit",
     })
     .replace(",", "")
-  return `Last refreshed today at ${time} · ${through}`
+  return `Refreshed today at ${time} · ${through}`
 }
 
 function monthsInPeriod(period: ImpactPeriodId) {
@@ -134,8 +134,8 @@ export function PartnerImpactHero({
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top,_rgb(var(--primary-rgb)_/_0.14),_transparent_65%)]"
         />
-        <div className="relative z-10 grid gap-6 px-6 py-7 sm:px-10 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:items-start lg:gap-8">
-          <div className="flex flex-col items-start text-left">
+        <div className="relative z-10 grid gap-6 px-6 py-7 sm:px-10 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:items-center lg:gap-8">
+          <div className="flex flex-col items-start justify-center text-left">
             <span
               className={cn(
                 MONO_LABEL,
@@ -181,15 +181,15 @@ export function PartnerImpactHero({
                 })}
               </div>
 
-              <div className="mt-4 w-0 min-w-full rounded-xl border border-emerald-500/45 bg-emerald-500/[0.06] px-3.5 py-2.5 dark:bg-emerald-500/10">
-                <div className="flex flex-col gap-1">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
+              <div className="mt-4 w-0 min-w-full rounded-xl border border-dashed border-emerald-500/45 bg-emerald-500/[0.06] px-3.5 py-2 dark:bg-emerald-500/10">
+                <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden">
+                  <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
                     <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
                     Live
                   </span>
-                  <p className="w-fit border-b border-dashed border-muted-foreground/40 pb-px text-[11px] leading-snug text-muted-foreground">
+                  <span className="min-w-0 truncate text-[11px] leading-snug text-muted-foreground">
                     {refreshedLabel()}
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>

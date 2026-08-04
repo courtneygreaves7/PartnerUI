@@ -51,9 +51,9 @@ const GLOBE_STYLES: {
   label: string
   hint: string
 }[] = [
-  { id: "classic", label: "Classic", hint: "Marble + glowing Europe / UK outlines" },
-  { id: "particles", label: "Particles", hint: "Point-cloud continents" },
-  { id: "relief", label: "Relief", hint: "Monochrome extruded land" },
+  { id: "classic", label: "Classic", hint: "Marble + UK / France / Spain glowing outlines" },
+  { id: "particles", label: "Particles", hint: "Point-cloud of all landmasses" },
+  { id: "relief", label: "Relief", hint: "Soft off-white globe · low extruded land" },
   { id: "holo", label: "Holo", hint: "Wireframe + glow borders" },
 ]
 
@@ -91,33 +91,41 @@ function hashUnit(n: number) {
   return x - Math.floor(x)
 }
 
-function sampleCountryParticles(features: CountryFeature[]) {
+function sampleLandParticles(geometries: Geometry[]) {
   const groups: { particles: { lat: number; lng: number; alt: number }[]; color: string; size: number }[] =
     PARTICLE_COLORS.map((color, index) => ({
       particles: [],
       color,
-      size: index === 0 ? 0.85 : index === 1 ? 1.05 : 0.7,
+      size: index === 0 ? 0.7 : index === 1 ? 0.9 : 0.55,
     }))
 
-  features.forEach((feat, featureIndex) => {
+  const vertSets = geometries.map((geometry) => {
     const verts: Position[] = []
-    walkCoords(feat.geometry, (c) => verts.push(c))
-    if (!verts.length) return
+    walkCoords(geometry, (c) => verts.push(c))
+    return verts
+  })
+  const totalVerts = vertSets.reduce((sum, verts) => sum + verts.length, 0)
+  if (!totalVerts) return []
 
-    const density = Math.min(
-      220,
-      40 + Math.round(feat.properties.stats.properties / 8)
-    )
+  // Enough points to read continents without melting the GPU
+  const TARGET = 7800
+
+  vertSets.forEach((verts, featureIndex) => {
+    if (verts.length < 3) return
+    const share = verts.length / totalVerts
+    const density = Math.max(4, Math.round(share * TARGET))
+
     for (let i = 0; i < density; i++) {
       const base = verts[Math.floor(hashUnit(featureIndex * 997 + i) * verts.length)]
-      const jitter = 0.15 + hashUnit(featureIndex + i * 17) * 0.55
+      // Tight jitter so particles stay on land rather than drifting into ocean
+      const jitter = 0.06 + hashUnit(featureIndex + i * 17) * 0.28
       const lat = base[1] + (hashUnit(i * 3.1 + featureIndex) - 0.5) * jitter
       const lng = base[0] + (hashUnit(i * 7.7 + featureIndex) - 0.5) * jitter
       const colorIndex = Math.floor(hashUnit(featureIndex * 13 + i) * 3)
       groups[colorIndex].particles.push({
         lat,
         lng,
-        alt: 0.004 + hashUnit(i + featureIndex * 2) * 0.018,
+        alt: 0.003 + hashUnit(i + featureIndex * 2) * 0.012,
       })
     }
   })
@@ -146,25 +154,42 @@ type GlowPath = {
   stroke: number | null
 }
 
+type OutlineFeature = Feature<Geometry, { code: string }>
+
 function outerRings(geometry: Geometry): Position[][] {
   if (geometry.type === "Polygon") return [geometry.coordinates[0]]
   if (geometry.type === "MultiPolygon") return geometry.coordinates.map((poly) => poly[0])
   return []
 }
 
-/** Soft glow + bright core outlines for Europe / UK portfolio countries. */
-function buildEuropeGlowOutlines(features: CountryFeature[]): GlowPath[] {
+function ringSpanDegrees(ring: Position[]) {
+  let minLng = Infinity
+  let maxLng = -Infinity
+  let minLat = Infinity
+  let maxLat = -Infinity
+  for (const [lng, lat] of ring) {
+    minLng = Math.min(minLng, lng)
+    maxLng = Math.max(maxLng, lng)
+    minLat = Math.min(minLat, lat)
+    maxLat = Math.max(maxLat, lat)
+  }
+  return Math.hypot(maxLng - minLng, maxLat - minLat)
+}
+
+/** Soft glow + bright core — UK, France & Spain with matching finish. */
+function buildUkFranceGlowOutlines(features: OutlineFeature[]): GlowPath[] {
   const paths: GlowPath[] = []
+  const OUTLINE_CODES = new Set(["UK", "FR", "ES"])
 
   for (const feat of features) {
-    if (feat.properties.stats.market !== "europe") continue
-    const isUk = feat.properties.stats.code === "UK"
+    if (!OUTLINE_CODES.has(feat.properties.code)) continue
 
     for (const ring of outerRings(feat.geometry)) {
-      if (ring.length < 12) continue
+      // Drop micro-islets that read as noise at globe distance
+      if (ring.length < 10 || ringSpanDegrees(ring) < 0.12) continue
 
-      // Keep outlines readable without shipping every coastline vertex
-      const step = Math.max(1, Math.floor(ring.length / 160))
+      // Preserve coastline detail; only thin extremely dense rings
+      const step = ring.length > 520 ? 2 : 1
       const coords: [number, number][] = []
       for (let i = 0; i < ring.length; i += step) {
         const [lng, lat] = ring[i]
@@ -177,17 +202,16 @@ function buildEuropeGlowOutlines(features: CountryFeature[]): GlowPath[] {
         coords.push([first[0], first[1]])
       }
 
-      // Soft halo
+      // Matching halo + core for UK / France / Spain
       paths.push({
         coords,
-        stroke: isUk ? 1.35 : 0.9,
-        color: isUk ? "rgba(120, 210, 255, 0.32)" : "rgba(70, 170, 255, 0.2)",
+        stroke: 1.05,
+        color: "rgba(130, 215, 255, 0.28)",
       })
-      // Bright core
       paths.push({
         coords,
-        stroke: isUk ? 0.48 : 0.32,
-        color: isUk ? "rgba(210, 245, 255, 0.95)" : "rgba(130, 205, 255, 0.88)",
+        stroke: 0.38,
+        color: "rgba(220, 245, 255, 0.98)",
       })
     }
   }
@@ -222,12 +246,12 @@ function applyGlobeMaterialStyle(globe: GlobeMethods, style: GlobeStyleId) {
     const mat = (globe as GlobeMethods & { globeMaterial: () => GlobeMaterialLike }).globeMaterial()
     if (!mat) return
     if (style === "relief") {
-      mat.color?.set("#e6e4df")
-      mat.emissive?.set("#d8d6d0")
-      mat.emissiveIntensity = 0.12
+      mat.color?.set("#efece6")
+      mat.emissive?.set("#e8e4dc")
+      mat.emissiveIntensity = 0.22
       mat.transparent = false
       mat.opacity = 1
-      mat.shininess = 8
+      mat.shininess = 4
     } else if (style === "holo") {
       mat.color?.set("#0a0e16")
       mat.emissive?.set("#121826")
@@ -255,6 +279,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
   const [focus, setFocus] = useState<GlobeFocusId>("world")
   const [hoveredCountry, setHoveredCountry] = useState<CountryFeature | null>(null)
   const [countries, setCountries] = useState<CountryFeature[]>([])
+  const [landGeometries, setLandGeometries] = useState<Geometry[]>([])
+  const [outlineFeatures, setOutlineFeatures] = useState<OutlineFeature[]>([])
   const [ready, setReady] = useState(false)
   const [globeStyle, setGlobeStyle] = useState<GlobeStyleId>("classic")
   const [globeError, setGlobeError] = useState<string | null>(null)
@@ -282,18 +308,24 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
   )
 
   const particleSets = useMemo(
-    () => (isParticles ? sampleCountryParticles(visibleCountries) : []),
-    [isParticles, visibleCountries]
+    () => (isParticles ? sampleLandParticles(landGeometries) : []),
+    [isParticles, landGeometries]
   )
 
   const graticule = useMemo(() => (isHolo ? buildGraticule() : []), [isHolo])
 
-  const glowOutlines = useMemo(() => buildEuropeGlowOutlines(countries), [countries])
-
-  const pathsData = useMemo(
-    () => (isHolo ? [...graticule, ...glowOutlines] : glowOutlines),
-    [glowOutlines, graticule, isHolo]
+  const glowOutlines = useMemo(
+    () => buildUkFranceGlowOutlines(outlineFeatures),
+    [outlineFeatures]
   )
+
+  const pathsData = useMemo(() => {
+    // Glowing coast outlines are for Classic (and Holo grid); Relief stays clean monochrome
+    if (isRelief) return []
+    if (isHolo) return [...graticule, ...glowOutlines]
+    if (isParticles) return []
+    return glowOutlines
+  }, [glowOutlines, graticule, isHolo, isParticles, isRelief])
 
   const starSets = useMemo(() => (isHolo ? buildInteriorStars() : []), [isHolo])
 
@@ -326,13 +358,33 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
               stats: byIso.get(String(item.id))!,
             },
           })) as CountryFeature[]
-        if (!cancelled) setCountries(next)
+        const allLand = collection.features
+          .map((item) => item.geometry)
+          .filter((geom): geom is Geometry => Boolean(geom))
+        if (!cancelled) {
+          setCountries(next)
+          setLandGeometries(allLand)
+        }
       } catch (error) {
         console.error("Failed to load country polygons:", error)
       }
     }
 
+    async function loadOutlines() {
+      try {
+        const collection = (await fetch("/globe-glow-outlines.json").then((res) =>
+          res.json()
+        )) as FeatureCollection<Geometry, { code: string }>
+        if (!cancelled) {
+          setOutlineFeatures(collection.features as OutlineFeature[])
+        }
+      } catch (error) {
+        console.error("Failed to load glow outlines:", error)
+      }
+    }
+
     void loadCountries()
+    void loadOutlines()
     return () => {
       cancelled = true
     }
@@ -408,12 +460,12 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
 
   /** Open country detail map when available; otherwise fly the globe to that country. */
   function openCountry(code: string) {
-    if (code === "UK") {
+    if (code === "UK" || code === "FR" || code === "ES") {
       if (onOpenCountry) {
         onOpenCountry(code)
         return
       }
-      if (onOpenUkDetail) {
+      if (code === "UK" && onOpenUkDetail) {
         onOpenUkDetail()
         return
       }
@@ -562,9 +614,9 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             showGlobe
             showAtmosphere
             atmosphereColor={
-              isParticles ? "#5ef0ff" : isRelief ? "#c9c6d6" : isHolo ? "#e8eef8" : primary
+              isParticles ? "#5ef0ff" : isRelief ? "#d9d4cb" : isHolo ? "#e8eef8" : primary
             }
-            atmosphereAltitude={isHolo ? 0.22 : isRelief ? 0.16 : 0.14}
+            atmosphereAltitude={isHolo ? 0.22 : isRelief ? 0.1 : 0.14}
             globeImageUrl={
               isClassic
                 ? `${CDN}/earth-blue-marble.jpg`
@@ -573,9 +625,9 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                   : undefined
             }
             bumpImageUrl={
-              isParticles
+              isParticles || isRelief
                 ? undefined
-                : isClassic || isRelief
+                : isClassic
                   ? `${CDN}/earth-topology.png`
                   : undefined
             }
@@ -593,8 +645,9 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                 return raised ? 0.02 : 0.004
               }
               if (isRelief) {
-                const base = 0.05 + Math.min(0.1, props / 3800)
-                return raised ? base + 0.08 : base
+                // Sit close to the globe — soft relief, not floating shells
+                const base = 0.008 + Math.min(0.016, props / 5200)
+                return raised ? base + 0.014 : base
               }
               if (isHolo) {
                 const base = 0.012
@@ -615,7 +668,7 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                 return raised ? "rgba(94,240,255,0.12)" : "rgba(94,240,255,0.03)"
               }
               if (isRelief) {
-                return raised ? "rgba(255,255,255,0.98)" : "rgba(248,247,244,0.94)"
+                return raised ? "rgba(255,255,255,1)" : "rgba(252,250,246,0.98)"
               }
               if (isHolo) {
                 return raised ? "rgba(220,230,245,0.55)" : "rgba(170,185,210,0.28)"
@@ -626,14 +679,14 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             polygonSideColor={() => {
               if (outlineOnlyVisual) return "rgba(0,0,0,0)"
               if (particlesOnlyVisual) return "rgba(94,240,255,0.05)"
-              if (isRelief) return "rgba(190,188,182,0.85)"
+              if (isRelief) return "rgba(214,208,198,0.95)"
               if (isHolo) return "rgba(210,220,240,0.35)"
               return "rgba(0,0,0,0)"
             }}
             polygonStrokeColor={() => {
               if (outlineOnlyVisual) return "rgba(0,0,0,0)"
               if (particlesOnlyVisual) return "rgba(94,240,255,0.15)"
-              if (isRelief) return "rgba(160,158,152,0.55)"
+              if (isRelief) return "rgba(198,192,182,0.45)"
               if (isHolo) return "rgba(255,255,255,0.95)"
               return "rgba(0,0,0,0)"
             }}
@@ -650,10 +703,10 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             pathPoints="coords"
             pathPointLat={(p) => (p as [number, number])[0]}
             pathPointLng={(p) => (p as [number, number])[1]}
-            pathPointAlt={0.014}
+            pathPointAlt={0.012}
             pathColor={(d) => (d as GlowPath).color}
             pathStroke={(d) => (d as GlowPath).stroke}
-            pathResolution={2.5}
+            pathResolution={1.2}
             pathTransitionDuration={600}
             particlesData={layerParticles}
             particlesList="particles"
@@ -698,8 +751,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             {activeHover.detail}
           </p>
           <p className={cn("mt-1.5 text-[10px]", isDarkStage ? "text-white/40" : "text-muted-foreground")}>
-            {activeHover.code === "UK"
-              ? "Click to open UK county map"
+            {activeHover.code === "UK" || activeHover.code === "FR" || activeHover.code === "ES"
+              ? "Click to open country map"
               : "Click to fly to country"}
           </p>
         </div>

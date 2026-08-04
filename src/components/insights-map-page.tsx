@@ -35,10 +35,12 @@ import {
   getRegionDetailStats,
   getTownsForCounty,
   loadMapRegions,
+  MAP_COUNTRY_META,
   MAP_METRICS,
   metricRange,
   scaleRegionByTownShare,
   scaleRegionForFilters,
+  type MapCountryCode,
   type MapMetricId,
   type MapRegion,
   type RegionDetailStats,
@@ -70,6 +72,43 @@ function BritishFlag({ className }: { className?: string }) {
       </g>
     </svg>
   )
+}
+
+function FrenchFlag({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 60 30"
+      preserveAspectRatio="xMidYMid meet"
+      className={cn("aspect-[2/1] h-4 w-auto shrink-0", className)}
+      aria-hidden
+      focusable="false"
+    >
+      <rect width="20" height="30" fill="#002395" />
+      <rect x="20" width="20" height="30" fill="#fff" />
+      <rect x="40" width="20" height="30" fill="#ED2939" />
+    </svg>
+  )
+}
+
+function SpanishFlag({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 60 30"
+      preserveAspectRatio="xMidYMid meet"
+      className={cn("aspect-[2/1] h-4 w-auto shrink-0", className)}
+      aria-hidden
+      focusable="false"
+    >
+      <rect width="60" height="30" fill="#AA151B" />
+      <rect y="7.5" width="60" height="15" fill="#F1BF00" />
+    </svg>
+  )
+}
+
+function CountryFlag({ code, className }: { code: MapCountryCode; className?: string }) {
+  if (code === "FR") return <FrenchFlag className={className} />
+  if (code === "ES") return <SpanishFlag className={className} />
+  return <BritishFlag className={className} />
 }
 
 type InsightsMapPageProps = {
@@ -291,20 +330,27 @@ function RegionStatsPanel({
 }
 
 export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMapPageProps) {
-  const [viewMode, setViewMode] = useState<"globe" | "uk">("globe")
+  const [viewMode, setViewMode] = useState<"globe" | MapCountryCode>("globe")
   const [metric, setMetric] = useState<MapMetricId>("bookings")
   const [regions, setRegions] = useState<MapRegion[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [hoveredCountyId, setHoveredCountyId] = useState<string | null>(null)
   const [selectedCountyId, setSelectedCountyId] = useState(
     filters.county !== ALL_COUNTIES ? filters.county : ALL_COUNTIES
   )
   const [selectedTownId, setSelectedTownId] = useState(ALL_TOWNS)
 
+  const countryView = viewMode === "globe" ? null : viewMode
+  const countryMeta = countryView ? MAP_COUNTRY_META[countryView] : null
+
   useEffect(() => {
+    if (!countryView) {
+      setRegions([])
+      return
+    }
     let cancelled = false
     setIsLoading(true)
-    loadMapRegions()
+    loadMapRegions(countryView)
       .then((data) => {
         if (!cancelled) setRegions(data)
       })
@@ -314,7 +360,15 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [countryView])
+
+  useEffect(() => {
+    if (countryView) {
+      setSelectedCountyId(ALL_COUNTIES)
+      setSelectedTownId(ALL_TOWNS)
+      setHoveredCountyId(null)
+    }
+  }, [countryView])
 
   useEffect(() => {
     if (filters.county !== ALL_COUNTIES) {
@@ -398,6 +452,26 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
     })
   }
 
+  function openCountryView(code: MapCountryCode) {
+    setViewMode(code)
+  }
+
+  const countryTabs: Array<{ id: "globe" | MapCountryCode; label: string }> = [
+    { id: "globe", label: "Globe" },
+    { id: "UK", label: "UK" },
+    { id: "FR", label: "France" },
+    { id: "ES", label: "Spain" },
+  ]
+
+  const regionPlaceLabel =
+    selectedTown
+      ? "City / town"
+      : countryView === "FR"
+        ? "Region"
+        : countryView === "ES"
+          ? "Community"
+          : "County"
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-6 py-3">
@@ -411,41 +485,32 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
             <h1 className="text-base font-semibold tracking-tight">Map view</h1>
             <p className="text-xs text-muted-foreground">
               {viewMode === "globe"
-                ? "3D globe · click a country for detail"
-                : "3D UK counties · drag to orbit · shaded by performance"}
+                ? "3D globe · click UK, France or Spain for detail"
+                : `3D ${countryMeta?.regionNoun} · drag to orbit · shaded by performance`}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
-            <button
-              type="button"
-              onClick={() => setViewMode("globe")}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                viewMode === "globe"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Globe
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("uk")}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                viewMode === "uk"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              UK counties
-            </button>
+            {countryTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setViewMode(tab.id)}
+                className={cn(
+                  "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                  viewMode === tab.id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {viewMode === "uk" ? (
+          {countryView ? (
             <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
               {MAP_METRICS.map((item) => (
                 <button
@@ -471,9 +536,11 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
         <div className="relative min-h-0 flex-1 bg-[#0b1220] dark:bg-[#070b12]">
           <InsightsGlobe
             className="absolute inset-0 h-full min-h-[360px] w-full"
-            onOpenUkDetail={() => setViewMode("uk")}
+            onOpenUkDetail={() => openCountryView("UK")}
             onOpenCountry={(code) => {
-              if (code === "UK") setViewMode("uk")
+              if (code === "UK" || code === "FR" || code === "ES") {
+                openCountryView(code)
+              }
             }}
           />
         </div>
@@ -482,13 +549,16 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
         <div className="relative min-h-0 bg-[#0b1220] dark:bg-[#070b12]">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-4">
             <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/55 px-4 py-3 shadow-sm backdrop-blur-sm">
-              <BritishFlag className="rounded-[2px] shadow-xs ring-1 ring-white/20" />
+              <CountryFlag
+                code={countryView!}
+                className="rounded-[2px] shadow-xs ring-1 ring-white/20"
+              />
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/55">
-                  United Kingdom
+                  {countryMeta?.label}
                 </p>
                 <p className="text-sm text-white/80">
-                  3D counties · shaded by {metricLabel}
+                  3D {countryMeta?.regionNoun} · shaded by {metricLabel}
                 </p>
               </div>
             </div>
@@ -501,7 +571,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
 
           {isLoading ? (
             <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-white/60">
-              Loading UK counties…
+              Loading {countryMeta?.label}…
             </div>
           ) : (
             <InsightsUkCounties3d
@@ -534,7 +604,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           <RegionStatsPanel
             stats={activeStats ?? overviewStats}
             isPlaceholder={!activeStats}
-            placeLabel={selectedTown ? "City / town" : "County"}
+            placeLabel={regionPlaceLabel}
             includeCode={Boolean(activeStats?.code)}
             counties={sortedCounties}
             towns={towns}

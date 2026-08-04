@@ -47,7 +47,18 @@ export const MAP_METRICS: Array<{ id: MapMetricId; label: string }> = [
 /** SVG viewBox for the projected UK counties map (see public/uk-counties-map.json). */
 export const MAP_VIEWBOX = "0 0 800 1000"
 
-let cachedRegions: MapRegion[] | null = null
+export type MapCountryCode = "UK" | "FR" | "ES"
+
+export const MAP_COUNTRY_META: Record<
+  MapCountryCode,
+  { label: string; regionNoun: string; asset: string }
+> = {
+  UK: { label: "United Kingdom", regionNoun: "counties", asset: "/uk-counties-map.json" },
+  FR: { label: "France", regionNoun: "regions", asset: "/france-regions-map.json" },
+  ES: { label: "Spain", regionNoun: "communities", asset: "/spain-regions-map.json" },
+}
+
+const regionCache = new Map<MapCountryCode, MapRegion[]>()
 
 type RawMapRegion = Omit<MapRegion, "reletRate" | "recoveryRate"> & {
   reletRate?: number
@@ -71,13 +82,21 @@ function enrichRegionRecovery(region: RawMapRegion): MapRegion {
   return { ...region, reletRate, recoveryRate }
 }
 
-export async function loadMapRegions(): Promise<MapRegion[]> {
-  if (cachedRegions) return cachedRegions
-  const response = await fetch("/uk-counties-map.json")
-  if (!response.ok) throw new Error("Failed to load UK counties map data")
+export async function loadMapRegions(country: MapCountryCode = "UK"): Promise<MapRegion[]> {
+  const cached = regionCache.get(country)
+  if (cached) return cached
+  const meta = MAP_COUNTRY_META[country]
+  const response = await fetch(meta.asset)
+  if (!response.ok) throw new Error(`Failed to load ${meta.label} map data`)
   const raw = (await response.json()) as RawMapRegion[]
-  cachedRegions = raw.map(enrichRegionRecovery)
-  return cachedRegions
+  const next = raw.map(enrichRegionRecovery)
+  regionCache.set(country, next)
+  return next
+}
+
+/** @deprecated Prefer loadMapRegions("UK") */
+export async function loadUkMapRegions(): Promise<MapRegion[]> {
+  return loadMapRegions("UK")
 }
 
 /** Recognisable UK counties for pitch-deck regional slide (mock booking volumes). */
@@ -89,8 +108,8 @@ export const UK_PITCH_DECK_HIGHLIGHTS = [
   { name: "Dorset", bookings: 35200 },
 ] as const
 
-export function getCachedMapRegions(): MapRegion[] {
-  return cachedRegions ?? []
+export function getCachedMapRegions(country: MapCountryCode = "UK"): MapRegion[] {
+  return regionCache.get(country) ?? []
 }
 
 export function getMetricValue(region: MapRegion, metric: MapMetricId): number {

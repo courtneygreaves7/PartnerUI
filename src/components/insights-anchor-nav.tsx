@@ -99,9 +99,6 @@ export function InsightsAnchorNav({ product, className }: InsightsAnchorNavProps
       aria-label="Jump to section"
       className={cn("flex items-center gap-1.5 overflow-x-auto pb-0.5", className)}
     >
-      <span className="mr-1 shrink-0 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        Jump
-      </span>
       {items.map((item) => {
         const active = activeId === item.id
         return (

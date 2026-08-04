@@ -1452,14 +1452,14 @@ export function InsightsProductTabs({
   onChange: (id: InsightsProductId) => void
 }) {
   return (
-    <div className="flex w-full items-center gap-1 rounded-xl bg-muted p-1">
+    <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-muted p-1">
       {INSIGHTS_PRODUCT_TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onChange(tab.id)}
           className={cn(
-            "flex-1 rounded-lg px-2 py-2 text-center text-xs font-medium transition-colors sm:px-4 sm:text-sm",
+            "shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm",
             value === tab.id
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
