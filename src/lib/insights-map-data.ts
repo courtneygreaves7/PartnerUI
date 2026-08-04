@@ -74,28 +74,28 @@ export const MAP_COUNTRY_META: Record<
 }
 
 /**
- * 3D country framing — recognisable atlas silhouettes (not globe-true yaw).
- * UK sits north-up; islands are filtered out so the main island fills the frame.
+ * Shared county-view angle — SE isometric like the Spain relief framing.
+ * Same pitch/yaw for UK / FR / ES so every country sits at one recognisable pose.
  */
 export const COUNTRY_3D_VIEW: Record<
   MapCountryCode,
   {
     /** Tip of the map table toward the camera (radians). Near -π/2 keeps extrusion upright. */
     pitch: number
-    /** Map-table spin (radians). 0 ≈ north-up atlas orientation. */
+    /** Map-table spin (radians). 0 ≈ north-up under the shared SE camera. */
     yaw: number
   }
 > = {
   UK: {
-    pitch: -Math.PI / 2 + 0.32,
+    pitch: -Math.PI / 2 + 0.4,
     yaw: 0,
   },
   FR: {
-    pitch: -Math.PI / 2 + 0.28,
+    pitch: -Math.PI / 2 + 0.4,
     yaw: 0,
   },
   ES: {
-    pitch: -Math.PI / 2 + 0.28,
+    pitch: -Math.PI / 2 + 0.4,
     yaw: 0,
   },
 }
@@ -206,6 +206,47 @@ export function darkenMetricFill(
 export function metricRange(regions: MapRegion[], metric: MapMetricId): { min: number; max: number } {
   const values = regions.map((region) => getMetricValue(region, metric))
   return { min: Math.min(...values), max: Math.max(...values) }
+}
+
+/** Cancellation is the only map metric where lower is better. */
+export function metricHigherIsBetter(metric: MapMetricId): boolean {
+  return metric !== "cancellationRate"
+}
+
+/**
+ * Competition rank for a region on a metric (1 = best).
+ * Ties share the same rank (next ranks skip).
+ */
+export function rankRegionByMetric(
+  regions: MapRegion[],
+  regionId: string,
+  metric: MapMetricId
+): { rank: number; total: number } | null {
+  if (regions.length === 0) return null
+  const region = regions.find((item) => item.id === regionId)
+  if (!region) return null
+
+  const higherBetter = metricHigherIsBetter(metric)
+  const value = getMetricValue(region, metric)
+  const ahead = regions.filter((item) => {
+    const other = getMetricValue(item, metric)
+    return higherBetter ? other > value : other < value
+  }).length
+
+  return { rank: ahead + 1, total: regions.length }
+}
+
+export function formatMetricRank(rank: number, total: number): string {
+  return `#${rank} of ${total.toLocaleString("en-GB")}`
+}
+
+/** Top-quartile / mid / lower label for a quick read beside the rank. */
+export function metricRankBand(rank: number, total: number): "top" | "mid" | "lower" {
+  if (total <= 1) return "top"
+  const pct = rank / total
+  if (pct <= 0.25) return "top"
+  if (pct <= 0.75) return "mid"
+  return "lower"
 }
 
 /** Apply brand filter — volumes are a share of the all-brands county total. */

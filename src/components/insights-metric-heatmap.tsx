@@ -263,10 +263,10 @@ export function InsightsMetricHeatmap({
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[28rem] border-separate border-spacing-1.5">
+        <table className="border-separate border-spacing-1.5">
           <thead>
             <tr>
-              <th className="w-20 px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
+              <th className="px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
                 {
                   HEAT_DIMENSION_OPTIONS.find((option) => option.id === rowDim)
                     ?.label
@@ -275,7 +275,7 @@ export function InsightsMetricHeatmap({
               {matrix.colBands.map((col) => (
                 <th
                   key={col.id}
-                  className="px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
+                  className="w-9 px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
                 >
                   {col.label}
                 </th>
@@ -293,7 +293,7 @@ export function InsightsMetricHeatmap({
                   if (value === null) {
                     return (
                       <td key={col.id} className="p-0">
-                        <div className="aspect-square w-full min-h-9 rounded-[0.55rem]" />
+                        <div className="size-9 rounded-md" />
                       </td>
                     )
                   }
@@ -304,7 +304,7 @@ export function InsightsMetricHeatmap({
                         <TooltipTrigger asChild>
                           <button
                             type="button"
-                            className="block aspect-square w-full min-h-9 rounded-[0.55rem] outline-none transition-[transform,box-shadow] hover:scale-[1.04] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
+                            className="size-9 shrink-0 rounded-md outline-none transition-[transform,box-shadow] hover:scale-105 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
                             style={{
                               backgroundColor: cellBackground(
                                 value,
@@ -315,7 +315,7 @@ export function InsightsMetricHeatmap({
                             aria-label={label}
                           />
                         </TooltipTrigger>
-                        <TooltipContent className="text-left">
+                        <TooltipContent variant="plain" className="text-left">
                           <p className="font-medium text-foreground">
                             {formatHeatValue(value)}
                           </p>

@@ -144,14 +144,17 @@ function MatrixCellSwatch({
       <TooltipTrigger asChild>
         <button
           type="button"
-          className="aspect-square w-full min-h-12 rounded-[0.65rem] outline-none transition-[transform,box-shadow] hover:scale-[1.04] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="size-10 shrink-0 rounded-md outline-none transition-[transform,box-shadow] hover:scale-105 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
           style={{
             backgroundColor: heatSwatchBackground(relet, colourMin, colourMax),
           }}
           aria-label={label}
         />
       </TooltipTrigger>
-      <TooltipContent className="max-w-56 space-y-1.5 text-left">
+      <TooltipContent
+        variant="plain"
+        className="max-w-56 space-y-1.5 px-3 py-2.5 text-left"
+      >
         <p className="text-[11px] font-medium text-muted-foreground">{title}</p>
         <p className="text-sm font-semibold tabular-nums text-foreground">
           Relet {relet.toFixed(1)}%
@@ -275,10 +278,10 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[28rem] border-separate border-spacing-1.5">
+          <table className="border-separate border-spacing-1.5">
             <thead>
               <tr>
-                <th className="w-20 px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
+                <th className="px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
                   {
                     HEAT_DIMENSION_OPTIONS.find((option) => option.id === rowDim)
                       ?.label
@@ -287,7 +290,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
                 {matrix.colBands.map((col) => (
                   <th
                     key={col.id}
-                    className="px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
+                    className="w-10 px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
                   >
                     {col.label}
                   </th>
@@ -305,7 +308,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
                     if (!cell) {
                       return (
                         <td key={col.id} className="p-0">
-                          <div className="aspect-square w-full min-h-12 rounded-[0.65rem] bg-transparent" />
+                          <div className="size-10 rounded-md bg-transparent" />
                         </td>
                       )
                     }

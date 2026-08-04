@@ -1,11 +1,16 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js"
 
 import {
+  formatMapMetric,
   getMetricValue,
   COUNTRY_3D_VIEW,
+  MAP_METRICS,
+  formatMetricRank,
+  metricRankBand,
+  rankRegionByMetric,
   type MapCountryCode,
   type MapMetricId,
   type MapRegion,
@@ -35,6 +40,8 @@ const TARGET_SPAN = 88
 const RELIEF_HEIGHT_MIN = 2.8
 const RELIEF_HEIGHT_MAX = 5.6
 
+const ANNOTATION_OFFSET = { x: 108, y: -56 }
+
 type InsightsUkCounties3dProps = {
   country: MapCountryCode
   regions: MapRegion[]
@@ -54,10 +61,20 @@ type CountyUserData = {
 
 type CountyEntry = {
   id: string
-  group: any
-  meshes: any[]
+  group: THREE.Group
+  meshes: THREE.Mesh[]
   baseZ: number
   targetZ: number
+}
+
+type AnnotationState = {
+  id: string
+  name: string
+  ax: number
+  ay: number
+  bx: number
+  by: number
+  side: "left" | "right"
 }
 
 function metricT(value: number, min: number, max: number) {
@@ -84,12 +101,12 @@ function mix(
   }
 }
 
-function meshMaterials(mesh: any): any[] {
+function meshMaterials(mesh: THREE.Mesh): THREE.Material[] {
   return Array.isArray(mesh.material) ? mesh.material : [mesh.material]
 }
 
 function paintMesh(
-  mesh: any,
+  mesh: THREE.Mesh,
   value: number,
   range: { min: number; max: number },
   selected: boolean,
@@ -102,10 +119,11 @@ function paintMesh(
     selected || hovered
       ? mix(tone, LAND.sideHover, 0.35)
       : mix(tone, LAND.side, 0.55)
-    const dim = dimmed ? 0.78 : 1
+  const dim = dimmed ? 0.78 : 1
 
   const mats = meshMaterials(mesh)
   mats.forEach((material, index) => {
+    if (!(material instanceof THREE.MeshStandardMaterial)) return
     const c = index === 0 ? sideTone : tone
     material.color.setRGB(c.r * dim, c.g * dim, c.b * dim)
     material.emissive.setRGB(c.r * 0.08 * dim, c.g * 0.08 * dim, c.b * 0.07 * dim)
@@ -133,6 +151,21 @@ function makeCountyMaterial(isSide: boolean) {
   })
 }
 
+function placeAnnotation(
+  ax: number,
+  ay: number,
+  width: number,
+  height: number
+): Pick<AnnotationState, "bx" | "by" | "side"> {
+  const preferRight = ax < width * 0.58
+  const side: "left" | "right" = preferRight ? "right" : "left"
+  const bx = preferRight
+    ? Math.min(width - 24, ax + ANNOTATION_OFFSET.x)
+    : Math.max(24, ax - ANNOTATION_OFFSET.x)
+  const by = Math.min(height - 28, Math.max(28, ay + ANNOTATION_OFFSET.y))
+  return { bx, by, side }
+}
+
 export function InsightsUkCounties3d({
   country,
   regions,
@@ -157,6 +190,33 @@ export function InsightsUkCounties3d({
     range,
   })
   stateRef.current = { selectedCountyId, hoveredCountyId, metric, range }
+
+  const regionsRef = useRef(regions)
+  regionsRef.current = regions
+
+  const [annotation, setAnnotation] = useState<AnnotationState | null>(null)
+  const annotationIdRef = useRef<string | null>(null)
+  const linePathRef = useRef<SVGPathElement | null>(null)
+  const pinRef = useRef<SVGCircleElement | null>(null)
+  const cardRef = useRef<HTMLDivElement | null>(null)
+
+  const metricLabel =
+    MAP_METRICS.find((item) => item.id === metric)?.label ?? metric
+  const hoveredRegion = annotation
+    ? (regions.find((region) => region.id === annotation.id) ?? null)
+    : null
+  const hoverRank = hoveredRegion
+    ? rankRegionByMetric(regions, hoveredRegion.id, metric)
+    : null
+  const hoverBand = hoverRank
+    ? metricRankBand(hoverRank.rank, hoverRank.total)
+    : null
+  const cancelRank = hoveredRegion
+    ? rankRegionByMetric(regions, hoveredRegion.id, "cancellationRate")
+    : null
+  const reletRank = hoveredRegion
+    ? rankRegionByMetric(regions, hoveredRegion.id, "reletRate")
+    : null
 
   useEffect(() => {
     const container = containerRef.current
@@ -193,7 +253,7 @@ export function InsightsUkCounties3d({
     const root = new THREE.Group()
     const loader = new SVGLoader()
     const counties: CountyEntry[] = []
-    const meshList: any[] = []
+    const meshList: THREE.Mesh[] = []
 
     // Pass 1 — measure SVG XY so we can size extrusion in true world units
     let minX = Infinity
@@ -300,13 +360,13 @@ export function InsightsUkCounties3d({
       }
     }
 
-    // Oblique SE frame so extrusion sides read clearly (not top-down flat)
+    // Shared SE isometric frame (Spain-style) for every country
     stage.updateMatrixWorld(true)
     const frameBox = new THREE.Box3().setFromObject(stage)
     const frameSize = frameBox.getSize(new THREE.Vector3())
     const frameSpan = Math.max(frameSize.x, frameSize.y, frameSize.z, 40)
     const distance = frameSpan * 1.7
-    camera.position.set(distance * 0.52, distance * 0.58, distance * 0.82)
+    camera.position.set(distance * 0.48, distance * 0.72, distance * 0.88)
     camera.near = Math.max(0.1, distance / 100)
     camera.far = distance * 20
     camera.updateProjectionMatrix()
@@ -327,6 +387,8 @@ export function InsightsUkCounties3d({
 
     const raycaster = new THREE.Raycaster()
     const pointer = new THREE.Vector2()
+    const worldPoint = new THREE.Vector3()
+    const ndc = new THREE.Vector3()
     let frame = 0
     let disposed = false
 
@@ -348,6 +410,75 @@ export function InsightsUkCounties3d({
       const hit = hits[0]?.object
       if (!hit) return null
       return (hit.userData as CountyUserData) ?? null
+    }
+
+    function clearAnnotation() {
+      if (annotationIdRef.current !== null) {
+        annotationIdRef.current = null
+        setAnnotation(null)
+      }
+    }
+
+    function writeAnnotationDom(
+      ax: number,
+      ay: number,
+      bx: number,
+      by: number,
+      side: "left" | "right"
+    ) {
+      const elbowX = side === "right" ? ax + 28 : ax - 28
+      const d = `M ${ax} ${ay} L ${elbowX} ${ay} L ${bx} ${by}`
+      if (linePathRef.current) linePathRef.current.setAttribute("d", d)
+      if (pinRef.current) {
+        pinRef.current.setAttribute("cx", String(ax))
+        pinRef.current.setAttribute("cy", String(ay))
+      }
+      if (cardRef.current) {
+        cardRef.current.style.left = `${bx}px`
+        cardRef.current.style.top = `${by}px`
+        cardRef.current.style.transform =
+          side === "right" ? "translate(0, -50%)" : "translate(-100%, -50%)"
+      }
+    }
+
+    function syncAnnotation() {
+      const hovered = stateRef.current.hoveredCountyId
+      if (!hovered || !container) {
+        clearAnnotation()
+        return
+      }
+      const entry = counties.find((item) => item.id === hovered)
+      const region = regionsRef.current.find((item) => item.id === hovered)
+      if (!entry || !region) {
+        clearAnnotation()
+        return
+      }
+
+      entry.group.updateWorldMatrix(true, false)
+      const box = new THREE.Box3().setFromObject(entry.group)
+      box.getCenter(worldPoint)
+      // Sit the pin on the raised cap, not buried in the extrusion
+      worldPoint.y = box.max.y + 0.6
+
+      ndc.copy(worldPoint).project(camera)
+      if (ndc.z > 1) {
+        clearAnnotation()
+        return
+      }
+
+      const width = container.clientWidth
+      const height = container.clientHeight
+      const ax = (ndc.x * 0.5 + 0.5) * width
+      const ay = (-ndc.y * 0.5 + 0.5) * height
+      const { bx, by, side } = placeAnnotation(ax, ay, width, height)
+
+      if (annotationIdRef.current === hovered) {
+        writeAnnotationDom(ax, ay, bx, by, side)
+        return
+      }
+
+      annotationIdRef.current = hovered
+      setAnnotation({ id: hovered, name: region.name, ax, ay, bx, by, side })
     }
 
     function onPointerMove(event: PointerEvent) {
@@ -394,6 +525,7 @@ export function InsightsUkCounties3d({
       }
 
       controls.update()
+      syncAnnotation()
       renderer.render(scene, camera)
     }
 
@@ -431,6 +563,8 @@ export function InsightsUkCounties3d({
         container.removeChild(renderer.domElement)
       }
       delete (container as HTMLDivElement & { __uk3dSync?: unknown }).__uk3dSync
+      annotationIdRef.current = null
+      setAnnotation(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regions, country])
@@ -442,10 +576,155 @@ export function InsightsUkCounties3d({
     container?.__uk3dSync?.apply()
   }, [metric, range, selectedCountyId, hoveredCountyId, regions])
 
+  useEffect(() => {
+    if (!annotation) return
+    const elbowX =
+      annotation.side === "right" ? annotation.ax + 28 : annotation.ax - 28
+    const d = `M ${annotation.ax} ${annotation.ay} L ${elbowX} ${annotation.ay} L ${annotation.bx} ${annotation.by}`
+    linePathRef.current?.setAttribute("d", d)
+    pinRef.current?.setAttribute("cx", String(annotation.ax))
+    pinRef.current?.setAttribute("cy", String(annotation.ay))
+    if (cardRef.current) {
+      cardRef.current.style.left = `${annotation.bx}px`
+      cardRef.current.style.top = `${annotation.by}px`
+      cardRef.current.style.transform =
+        annotation.side === "right"
+          ? "translate(0, -50%)"
+          : "translate(-100%, -50%)"
+    }
+  }, [annotation])
+
+  const elbowX = annotation
+    ? annotation.side === "right"
+      ? annotation.ax + 28
+      : annotation.ax - 28
+    : 0
+  const pathD = annotation
+    ? `M ${annotation.ax} ${annotation.ay} L ${elbowX} ${annotation.ay} L ${annotation.bx} ${annotation.by}`
+    : ""
+
   return (
     <div
       ref={containerRef}
       className={cn("relative h-full min-h-[360px] w-full overflow-hidden", className)}
-    />
+    >
+      {annotation && hoveredRegion ? (
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+          <svg className="absolute inset-0 size-full overflow-visible" aria-hidden>
+            <path
+              key={`line-${annotation.id}`}
+              ref={linePathRef}
+              d={pathD}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-foreground/55 county-annotation-line"
+            />
+            <circle
+              key={`dot-${annotation.id}`}
+              ref={pinRef}
+              cx={annotation.ax}
+              cy={annotation.ay}
+              r="3.5"
+              className="fill-[var(--brand-green,#1F5C3D)] county-annotation-dot"
+            />
+          </svg>
+
+          <div
+            key={`card-${annotation.id}`}
+            ref={cardRef}
+            className="county-annotation-card absolute w-[13.5rem] rounded-xl border border-border/70 bg-card/95 px-3.5 py-3 shadow-md backdrop-blur-sm"
+            style={{
+              left: annotation.bx,
+              top: annotation.by,
+              transform:
+                annotation.side === "right"
+                  ? "translate(0, -50%)"
+                  : "translate(-100%, -50%)",
+            }}
+          >
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {hoveredRegion.country || country}
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{annotation.name}</p>
+            <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+              <p className="text-[22px] font-bold tracking-tight tabular-nums text-foreground">
+                {formatMapMetric(getMetricValue(hoveredRegion, metric), metric)}
+              </p>
+              {hoverRank ? (
+                <span
+                  className={cn(
+                    "mb-0.5 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.1em] uppercase",
+                    hoverBand === "top" &&
+                      "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
+                    hoverBand === "mid" &&
+                      "border-border/70 bg-muted/60 text-muted-foreground",
+                    hoverBand === "lower" &&
+                      "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  )}
+                >
+                  {formatMetricRank(hoverRank.rank, hoverRank.total)}
+                </span>
+              ) : null}
+            </div>
+            <p className="text-[11px] text-muted-foreground">{metricLabel}</p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2 border-t border-border/60 pt-2.5">
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Cancel
+                </p>
+                <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
+                  {formatMapMetric(hoveredRegion.cancellationRate, "cancellationRate")}
+                </p>
+                {cancelRank ? (
+                  <p className="mt-0.5 text-[9px] tabular-nums text-muted-foreground">
+                    {formatMetricRank(cancelRank.rank, cancelRank.total)}
+                  </p>
+                ) : null}
+              </div>
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Re-let
+                </p>
+                <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
+                  {formatMapMetric(hoveredRegion.reletRate, "reletRate")}
+                </p>
+                {reletRank ? (
+                  <p className="mt-0.5 text-[9px] tabular-nums text-muted-foreground">
+                    {formatMetricRank(reletRank.rank, reletRank.total)}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">Click to pin in the side panel</p>
+          </div>
+        </div>
+      ) : null}
+
+      <style>{`
+        @keyframes county-annotation-draw {
+          from { stroke-dashoffset: 180; }
+          to { stroke-dashoffset: 0; }
+        }
+        @keyframes county-annotation-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .county-annotation-line {
+          stroke-dasharray: 180;
+          animation: county-annotation-draw 420ms ease-out forwards;
+        }
+        .county-annotation-dot {
+          opacity: 0;
+          animation: county-annotation-in 240ms ease-out 80ms forwards;
+        }
+        .county-annotation-card {
+          opacity: 0;
+          animation: county-annotation-in 320ms ease-out 160ms forwards;
+        }
+      `}</style>
+    </div>
   )
 }

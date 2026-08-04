@@ -32,14 +32,16 @@ import { buildGlobeCountryStats } from "@/lib/insights-globe-data"
 import {
   formatCompactCurrency,
   formatMapMetric,
+  formatMetricRank,
   getAggregateDetailStats,
-  getMetricValue,
   getRegionDetailStats,
   getTownsForCounty,
   loadMapRegions,
   MAP_COUNTRY_META,
   MAP_METRICS,
   metricRange,
+  metricRankBand,
+  rankRegionByMetric,
   scaleRegionByTownShare,
   scaleRegionForFilters,
   type MapCountryCode,
@@ -68,6 +70,7 @@ type StatRow = {
   value: string
   sub?: string
   icon: typeof MapPin
+  metricId?: MapMetricId
 }
 
 function buildStatRows(
@@ -106,6 +109,7 @@ function buildStatRows(
       label: "Bookings",
       value: stats.bookings.toLocaleString("en-GB"),
       icon: CalendarDays,
+      metricId: "bookings",
     },
     {
       label: "With CAL",
@@ -123,31 +127,37 @@ function buildStatRows(
       label: "Revenue",
       value: formatCompactCurrency(stats.revenue),
       icon: PoundSterling,
+      metricId: "gwp",
     },
     {
       label: "ABV",
       value: formatMapMetric(stats.abv, "abv"),
       icon: TrendingUp,
+      metricId: "abv",
     },
     {
       label: "CAL take-up",
       value: formatMapMetric(stats.calTakeUp, "calTakeUp"),
       icon: ShieldCheck,
+      metricId: "calTakeUp",
     },
     {
       label: "Cancellation rate",
       value: formatMapMetric(stats.cancellationRate, "cancellationRate"),
       icon: Ban,
+      metricId: "cancellationRate",
     },
     {
       label: "Re-let rate",
       value: formatMapMetric(stats.reletRate, "reletRate"),
       icon: TrendingUp,
+      metricId: "reletRate",
     },
     {
       label: "Recovery rate",
       value: formatMapMetric(stats.recoveryRate, "recoveryRate"),
       icon: PoundSterling,
+      metricId: "recoveryRate",
     }
   )
 
@@ -180,6 +190,7 @@ function RegionStatsPanel({
   onOpenInsights?: () => void
 }) {
   const rows = buildStatRows(stats, placeLabel, { includeCode })
+  const showRanks = !isPlaceholder && selectedCountyId !== ALL_COUNTIES
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -239,6 +250,11 @@ function RegionStatsPanel({
           <h3 className="text-sm font-semibold">Metrics</h3>
           {rows.map((row) => {
             const Icon = row.icon
+            const rank =
+              showRanks && row.metricId
+                ? rankRegionByMetric(counties, selectedCountyId, row.metricId)
+                : null
+            const band = rank ? metricRankBand(rank.rank, rank.total) : null
             return (
               <div
                 key={row.label}
@@ -251,12 +267,26 @@ function RegionStatsPanel({
               >
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 flex-1 text-left text-muted-foreground">{row.label}</span>
-                <span className="shrink-0 text-right font-semibold tabular-nums text-foreground">
-                  {row.value}
-                  {row.sub ? (
-                    <span className="ml-1.5 font-medium text-muted-foreground">{row.sub}</span>
+                <div className="flex shrink-0 flex-col items-end gap-0.5">
+                  <span className="text-right font-semibold tabular-nums text-foreground">
+                    {row.value}
+                    {row.sub ? (
+                      <span className="ml-1.5 font-medium text-muted-foreground">{row.sub}</span>
+                    ) : null}
+                  </span>
+                  {rank ? (
+                    <span
+                      className={cn(
+                        "text-[9px] font-medium tabular-nums tracking-wide",
+                        band === "top" && "text-emerald-700 dark:text-emerald-300",
+                        band === "mid" && "text-muted-foreground",
+                        band === "lower" && "text-amber-700 dark:text-amber-300"
+                      )}
+                    >
+                      {formatMetricRank(rank.rank, rank.total)}
+                    </span>
                   ) : null}
-                </span>
+                </div>
               </div>
             )
           })}
@@ -337,10 +367,6 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
     selectedCountyId === ALL_COUNTIES
       ? null
       : (scaledRegions.find((r) => r.id === selectedCountyId) ?? null)
-
-  const hoveredCounty = hoveredCountyId
-    ? (scaledRegions.find((r) => r.id === hoveredCountyId) ?? null)
-    : null
 
   const towns = useMemo(
     () => (selectedCounty ? getTownsForCounty(selectedCounty) : []),
@@ -529,17 +555,6 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
             />
           )}
 
-          {hoveredCounty && metricLabel ? (
-            <div className="pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-md backdrop-blur-sm">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {hoveredCounty.name}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-foreground">
-                {formatMapMetric(getMetricValue(hoveredCounty, metric), metric)} {metricLabel}
-              </p>
-              <p className="mt-1 text-[10px] text-muted-foreground">Click to pin in the side panel</p>
-            </div>
-          ) : null}
         </div>
 
         <aside className="relative flex min-h-0 flex-col">
