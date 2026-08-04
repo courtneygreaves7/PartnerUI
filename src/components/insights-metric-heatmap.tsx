@@ -1,5 +1,13 @@
-import { useMemo, useState } from "react"
-import { Info } from "lucide-react"
+import { useMemo, useState, type ComponentType } from "react"
+import {
+  BedDouble,
+  CalendarDays,
+  ChevronDown,
+  Clock,
+  Info,
+  ListFilter,
+  type LucideProps,
+} from "lucide-react"
 
 import {
   HEAT_BANDS,
@@ -20,9 +28,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-const PANEL = "rounded-2xl border border-border/60 bg-card p-3 shadow-xs"
+const PANEL = "@container rounded-2xl border border-border/60 bg-card p-3 shadow-xs"
 const MONO_LABEL =
   "text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground"
+const SELECT_CLASS =
+  "h-8 w-full appearance-none rounded-md border border-border bg-background py-0 text-xs leading-none outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+/** Compact (side-by-side cards): icon placeholders. Wider: full labels. */
+const SELECT_COMPACT =
+  "pr-7 pl-2 text-transparent @min-[34rem]:pl-2.5 @min-[34rem]:text-foreground"
+
+const DIMENSION_ICONS: Record<
+  HeatDimension,
+  ComponentType<LucideProps>
+> = {
+  bedroom: BedDouble,
+  departure: CalendarDays,
+  leadTime: Clock,
+}
 
 function MeasureHelp({ title, help }: { title: string; help: string }) {
   return (
@@ -36,10 +58,38 @@ function MeasureHelp({ title, help }: { title: string; help: string }) {
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-64 text-left">
+      <TooltipContent className="max-w-64 text-left">
         {help}
       </TooltipContent>
     </Tooltip>
+  )
+}
+
+function SelectChevron() {
+  return (
+    <ChevronDown
+      className="pointer-events-none absolute top-1/2 right-1.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+      strokeWidth={2}
+      aria-hidden
+    />
+  )
+}
+
+function IconPlaceholder({
+  icon: Icon,
+  label,
+}: {
+  icon: ComponentType<LucideProps>
+  label: string
+}) {
+  return (
+    <span
+      className="pointer-events-none absolute inset-y-0 left-0 z-10 flex w-[calc(100%-0.25rem)] items-center justify-center pr-4 @min-[34rem]:hidden"
+      aria-hidden
+    >
+      <Icon className="size-3.5 text-foreground" strokeWidth={2} />
+      <span className="sr-only">{label}</span>
+    </span>
   )
 }
 
@@ -56,24 +106,33 @@ function DimensionSelect({
   options: typeof HEAT_DIMENSION_OPTIONS
   disabledIds?: HeatDimension[]
 }) {
+  const selected =
+    options.find((option) => option.id === value)?.label ?? label
+  const Icon = DIMENSION_ICONS[value]
+
   return (
-    <label className="flex min-w-0 flex-col gap-1">
+    <label className="flex min-w-0 flex-col gap-1" title={`${label}: ${selected}`}>
       <span className={MONO_LABEL}>{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as HeatDimension)}
-        className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-      >
-        {options.map((option) => (
-          <option
-            key={option.id}
-            value={option.id}
-            disabled={disabledIds.includes(option.id)}
-          >
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative min-w-0">
+        <IconPlaceholder icon={Icon} label={selected} />
+        <select
+          value={value}
+          onChange={(event) => onChange(event.target.value as HeatDimension)}
+          aria-label={`${label}: ${selected}`}
+          className={cn(SELECT_CLASS, SELECT_COMPACT)}
+        >
+          {options.map((option) => (
+            <option
+              key={option.id}
+              value={option.id}
+              disabled={disabledIds.includes(option.id)}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <SelectChevron />
+      </div>
     </label>
   )
 }
@@ -148,7 +207,7 @@ export function InsightsMetricHeatmap({
           <p className="mt-1 max-w-xl text-xs text-muted-foreground">{HEATMAP_INTRO}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid min-w-0 grid-cols-3 gap-1.5 sm:gap-2">
           <DimensionSelect
             label="Rows"
             value={rowDim}
@@ -162,22 +221,42 @@ export function InsightsMetricHeatmap({
             options={HEAT_DIMENSION_OPTIONS}
             disabledIds={[rowDim]}
           />
-          <label className="col-span-2 flex min-w-0 flex-col gap-1 sm:col-span-1">
+          <label
+            className="flex min-w-0 flex-col gap-1"
+            title={`Filter: ${
+              filterId === "all"
+                ? `All ${filterLabel.toLowerCase()}`
+                : (filterBands.find((band) => band.id === filterId)?.label ?? filterId)
+            }`}
+          >
             <span className={MONO_LABEL}>Filter</span>
-            <select
-              value={filterId}
-              onChange={(event) =>
-                setFilterId(event.target.value === "all" ? "all" : event.target.value)
-              }
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-            >
-              <option value="all">All {filterLabel.toLowerCase()}</option>
-              {filterBands.map((band) => (
-                <option key={band.id} value={band.id}>
-                  {band.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative min-w-0">
+              <IconPlaceholder
+                icon={ListFilter}
+                label={
+                  filterId === "all"
+                    ? `All ${filterLabel.toLowerCase()}`
+                    : (filterBands.find((band) => band.id === filterId)?.label ??
+                      filterId)
+                }
+              />
+              <select
+                value={filterId}
+                onChange={(event) =>
+                  setFilterId(event.target.value === "all" ? "all" : event.target.value)
+                }
+                aria-label={`Filter by ${filterLabel}`}
+                className={cn(SELECT_CLASS, SELECT_COMPACT)}
+              >
+                <option value="all">All {filterLabel.toLowerCase()}</option>
+                {filterBands.map((band) => (
+                  <option key={band.id} value={band.id}>
+                    {band.label}
+                  </option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           </label>
         </div>
       </div>

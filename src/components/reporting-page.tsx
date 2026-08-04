@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react"
 
 import { FileText } from "lucide-react"
 
-import { BdxSubmissionsPanel } from "@/components/bdx-submissions-panel"
 import { ChannelGridTable } from "@/components/sykes/channel-grid-table"
 import { CollapsibleDataTable } from "@/components/sykes/sykes-visual-primitives"
 import { CompareMetricSection } from "@/components/compare/compare-metric-section"
@@ -21,7 +20,7 @@ import { cn } from "@/lib/utils"
 type ReportingPageProps = {
   filters: ReportingFilters
   hasRun: boolean
-  /** Increments each time Run report is clicked — scrolls past BDX to the report. */
+  /** Increments each time Run report is clicked — scrolls to the report. */
   runId?: number
 }
 
@@ -264,26 +263,22 @@ export function ReportingPage({ filters, hasRun, runId = 0 }: ReportingPageProps
   }, [hasRun, runId])
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-[22px] font-semibold tracking-tight">Reporting</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {hasRun
-            ? formatReportingContext(filters)
-            : `Build and run brand comparison reports for ${PARTNER_BRANDING.name}.`}
-        </p>
-      </div>
-
-      <BdxSubmissionsPanel />
-
+    <div className="space-y-6">
       <div
         ref={reportRef}
         id="reporting-brand-performance"
         className="scroll-mt-6 space-y-6"
       >
-        <div>
+        <div className="flex flex-col gap-1">
           <p className={MONO_LABEL}>Insights report</p>
-          <h2 className="mt-1 text-sm font-semibold text-foreground">Brand performance</h2>
+          <h2 className="text-[22px] font-semibold tracking-tight text-foreground">
+            Brand performance
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {hasRun
+              ? formatReportingContext(filters)
+              : `Build and run brand comparison reports for ${PARTNER_BRANDING.name}.`}
+          </p>
         </div>
 
         {!hasRun ? (

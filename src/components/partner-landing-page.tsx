@@ -7,7 +7,7 @@ import {
   BarChart3,
   CalendarCheck,
   CalendarRange,
-  ChevronRight,
+  ArrowRight,
   Clock,
   Coins,
   FileText,
@@ -167,7 +167,6 @@ function MeasureHelpButton({
   helpText,
   className,
   tone = "default",
-  side = "top",
 }: {
   title: string
   helpText?: string
@@ -194,7 +193,7 @@ function MeasureHelpButton({
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side={side} align="start" className="max-w-72 text-left">
+      <TooltipContent className="max-w-72 text-left">
         {text}
       </TooltipContent>
     </Tooltip>
@@ -434,7 +433,7 @@ function TrendChip({
           {chip}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" align="center" className="max-w-56 text-left">
+      <TooltipContent className="max-w-56 text-left">
         {tip}
       </TooltipContent>
     </Tooltip>
@@ -979,7 +978,7 @@ function PiklStaysDriverCards({
               PANEL,
               "relative flex flex-col gap-4 p-5",
               highlight &&
-                "border-primary/80 bg-gradient-to-br from-primary to-[#0047b3] text-primary-foreground shadow-sm"
+                "border-primary/80 bg-gradient-to-br from-primary to-[var(--brand-primary-dark)] text-primary-foreground shadow-sm"
             )}
           >
             <CardCornerLink
@@ -1129,26 +1128,39 @@ function PiklMarketDriverCards({
   )
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)] lg:items-stretch">
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 content-start">
-        {metrics.market.map((item) => (
-          <div key={item.metric} className={cn(PANEL, "relative flex flex-col gap-4 p-5")}>
-            <CardCornerLink title={item.metric} onOpenInsights={onOpenInsights} />
-            <div>
-              <TileIcon label={item.metric} />
-            </div>
-            <div className="space-y-1">
-              <LabelWithHelp title={item.metric} />
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
-                  {item.value}
-                </p>
-                <TrendChip value={item.trend} tone={item.tone} label={item.metric} />
+    <div className="flex flex-col gap-6">
+      <div className="rounded-2xl bg-[var(--brand-surface)] p-4 dark:bg-muted">
+        <h2 className="mb-3 text-sm font-semibold tracking-tight text-foreground">
+          Partner vs market
+        </h2>
+        <div className="@container overflow-x-auto">
+          <div className="flex w-max gap-6">
+            {metrics.market.map((item) => (
+              <div
+                key={item.metric}
+                className={cn(
+                  PANEL,
+                  "relative flex w-[calc((100cqi-6rem)/4.25)] shrink-0 flex-col gap-4 p-5"
+                )}
+              >
+                <CardCornerLink title={item.metric} onOpenInsights={onOpenInsights} />
+                <div>
+                  <TileIcon label={item.metric} />
+                </div>
+                <div className="space-y-1">
+                  <LabelWithHelp title={item.metric} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+                      {item.value}
+                    </p>
+                    <TrendChip value={item.trend} tone={item.tone} label={item.metric} />
+                  </div>
+                </div>
+                <p className="mt-auto text-xs text-muted-foreground">{item.side}</p>
               </div>
-            </div>
-            <p className="mt-auto text-xs text-muted-foreground">{item.side}</p>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       <ChartRowCard
@@ -1156,11 +1168,9 @@ function PiklMarketDriverCards({
         sub="Benchmark by metric"
         value={`${score}`}
         trend={`${score >= 100 ? "+" : ""}${score - 100}`}
-        className="h-full min-h-0"
-        contentClassName="mt-0 flex min-h-0 flex-1 flex-col pt-4"
         onOpenInsights={onOpenInsights}
       >
-        <PartnerVsMarketBullets items={metrics.market} fillHeight />
+        <PartnerVsMarketBullets items={metrics.market} />
       </ChartRowCard>
     </div>
   )
@@ -1462,7 +1472,12 @@ export function InsightsProductTabs({
   )
 }
 
-const CAL_CHANNEL_COLORS = ["#006BFF", "#3389FF", "#66A6FF", "#99C4FF"] as const
+const CAL_CHANNEL_COLORS = [
+  "var(--primary)",
+  "color-mix(in oklab, var(--primary) 78%, white)",
+  "color-mix(in oklab, var(--primary) 55%, white)",
+  "color-mix(in oklab, var(--primary) 35%, white)",
+] as const
 
 const CAL_RATE_CARDS: Array<{
   label: string
@@ -1639,34 +1654,27 @@ function ProductValueLoopScorecard({
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch xl:gap-0">
-        {loop.steps.map((step, index) => (
-          <div key={step.id} className="flex min-w-0 flex-1 items-stretch">
-            <div className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5">
-              <div className="flex items-center gap-2">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-semibold tabular-nums text-primary-foreground">
-                  {index + 1}
-                </span>
-                <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
-                  {step.label}
-                </p>
-                <MeasureHelpButton title={step.label} helpText={step.help} />
-              </div>
-              <p className="mt-4 text-[28px] font-bold tracking-tight tabular-nums text-foreground">
-                {step.value}
+      <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch">
+        {loop.steps.map((step) => (
+          <div
+            key={step.id}
+            className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5"
+          >
+            <div className="flex items-center gap-2">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+              </span>
+              <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
+                {step.label}
               </p>
-              <p className="mt-auto pt-3 text-[11px] leading-snug text-muted-foreground">
-                {step.hint}
-              </p>
+              <MeasureHelpButton title={step.label} helpText={step.help} />
             </div>
-            {index < loop.steps.length - 1 ? (
-              <div
-                className="hidden w-8 shrink-0 items-center justify-center xl:flex"
-                aria-hidden
-              >
-                <ChevronRight className="size-4 text-border" strokeWidth={2} />
-              </div>
-            ) : null}
+            <p className="mt-4 text-[28px] font-bold tracking-tight tabular-nums text-foreground">
+              {step.value}
+            </p>
+            <p className="mt-auto pt-3 text-[11px] leading-snug text-muted-foreground">
+              {step.hint}
+            </p>
           </div>
         ))}
       </div>
@@ -1737,6 +1745,7 @@ export function InsightsCalPanel({
   return (
     <div className="flex flex-col">
       <InsightsSection
+        id="insights-health"
         eyebrow="1 · How are we doing?"
         title="Commercial performance"
         description="See whether Flexible Cancellation is priced right, converting guests, and earning margin — plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and ops."
@@ -1959,6 +1968,7 @@ export function InsightsCalPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-story"
         eyebrow="2 · The story"
         title="How Flexible Cancellation pays"
         description="Flexible Cancellation is not just cover sold. Guests convert onto it, some cancel (that is expected), ops re-lets the stay, and you keep — or even grow — the revenue. Follow that loop to see where money is made or lost."
@@ -1968,6 +1978,7 @@ export function InsightsCalPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-act"
         eyebrow="3 · Where to act"
         title="What is driving the results?"
         description="Use bedrooms, travel dates, and lead time to find where attachment is weak, cancels are high, or relets need work — then act on the shortlist."
@@ -1977,6 +1988,7 @@ export function InsightsCalPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-growth"
         eyebrow="4 · Growth opportunity"
         title="What happens if we sell a bit more?"
         description="Value of raising attachment by 1 percentage point, plus when travelling guests booked cover by departure month."
@@ -2010,6 +2022,7 @@ export function InsightsCalPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-detail"
         eyebrow="5 · Full detail"
         title="Channel breakdown"
         description="Same metrics as above, row by row across Website, App, Offline, OTA, Direct, and Total. Open when you need the audit view."
@@ -2109,6 +2122,7 @@ export function InsightsDdlPanel({
   return (
     <div className="flex flex-col">
       <InsightsSection
+        id="insights-health"
         eyebrow="1 · How are we doing?"
         title="Commercial performance"
         description="See whether Damage Waiver is priced right, converting guests, and earning margin — plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and growth."
@@ -2324,6 +2338,7 @@ export function InsightsDdlPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-story"
         eyebrow="2 · The story"
         title="How Damage Waiver pays"
         description="Damage Waiver is not just a deposit alternative. Guests convert onto it, you earn partner margin, and stronger take-up on direct channels lifts the book. Follow that loop to see where money is made or left behind."
@@ -2333,6 +2348,7 @@ export function InsightsDdlPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-act"
         eyebrow="3 · Where to act"
         title="What is driving the results?"
         description="Use bedrooms, travel dates, and lead time to find where attachment is weak — then act on the shortlist of channel and segment signals."
@@ -2342,6 +2358,7 @@ export function InsightsDdlPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-growth"
         eyebrow="4 · Growth opportunity"
         title="What happens if we sell a bit more?"
         description="Value of raising Damage Waiver attachment by 1 percentage point, plus when travelling guests booked the waiver by departure month."
@@ -2375,6 +2392,7 @@ export function InsightsDdlPanel({
       </InsightsSection>
 
       <InsightsSection
+        id="insights-detail"
         eyebrow="5 · Full detail"
         title="Channel breakdown"
         description="Same metrics as above, row by row across Website, App, Offline, OTA, Direct, and Total. Open when you need the audit view."
@@ -2401,7 +2419,7 @@ export function InsightsOccupancyPanel() {
 /** Top card row for the Insights page — same style as the Home tab cards. */
 export function InsightsTopCards() {
   return (
-    <div className="rounded-2xl bg-[#e8f0fc] p-4 dark:bg-[#141b28]">
+    <div id="insights-top-cards" className="scroll-mt-36 rounded-2xl bg-[var(--brand-surface)] p-4 dark:bg-muted">
       <h2 className="mb-3 text-sm font-semibold tracking-tight text-foreground">
         Total products
       </h2>

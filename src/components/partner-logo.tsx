@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
+import {
+  BRAND_THEME_COPY,
+  type BrandThemeId,
+} from "@/lib/brand-theme"
 import sykesLogoBlue from "@/assets/sykes-holiday-cottages-logo.png"
 import sykesLogoMask from "@/assets/sykes-logo-mask.png"
 
@@ -9,6 +13,7 @@ type PartnerLogoProps = {
   variant?: "sidebar" | "hero"
   /** Force white logo (e.g. on blue gradient backgrounds). */
   inverted?: boolean
+  brandTheme?: BrandThemeId
 }
 
 /** Circular Sykes house mark for collapsed / compact UI. */
@@ -47,12 +52,76 @@ function SykesHouseMark({
   )
 }
 
+function PiklWordmark({
+  className,
+  compact = false,
+  inverted = false,
+  variant = "sidebar",
+}: {
+  className?: string
+  compact?: boolean
+  inverted?: boolean
+  variant?: "sidebar" | "hero"
+}) {
+  if (compact) {
+    return (
+      <div className={cn("flex shrink-0 items-center justify-center", className)}>
+        <span
+          className={cn(
+            "grid size-7 place-items-center rounded-full text-[11px] font-bold tracking-tight",
+            inverted
+              ? "bg-white/15 text-white"
+              : "bg-primary/10 text-primary"
+          )}
+        >
+          P
+        </span>
+        <span className="sr-only">Pikl</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn("flex min-w-0 flex-col items-start", className)}>
+      <span
+        className={cn(
+          "font-bold tracking-tight",
+          variant === "hero" ? "text-2xl" : "text-xl",
+          inverted ? "text-white" : "text-primary"
+        )}
+      >
+        Pikl
+      </span>
+      <p
+        className={cn(
+          "mt-1 text-[9px] font-bold tracking-[0.14em] uppercase",
+          inverted ? "text-white/70" : "text-muted-foreground"
+        )}
+      >
+        Partner portal
+      </p>
+    </div>
+  )
+}
+
 export function PartnerLogo({
   className,
   compact = false,
   variant = "sidebar",
   inverted = false,
+  brandTheme = "sykes",
 }: PartnerLogoProps) {
+  if (brandTheme === "pikl") {
+    return (
+      <PiklWordmark
+        className={className}
+        compact={compact}
+        inverted={inverted}
+        variant={variant}
+      />
+    )
+  }
+
   if (compact) {
     return (
       <div className={cn("flex shrink-0 items-center justify-center", className)}>
@@ -64,6 +133,18 @@ export function PartnerLogo({
 
   const sizeClass =
     variant === "hero" ? "h-10 w-auto max-w-[220px]" : "h-6 w-auto max-w-[140px]"
+  const copy = BRAND_THEME_COPY.sykes
+
+  const poweredBy = copy.poweredBy ? (
+    <p
+      className={cn(
+        "mt-1 text-[9px] font-bold tracking-[0.14em] uppercase",
+        inverted ? "text-white/70" : "text-muted-foreground"
+      )}
+    >
+      {copy.poweredBy}
+    </p>
+  ) : null
 
   const whiteLogo = (
     <span
@@ -84,11 +165,16 @@ export function PartnerLogo({
   )
 
   if (inverted) {
-    return <div className={cn("flex min-w-0 items-center", className)}>{whiteLogo}</div>
+    return (
+      <div className={cn("flex min-w-0 flex-col items-start", className)}>
+        {whiteLogo}
+        {poweredBy}
+      </div>
+    )
   }
 
   return (
-    <div className={cn("flex min-w-0 items-center", className)}>
+    <div className={cn("flex min-w-0 flex-col items-start", className)}>
       <img
         src={sykesLogoBlue}
         alt={PARTNER_BRANDING.name}
@@ -112,6 +198,7 @@ export function PartnerLogo({
           maskSize: "contain",
         }}
       />
+      {poweredBy}
     </div>
   )
 }

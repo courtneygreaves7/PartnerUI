@@ -105,10 +105,10 @@ export function formatMapMetric(value: number, metric: MapMetricId): string {
 }
 
 export function metricFill(value: number, min: number, max: number): string {
-  if (max <= min) return "rgb(0 107 255 / 0.55)"
+  if (max <= min) return "rgb(var(--primary-rgb) / 0.55)"
   const t = (value - min) / (max - min)
   const opacity = 0.22 + t * 0.68
-  return `rgb(0 107 255 / ${opacity.toFixed(2)})`
+  return `rgb(var(--primary-rgb) / ${opacity.toFixed(2)})`
 }
 
 /** Darken a metric fill for hover / selected states. */
@@ -119,13 +119,15 @@ export function darkenMetricFill(
   amount: "hover" | "selected"
 ): string {
   if (max <= min) {
-    return amount === "selected" ? "rgb(0 86 204 / 0.88)" : "rgb(0 96 230 / 0.72)"
+    return amount === "selected"
+      ? "rgb(var(--primary-dark-rgb) / 0.88)"
+      : "rgb(var(--primary-rgb) / 0.72)"
   }
   const t = (value - min) / (max - min)
   const base = 0.22 + t * 0.68
   const opacity = amount === "selected" ? Math.min(0.95, base + 0.28) : Math.min(0.88, base + 0.14)
-  const blue = amount === "selected" ? 86 : 96
-  return `rgb(0 ${blue} 204 / ${opacity.toFixed(2)})`
+  const rgb = amount === "selected" ? "var(--primary-dark-rgb)" : "var(--primary-rgb)"
+  return `rgb(${rgb} / ${opacity.toFixed(2)})`
 }
 
 export function metricRange(regions: MapRegion[], metric: MapMetricId): { min: number; max: number } {

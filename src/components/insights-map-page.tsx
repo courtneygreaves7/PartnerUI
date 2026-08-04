@@ -24,9 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { InsightsGlobe } from "@/components/insights-globe"
+import { InsightsUkCounties3d } from "@/components/insights-uk-counties-3d"
 import type { ActiveFilters } from "@/lib/chart-data"
 import {
-  darkenMetricFill,
   formatCompactCurrency,
   formatMapMetric,
   getAggregateDetailStats,
@@ -35,8 +36,6 @@ import {
   getTownsForCounty,
   loadMapRegions,
   MAP_METRICS,
-  MAP_VIEWBOX,
-  metricFill,
   metricRange,
   scaleRegionByTownShare,
   scaleRegionForFilters,
@@ -70,130 +69,6 @@ function BritishFlag({ className }: { className?: string }) {
         <path d="M30 0 V30 M0 15 H60" stroke="#C8102E" strokeWidth="6" />
       </g>
     </svg>
-  )
-}
-
-const MAP_MID_X = 400
-const CALLOUT_LINE_EDGE_INSET = 12
-
-/** Pin + stepped connector toward the white space beside the UK. */
-function MapRegionCalloutLine({
-  region,
-}: {
-  region: MapRegion
-}) {
-  const cx = region.labelX
-  const cy = region.labelY
-  const side: "left" | "right" = cx < MAP_MID_X ? "left" : "right"
-  const edgeX = side === "left" ? CALLOUT_LINE_EDGE_INSET : 800 - CALLOUT_LINE_EDGE_INSET
-  const elbowX = side === "left" ? Math.max(cx - 56, edgeX + 40) : Math.min(cx + 56, edgeX - 40)
-
-  const linePath = [
-    `M ${cx} ${cy}`,
-    `L ${elbowX} ${cy}`,
-    `L ${edgeX} ${cy}`,
-  ].join(" ")
-
-  return (
-    <g className="pointer-events-none" aria-hidden>
-      <path
-        d={linePath}
-        fill="none"
-        stroke="rgb(0 0 0 / 0.1)"
-        strokeWidth="5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <path
-        d={linePath}
-        fill="none"
-        stroke="#1e293b"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-
-      {/* County anchor */}
-      <circle cx={cx} cy={cy} r="10" fill="rgb(0 107 255 / 0.14)" />
-      <circle cx={cx} cy={cy} r="6" fill="#ffffff" stroke="#006BFF" strokeWidth="2.25" />
-      <circle cx={cx} cy={cy} r="2.75" fill="#006BFF" />
-
-      {/* Edge node toward the card */}
-      <circle cx={edgeX} cy={cy} r="4" fill="#ffffff" stroke="#1e293b" strokeWidth="1.75" />
-    </g>
-  )
-}
-
-function MapRegionCalloutCard({
-  region,
-  metric,
-  metricLabel,
-  brand,
-}: {
-  region: MapRegion
-  metric: MapMetricId
-  metricLabel: string
-  brand: string
-}) {
-  const stats = getRegionDetailStats(region, brand)
-  const value = formatMapMetric(getMetricValue(region, metric), metric)
-  const side: "left" | "right" = region.labelX < MAP_MID_X ? "left" : "right"
-  const topPct = Math.min(72, Math.max(18, (region.labelY / 1000) * 100))
-
-  const detailRows = [
-    { label: "Bookings", value: stats.bookings.toLocaleString("en-GB") },
-    { label: "Revenue", value: formatCompactCurrency(stats.revenue) },
-    { label: "ABV", value: formatMapMetric(stats.abv, "abv") },
-    { label: "CAL take-up", value: formatMapMetric(stats.calTakeUp, "calTakeUp") },
-    { label: "With CAL", value: `${stats.withCal.toLocaleString("en-GB")} · ${stats.withCalPct.toFixed(1)}%` },
-    { label: "Cancel rate", value: formatMapMetric(stats.cancellationRate, "cancellationRate") },
-    { label: "Re-let rate", value: formatMapMetric(stats.reletRate, "reletRate") },
-    { label: "Recovery rate", value: formatMapMetric(stats.recoveryRate, "recoveryRate") },
-  ]
-
-  return (
-    <div
-      className={cn(
-        "pointer-events-none absolute z-20 w-[20rem] -translate-y-1/2 xl:w-[22rem]",
-        side === "left" ? "left-4" : "right-4"
-      )}
-      style={{ top: `${topPct}%` }}
-    >
-      <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              County
-            </p>
-            <p className="text-lg font-semibold tracking-tight text-foreground">{region.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {region.code} · United Kingdom
-            </p>
-          </div>
-          <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
-        </div>
-
-        <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-border/50 pt-4">
-          <span className="text-sm capitalize text-muted-foreground">{metricLabel}</span>
-          <span className="text-xl font-bold tabular-nums tracking-tight text-foreground">
-            {value}
-          </span>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3">
-          {detailRows.map((row) => (
-            <div key={row.label} className="min-w-0">
-              <p className="text-xs text-muted-foreground">{row.label}</p>
-              <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-foreground">
-                {row.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-4 text-xs text-muted-foreground">Click county to select in sidebar</p>
-      </div>
-    </div>
   )
 }
 
@@ -416,6 +291,7 @@ function RegionStatsPanel({
 }
 
 export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMapPageProps) {
+  const [viewMode, setViewMode] = useState<"globe" | "uk">("globe")
   const [metric, setMetric] = useState<MapMetricId>("bookings")
   const [regions, setRegions] = useState<MapRegion[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -427,6 +303,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
 
   useEffect(() => {
     let cancelled = false
+    setIsLoading(true)
     loadMapRegions()
       .then((data) => {
         if (!cancelled) setRegions(data)
@@ -532,105 +409,123 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           <div className="hidden h-4 w-px bg-border sm:block" />
           <div className="hidden sm:block">
             <h1 className="text-base font-semibold tracking-tight">Map view</h1>
-            <p className="text-xs text-muted-foreground">UK counties · shaded by performance</p>
+            <p className="text-xs text-muted-foreground">
+              {viewMode === "globe"
+                ? "3D globe · click a country for detail"
+                : "3D UK counties · drag to orbit · shaded by performance"}
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
-          {MAP_METRICS.map((item) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
             <button
-              key={item.id}
               type="button"
-              onClick={() => setMetric(item.id)}
+              onClick={() => setViewMode("globe")}
               className={cn(
                 "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                metric === item.id
+                viewMode === "globe"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {item.label}
+              Globe
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setViewMode("uk")}
+              className={cn(
+                "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                viewMode === "uk"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              UK counties
+            </button>
+          </div>
+
+          {viewMode === "uk" ? (
+            <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
+              {MAP_METRICS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setMetric(item.id)}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                    metric === item.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
+      {viewMode === "globe" ? (
+        <div className="relative min-h-0 flex-1 bg-[#0b1220] dark:bg-[#070b12]">
+          <InsightsGlobe
+            className="absolute inset-0 h-full min-h-[360px] w-full"
+            onOpenUkDetail={() => setViewMode("uk")}
+            onOpenCountry={(code) => {
+              if (code === "UK") setViewMode("uk")
+            }}
+          />
+        </div>
+      ) : (
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="relative min-h-0 bg-[#f4f7fb] dark:bg-muted/15">
+        <div className="relative min-h-0 bg-[#0b1220] dark:bg-[#070b12]">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-4">
-            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/90 px-4 py-3 shadow-sm backdrop-blur-sm">
-              <BritishFlag className="rounded-[2px] shadow-xs ring-1 ring-black/10" />
+            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/55 px-4 py-3 shadow-sm backdrop-blur-sm">
+              <BritishFlag className="rounded-[2px] shadow-xs ring-1 ring-white/20" />
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/55">
                   United Kingdom
                 </p>
-                <p className="text-sm text-muted-foreground">Shaded by {metricLabel}</p>
+                <p className="text-sm text-white/80">
+                  3D counties · shaded by {metricLabel}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-              <span className="text-[10px] text-muted-foreground">Low</span>
-              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-primary/20 via-primary/50 to-primary" />
-              <span className="text-[10px] text-muted-foreground">High</span>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/55 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+              <span className="text-[10px] text-white/50">Low</span>
+              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#385f42] via-[#5a9a58] to-[#7ec864]" />
+              <span className="text-[10px] text-white/50">High</span>
             </div>
           </div>
 
           {isLoading ? (
-            <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-muted-foreground">
-              Loading UK map…
+            <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-white/60">
+              Loading UK counties…
             </div>
           ) : (
-            <svg
-              viewBox={MAP_VIEWBOX}
-              className="relative z-0 h-full min-h-[320px] w-full touch-manipulation px-16 py-10 xl:px-24"
-              preserveAspectRatio="xMidYMid meet"
-              role="img"
-              aria-label="United Kingdom county performance map"
-              onPointerLeave={() => setHoveredCountyId(null)}
-            >
-              {scaledRegions.map((region) => {
-                const value = getMetricValue(region, metric)
-                const isSelected = selectedCountyId === region.id
-                const isHovered = hoveredCountyId === region.id
-                const isDimmed = selectedCountyId !== ALL_COUNTIES && !isSelected
-                const fill = isSelected
-                  ? darkenMetricFill(value, range.min, range.max, "selected")
-                  : isHovered
-                    ? darkenMetricFill(value, range.min, range.max, "hover")
-                    : metricFill(value, range.min, range.max)
-
-                return (
-                  <path
-                    key={region.id}
-                    d={region.path}
-                    fill={fill}
-                    stroke={isSelected ? "#0047b3" : isHovered ? "#0060e6" : "#ffffff"}
-                    strokeWidth={isSelected ? 2.75 : isHovered ? 1.75 : 0.85}
-                    strokeLinejoin="round"
-                    opacity={isDimmed ? 0.28 : 1}
-                    style={{ pointerEvents: "visiblePainted", cursor: "pointer" }}
-                    onPointerEnter={() => setHoveredCountyId(region.id)}
-                    onPointerMove={() => {
-                      if (hoveredCountyId !== region.id) setHoveredCountyId(region.id)
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      handleRegionClick(region.id)
-                    }}
-                  />
-                )
-              })}
-
-              {hoveredCounty ? <MapRegionCalloutLine region={hoveredCounty} /> : null}
-            </svg>
+            <InsightsUkCounties3d
+              className="absolute inset-0"
+              regions={scaledRegions}
+              metric={metric}
+              range={range}
+              selectedCountyId={selectedCountyId}
+              hoveredCountyId={hoveredCountyId}
+              onHover={setHoveredCountyId}
+              onSelect={handleRegionClick}
+            />
           )}
 
           {hoveredCounty && metricLabel ? (
-            <MapRegionCalloutCard
-              region={hoveredCounty}
-              metric={metric}
-              metricLabel={metricLabel}
-              brand={filters.brand}
-            />
+            <div className="pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs rounded-xl border border-white/15 bg-black/70 px-4 py-3 shadow-md backdrop-blur-sm">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/50">
+                {hoveredCounty.name}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {formatMapMetric(getMetricValue(hoveredCounty, metric), metric)} {metricLabel}
+              </p>
+              <p className="mt-1 text-[10px] text-white/40">Click to pin in the side panel</p>
+            </div>
           ) : null}
         </div>
 
@@ -653,6 +548,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           />
         </aside>
       </div>
+      )}
     </div>
   )
 }

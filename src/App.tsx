@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import {
   BarChart3,
+  Check,
   ChevronsLeft,
   FileText,
   LayoutGrid,
@@ -27,8 +28,9 @@ import {
   type ReportingFilters,
 } from "@/components/reporting-filter-sidebar"
 import { ReportingPage } from "@/components/reporting-page"
+import { InsightsAnchorNav } from "@/components/insights-anchor-nav"
 import { InsightsMapPage } from "@/components/insights-map-page"
-import { SupportPage } from "@/components/support-page"
+import { SupportPage, PiklPartnersSidebar } from "@/components/support-page"
 import {
   InsightsCalPanel,
   InsightsContributionPanel,
@@ -70,6 +72,12 @@ import { cn } from "@/lib/utils"
 import { APP_MAIN_SCROLL_ID, scrollAppMainToTop, scrollToTop } from "@/lib/scroll-to-top"
 import { type ActiveFilters, DEFAULT_FILTERS } from "@/lib/chart-data"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
+import {
+  BRAND_THEME_COPY,
+  BRAND_THEME_LABELS,
+  DEFAULT_BRAND_THEME,
+  type BrandThemeId,
+} from "@/lib/brand-theme"
 
 type ActiveSection =
   | "dashboard"
@@ -180,7 +188,9 @@ function NavItemButton({
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isDark, setIsDark] = useState(false)
+  const [brandTheme, setBrandTheme] = useState<BrandThemeId>(DEFAULT_BRAND_THEME)
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
+  const [filterSidebarOpen, setFilterSidebarOpen] = useState(true)
   const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard")
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>(DEFAULT_FILTERS)
   const [reportingFilters, setReportingFilters] =
@@ -208,6 +218,13 @@ function App() {
   }, [activeSection])
 
   useEffect(() => {
+    const canShowFilters =
+      activeSection === "reporting" ||
+      (activeSection === "insights" && insightsView === "detail")
+    if (canShowFilters) setFilterSidebarOpen(true)
+  }, [activeSection, insightsView])
+
+  useEffect(() => {
     if (activeSection !== "insights" || !insightsScrollTarget) return
 
     const timer = window.setTimeout(() => {
@@ -229,9 +246,19 @@ function App() {
     document.documentElement.classList.toggle("dark", isDark)
   }, [isDark])
 
+  useEffect(() => {
+    document.documentElement.dataset.brand = brandTheme
+  }, [brandTheme])
+
+  const brandCopy = BRAND_THEME_COPY[brandTheme]
+
   const showFilterSidebar =
     activeSection === "reporting" ||
     (activeSection === "insights" && insightsView === "detail")
+
+  const showSupportPartnersSidebar = activeSection === "support"
+  const showRightSidebar =
+    (showFilterSidebar && filterSidebarOpen) || showSupportPartnersSidebar
 
   if (!isAuthenticated) {
     return (
@@ -256,9 +283,9 @@ function App() {
         <aside className="relative flex h-full min-h-0 flex-col overflow-visible">
             {leftSidebarOpen ? (
               <div className="flex min-h-0 flex-1 flex-col overflow-visible">
-                <div className="shrink-0 px-5">
+                <div className="shrink-0 px-5 pt-3">
                   <div className="flex h-16 shrink-0 items-center justify-between gap-2">
-                    <PartnerLogo />
+                    <PartnerLogo brandTheme={brandTheme} />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -312,7 +339,7 @@ function App() {
               </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col items-center overflow-visible px-2">
-                <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-border/50">
+                <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-border/50 pt-3">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -321,7 +348,7 @@ function App() {
                         aria-label="Show navigation"
                         className="flex size-9 items-center justify-center rounded-md transition-colors hover:bg-accent/60"
                       >
-                        <PartnerLogo compact />
+                        <PartnerLogo compact brandTheme={brandTheme} />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>Show navigation</TooltipContent>
@@ -367,7 +394,7 @@ function App() {
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbLink href="#">{PARTNER_BRANDING.shortName}</BreadcrumbLink>
+                    <BreadcrumbLink href="#">{brandCopy.shortName}</BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
@@ -402,12 +429,27 @@ function App() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>{PARTNER_BRANDING.name}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{brandCopy.name}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsDark((v) => !v)}>
                       {isDark ? <Sun className="size-4" /> : <MoonStar className="size-4" />}
                       {isDark ? "Light mode" : "Dark mode"}
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {(["sykes", "pikl"] as const).map((id) => (
+                      <DropdownMenuItem
+                        key={id}
+                        onClick={() => setBrandTheme(id)}
+                        className="justify-between gap-2"
+                      >
+                        <span>{BRAND_THEME_LABELS[id]}</span>
+                        {brandTheme === id ? (
+                          <Check className="size-4 text-primary" />
+                        ) : (
+                          <span className="size-4" aria-hidden />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout}>
                       <LogOut className="size-4" />
@@ -426,7 +468,7 @@ function App() {
             <div
               className={cn(
                 "relative grid min-h-0 flex-1 overflow-hidden",
-                showFilterSidebar ? "grid-cols-[1fr_300px]" : "grid-cols-1"
+                showRightSidebar ? "grid-cols-[1fr_300px]" : "grid-cols-1"
               )}
             >
               <div className="min-h-0 min-w-0 overflow-hidden">
@@ -509,9 +551,23 @@ function App() {
                             <Map className="size-3.5" />
                             Map view
                           </Button>
+                          {!filterSidebarOpen ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-9 shrink-0 gap-1.5 bg-[var(--panel-bg)]"
+                              onClick={() => setFilterSidebarOpen(true)}
+                            >
+                              <SlidersHorizontal className="size-3.5" />
+                              Filters
+                            </Button>
+                          ) : null}
                           {SHOW_INSIGHTS_CONTENT ? (
                             <FilterContextPill filters={activeFilters} />
                           ) : null}
+                        </div>
+                        <div className="border-t border-border/40 px-10 py-2 xl:px-16">
+                          <InsightsAnchorNav product={insightsProduct} />
                         </div>
                       </div>
                       <div className="px-10 pt-10 pb-10 xl:px-16 xl:pb-14">
@@ -541,7 +597,9 @@ function App() {
                 </section>
               </div>
 
-              {showFilterSidebar ? (
+              {showSupportPartnersSidebar ? (
+                <PiklPartnersSidebar />
+              ) : showFilterSidebar && filterSidebarOpen ? (
                 activeSection === "reporting" ? (
                   <ReportingFilterSidebar
                     filters={reportingFilters}
@@ -551,14 +609,38 @@ function App() {
                       setReportingHasRun(true)
                       setReportingRunId((id) => id + 1)
                     }}
+                    onClose={() => setFilterSidebarOpen(false)}
                   />
                 ) : (
                   <FilterSidebar
                     filters={activeFilters}
                     onRun={setActiveFilters}
                     showCounty={activeSection === "insights" && insightsView === "map"}
+                    onClose={() => setFilterSidebarOpen(false)}
                   />
                 )
+              ) : showFilterSidebar && !filterSidebarOpen ? (
+                <div className="absolute inset-y-0 right-0 z-20 flex items-start pt-20">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setFilterSidebarOpen(true)}
+                        className="pointer-events-auto flex h-[7.5rem] w-7 flex-col items-center justify-center gap-2 rounded-l-lg border border-r-0 border-border/60 bg-[var(--brand-surface)] text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground dark:bg-muted"
+                        aria-label="Show filters"
+                      >
+                        <SlidersHorizontal className="size-3.5 shrink-0" />
+                        <span
+                          className="text-[10px] font-medium uppercase tracking-[0.16em]"
+                          style={{ writingMode: "vertical-rl" }}
+                        >
+                          Filters
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">Show filters</TooltipContent>
+                  </Tooltip>
+                </div>
               ) : null}
             </div>
           </div>

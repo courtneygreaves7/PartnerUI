@@ -1,6 +1,7 @@
 import { useState } from "react"
 import {
   Check,
+  FileSpreadsheet,
   FolderOpen,
   KeyRound,
   Mail,
@@ -12,6 +13,7 @@ import {
   UserRound,
 } from "lucide-react"
 
+import { BdxSubmissionsPanel } from "@/components/bdx-submissions-panel"
 import { SubmittedFilesPanel } from "@/components/submitted-files-panel"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -21,7 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
 import { cn } from "@/lib/utils"
 
-type AdminTab = "account" | "files"
+type AdminTab = "account" | "files" | "bdx"
 
 const PANEL = "rounded-2xl border border-border/60 bg-card p-6 shadow-xs"
 const MONO_LABEL =
@@ -147,7 +149,7 @@ export function AdminPage() {
     <div
       className={cn(
         "mx-auto space-y-6",
-        tab === "files" ? "max-w-5xl" : "max-w-3xl"
+        tab === "account" ? "max-w-3xl" : "max-w-5xl"
       )}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -157,7 +159,9 @@ export function AdminPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {tab === "files"
               ? `View and manage files your team has submitted for ${PARTNER_BRANDING.shortName}.`
-              : `Manage your ${PARTNER_BRANDING.shortName} account details and sign-in settings.`}
+              : tab === "bdx"
+                ? "Sales, claims and relets bordereaux — view and download submissions in one place."
+                : `Manage your ${PARTNER_BRANDING.shortName} account details and sign-in settings.`}
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 rounded-full border border-border/70 bg-muted/40 p-1">
@@ -165,6 +169,7 @@ export function AdminPage() {
             [
               { id: "account", label: "Account", icon: UserRound },
               { id: "files", label: "Submitted files", icon: FolderOpen },
+              { id: "bdx", label: "BDX", icon: FileSpreadsheet },
             ] as const
           ).map((item) => (
             <button
@@ -186,6 +191,7 @@ export function AdminPage() {
       </div>
 
       {tab === "files" ? <SubmittedFilesPanel /> : null}
+      {tab === "bdx" ? <BdxSubmissionsPanel /> : null}
 
       {tab === "account" ? (
       <>

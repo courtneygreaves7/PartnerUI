@@ -101,18 +101,18 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0054cc] px-6 py-12 text-white">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--brand-primary-dark)] px-6 py-12 text-white">
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-32 -top-28 size-[34rem] rounded-full bg-[radial-gradient(circle,_#7eb6ff_0%,_#4d9fff_35%,_transparent_70%)] opacity-90 blur-3xl"
+        className="pointer-events-none absolute -left-32 -top-28 size-[34rem] rounded-full bg-[radial-gradient(circle,_rgb(var(--primary-rgb)_/_0.55)_0%,_var(--primary)_35%,_transparent_70%)] opacity-90 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-24 top-[8%] size-[28rem] rounded-full bg-[radial-gradient(circle,_#a8d0ff_0%,_#66a6ff_40%,_transparent_72%)] opacity-80 blur-3xl"
+        className="pointer-events-none absolute -right-24 top-[8%] size-[28rem] rounded-full bg-[radial-gradient(circle,_rgb(var(--primary-rgb)_/_0.4)_0%,_var(--primary)_40%,_transparent_72%)] opacity-80 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-[-18%] left-[18%] size-[32rem] rounded-full bg-[radial-gradient(circle,_#3389ff_0%,_#006bff_38%,_transparent_70%)] opacity-70 blur-3xl"
+        className="pointer-events-none absolute bottom-[-18%] left-[18%] size-[32rem] rounded-full bg-[radial-gradient(circle,_var(--primary)_0%,_var(--brand-primary-dark)_38%,_transparent_70%)] opacity-70 blur-3xl"
       />
       <div
         aria-hidden

@@ -9,6 +9,8 @@ export type BdxSubmissionMeta = {
   submittedAt: string
   status: "Accepted" | "Pending"
   rowCount: number
+  /** Mini spark bars (0–100) for the summary card. */
+  spark: number[]
 }
 
 export type BdxSalesRow = {
@@ -46,6 +48,7 @@ export const BDX_SUBMISSIONS: BdxSubmissionMeta[] = [
     submittedAt: "2 Aug 2026",
     status: "Accepted",
     rowCount: 8,
+    spark: [42, 55, 48, 62, 58, 70, 66, 78],
   },
   {
     kind: "claims",
@@ -54,6 +57,7 @@ export const BDX_SUBMISSIONS: BdxSubmissionMeta[] = [
     submittedAt: "2 Aug 2026",
     status: "Accepted",
     rowCount: 5,
+    spark: [30, 38, 34, 45, 40],
   },
   {
     kind: "relets",
@@ -62,6 +66,7 @@ export const BDX_SUBMISSIONS: BdxSubmissionMeta[] = [
     submittedAt: "2 Aug 2026",
     status: "Accepted",
     rowCount: 6,
+    spark: [50, 46, 58, 54, 64, 70],
   },
 ]
 

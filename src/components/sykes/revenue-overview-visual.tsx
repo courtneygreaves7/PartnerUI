@@ -21,16 +21,24 @@ import {
 import { PORTFOLIO, formatGbp, formatPct, formatVolume } from "@/lib/mock-portfolio"
 
 const REVENUE_SPLIT = [
-  { name: "Margin (ex. VAT)", value: PORTFOLIO.fcMargin / 1000, color: "#006BFF" },
-  { name: "Website conversion", value: PORTFOLIO.conversionUplift / 1000, color: "#3389FF" },
-  { name: "Incremental canx & relets", value: PORTFOLIO.incrementalTotal / 1000, color: "#99C4FF" },
+  { name: "Margin (ex. VAT)", value: PORTFOLIO.fcMargin / 1000, color: "var(--primary)" },
+  {
+    name: "Website conversion",
+    value: PORTFOLIO.conversionUplift / 1000,
+    color: "color-mix(in oklab, var(--primary) 78%, white)",
+  },
+  {
+    name: "Incremental canx & relets",
+    value: PORTFOLIO.incrementalTotal / 1000,
+    color: "color-mix(in oklab, var(--primary) 35%, white)",
+  },
 ]
 
 const CHANNEL_COLORS = {
-  website: "#006BFF",
-  app: "#3389FF",
-  offline: "#66A6FF",
-  ota: "#99C4FF",
+  website: "var(--primary)",
+  app: "color-mix(in oklab, var(--primary) 78%, white)",
+  offline: "color-mix(in oklab, var(--primary) 55%, white)",
+  ota: "color-mix(in oklab, var(--primary) 35%, white)",
 }
 
 function RevenueDonutCard() {
@@ -70,8 +78,8 @@ function RevenueDonutCard() {
             <PieChart>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#006BFF" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#0054CC" stopOpacity={0.7} />
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="var(--brand-primary-dark)" stopOpacity={0.7} />
                 </linearGradient>
               </defs>
               <Pie
@@ -125,7 +133,7 @@ function AttachmentGaugeCard() {
               cy="60"
               r="48"
               fill="none"
-              stroke="#006BFF"
+              stroke="var(--primary)"
               strokeWidth="10"
               strokeLinecap="round"
               strokeDasharray={`${attach * 3.01} ${(100 - attach) * 3.01}`}

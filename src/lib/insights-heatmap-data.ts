@@ -135,7 +135,7 @@ export const HEAT_METRICS: Record<HeatMetricId, HeatMetricConfig> = {
     label: "CAL attachment",
     unit: "%",
     higherIsBetter: true,
-    help: "CAL attachment rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: attached bookings ÷ bookings in each cell.",
+    help: "Flexible Cancellation (FC / CAL) attachment across lead time, bedrooms, and departure. Swap rows and columns, or filter the third dimension. How we calculate it: attached bookings ÷ bookings in each cell.",
     cells: ATTACHMENT_HEAT_CELLS,
   },
   cancellation: {
@@ -143,7 +143,7 @@ export const HEAT_METRICS: Record<HeatMetricId, HeatMetricConfig> = {
     label: "Cancel rate",
     unit: "%",
     higherIsBetter: false,
-    help: "Cancellation rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: cancellations ÷ bookings in each cell.",
+    help: "Cancellation rate across lead time, bedrooms, and departure. Swap rows and columns, or filter the third dimension. How we calculate it: cancellations ÷ bookings in each cell.",
     cells: CANCELLATION_HEAT_CELLS,
   },
   relet: {
@@ -151,7 +151,7 @@ export const HEAT_METRICS: Record<HeatMetricId, HeatMetricConfig> = {
     label: "Relet rate",
     unit: "%",
     higherIsBetter: true,
-    help: "Relet rate across lead time, bedrooms, and departure. Filter the third dimension or swap row and column axes. Calculation: relets ÷ cancellations in each cell.",
+    help: "Re-let rate (cancelled stays filled again) across lead time, bedrooms, and departure. Swap rows and columns, or filter the third dimension. How we calculate it: re-lets ÷ cancellations in each cell.",
     cells: RELET_HEAT_CELLS,
   },
 }

@@ -165,7 +165,7 @@ export function AdminComponentsPage() {
             xAxisKey="month"
             data={GRAPH_DATA}
             layers={[
-              { id: "cal", label: "CAL", color: "#006BFF", dataKey: "cal" },
+              { id: "cal", label: "CAL", color: "var(--primary)", dataKey: "cal" },
               { id: "ddl", label: "DDL", color: "#F59E0B", dataKey: "ddl" },
               { id: "market", label: "Market", color: "#94A3B8", dataKey: "market" },
             ]}
@@ -177,7 +177,7 @@ export function AdminComponentsPage() {
             xAxisKey="month"
             data={GRAPH_DATA}
             layers={[
-              { id: "cal", label: "CAL", color: "#006BFF", dataKey: "cal" },
+              { id: "cal", label: "CAL", color: "var(--primary)", dataKey: "cal" },
               { id: "ddl", label: "DDL", color: "#F59E0B", dataKey: "ddl" },
             ]}
           />

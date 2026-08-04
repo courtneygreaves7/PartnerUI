@@ -41,12 +41,14 @@ function timeOfDayGreeting(): string {
 function refreshedLabel() {
   const now = new Date()
   const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
-  const through = now.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })
-  return `Last refreshed today at ${time} · Data through ${through}`
+  const through = now
+    .toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+    .replace(",", "")
+  return `Last refreshed today at ${time} · ${through}`
 }
 
 function monthsInPeriod(period: ImpactPeriodId) {
@@ -127,12 +129,12 @@ export function PartnerImpactHero({
         className
       )}
     >
-      <div className="relative overflow-hidden border-b border-border/60">
+      <div className="relative overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top,_rgb(0_107_255_/_0.12),_transparent_65%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top,_rgb(var(--primary-rgb)_/_0.14),_transparent_65%)]"
         />
-        <div className="relative z-10 grid gap-6 px-6 py-7 sm:px-10 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:items-center lg:gap-8">
+        <div className="relative z-10 grid gap-6 px-6 py-7 sm:px-10 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:items-start lg:gap-8">
           <div className="flex flex-col items-start text-left">
             <span
               className={cn(
@@ -143,7 +145,7 @@ export function PartnerImpactHero({
               <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
               Partner Dashboard
             </span>
-            <h1 className="mt-4 text-[28px] font-semibold leading-tight tracking-tight text-foreground sm:text-[32px]">
+            <h1 className="mt-4 text-[26px] font-semibold leading-tight tracking-tight text-foreground">
               {timeOfDayGreeting()}, {PARTNER_BRANDING.userDisplayName}
             </h1>
             <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-[15px]">
@@ -151,31 +153,45 @@ export function PartnerImpactHero({
               then see what you have already made and what is still open.
             </p>
 
-            <div
-              role="tablist"
-              aria-label="Impact period"
-              className="mt-5 flex flex-wrap justify-start gap-1.5"
-            >
-              {IMPACT_PERIODS.map((item) => {
-                const active = item.id === period
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setPeriod(item.id)}
-                    className={cn(
-                      "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
-                      active
-                        ? "border-foreground/20 bg-foreground text-background"
-                        : "border-border/70 bg-card/80 text-muted-foreground backdrop-blur-sm hover:border-border hover:text-foreground"
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                )
-              })}
+            <div className="mt-5 w-fit">
+              <div
+                role="tablist"
+                aria-label="Impact period"
+                className="flex flex-wrap justify-start gap-1.5"
+              >
+                {IMPACT_PERIODS.map((item) => {
+                  const active = item.id === period
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setPeriod(item.id)}
+                      className={cn(
+                        "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+                        active
+                          ? "border-foreground/20 bg-foreground text-background"
+                          : "border-border/70 bg-card/80 text-muted-foreground backdrop-blur-sm hover:border-border hover:text-foreground"
+                      )}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="mt-4 w-0 min-w-full rounded-xl border border-emerald-500/45 bg-emerald-500/[0.06] px-3.5 py-2.5 dark:bg-emerald-500/10">
+                <div className="flex flex-col gap-1">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
+                    <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+                    Live
+                  </span>
+                  <p className="w-fit border-b border-dashed border-muted-foreground/40 pb-px text-[11px] leading-snug text-muted-foreground">
+                    {refreshedLabel()}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -253,8 +269,8 @@ export function PartnerImpactHero({
                         +1pp
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-56">
-                      1 percentage point — for example attachment rising from 12.5% to
+                    <TooltipContent className="max-w-56">
+                      1 percentage point (1pp) — for example attachment rising from 12.5% to
                       13.5%.
                     </TooltipContent>
                   </Tooltip>{" "}
@@ -291,14 +307,6 @@ export function PartnerImpactHero({
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-muted/20 px-6 py-2.5">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
-          Live
-        </span>
-        <p className="text-[11px] text-muted-foreground">{refreshedLabel()}</p>
       </div>
     </section>
   )

@@ -23,7 +23,7 @@ export type DdlOpportunity = {
 }
 
 export const DDL_LOOP_OPPORTUNITIES_HELP =
-  "Signals flag where Damage Waiver attachment is soft, where margin already pays, and where a small lift in take-up is worth chasing. Use Ask AI to dig into the segment."
+  "Signals flag where Damage Deposit Waiver (DDL) attachment is soft, where margin already pays, and where a small lift in take-up is worth chasing. Use Ask AI to dig into the segment."
 
 function channelAttach(key: "website" | "app" | "offline" | "ota") {
   return DAMAGE_DEPOSIT_WAIVER_GRID[1][key].value

@@ -2,7 +2,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
+:root,
+html[data-brand="sykes"] {
   /* Brand palette — Sykes Holiday Cottages */
   --brand-primary: #006bff;
   --brand-primary-dark: #0054cc;
@@ -25,6 +26,8 @@
   /* Actions */
   --primary: #006bff;
   --primary-foreground: #ffffff;
+  --primary-rgb: 0 107 255;
+  --primary-dark-rgb: 0 84 204;
 
   /* UI chrome */
   --muted: #f0f6ff;
@@ -56,7 +59,63 @@
   --compare-comparison-bar: #0054cc;
 }
 
-.dark {
+/*
+  Pikl skin — softened reading of pikl.com (pink + sage).
+  Dusty rose primary + calm sage accent on warm paper surfaces.
+  Temporary until the new Pikl palette ships.
+*/
+html[data-brand="pikl"] {
+  --brand-primary: #b55e76;
+  --brand-primary-dark: #8f4559;
+  --brand-accent: #6f8f7a;
+  --brand-surface: #f3f0ec;
+  --brand-pink: #b55e76;
+  --brand-dark-blue: #8f4559;
+  --brand-light-blue: #f3f0ec;
+  --brand-green: #6f8f7a;
+  --brand-grey-blue: #f7f4f1;
+
+  --background: #fffcfa;
+  --foreground: #1c1a19;
+  --card: #ffffff;
+  --card-foreground: #1c1a19;
+  --canvas: #f7f4f1;
+  --field: #f7f4f1;
+
+  --primary: #b55e76;
+  --primary-foreground: #ffffff;
+  --primary-rgb: 181 94 118;
+  --primary-dark-rgb: 143 69 89;
+
+  --muted: #f1ece8;
+  --muted-foreground: #6a635c;
+  --accent: #e7eee8;
+  --accent-foreground: #3f5748;
+  --border: #e2dad3;
+  --input: #e2dad3;
+  --ring: #b55e76;
+  --popover: #ffffff;
+  --popover-foreground: #1c1a19;
+  --destructive: #c2410c;
+
+  --gradient-from: #fffcfa;
+  --gradient-mid: #f7f4f1;
+  --gradient-to: #fffcfa;
+  --glow-pink: rgb(181 94 118 / 0.08);
+  --glow-green: rgb(111 143 122 / 0.08);
+  --glow-blue: rgb(181 94 118 / 0.06);
+  --panel-bg: #fffcfa;
+  --panel-border: rgb(181 94 118 / 0.1);
+  --tooltip: #8f4559;
+  --tooltip-foreground: #fafafa;
+
+  --compare-primary: #b55e76;
+  --compare-comparison: #6f8f7a;
+  --compare-comparison-bar: #557866;
+}
+
+.dark,
+html.dark[data-brand="sykes"] {
   --background: #131316;
   --foreground: #fafafa;
   --card: #1e1e22;
@@ -66,6 +125,8 @@
 
   --primary: #3389ff;
   --primary-foreground: #ffffff;
+  --primary-rgb: 51 137 255;
+  --primary-dark-rgb: 0 107 255;
 
   /* Darker chrome so sidebars / tabs separate from the panel */
   --muted: #141b28;
@@ -93,6 +154,56 @@
   --compare-primary: #3389ff;
   --compare-comparison: #006bff;
   --compare-comparison-bar: #0054cc;
+}
+
+html.dark[data-brand="pikl"] {
+  --brand-primary: #d4899a;
+  --brand-primary-dark: #b55e76;
+  --brand-accent: #8fad98;
+  --brand-surface: #1e2421;
+  --brand-pink: #d4899a;
+  --brand-dark-blue: #b55e76;
+  --brand-light-blue: #1e2421;
+  --brand-green: #8fad98;
+  --brand-grey-blue: #1a1f1c;
+
+  --background: #141614;
+  --foreground: #f7f4f1;
+  --card: #1c211e;
+  --card-foreground: #f7f4f1;
+  --canvas: #1a1f1c;
+  --field: #1a1f1c;
+
+  --primary: #d4899a;
+  --primary-foreground: #1c1a19;
+  --primary-rgb: 212 137 154;
+  --primary-dark-rgb: 181 94 118;
+
+  --muted: #1a211c;
+  --muted-foreground: #b5bfb7;
+  --accent: #243028;
+  --accent-foreground: #c5d6c9;
+  --border: #2f3a33;
+  --input: #2f3a33;
+  --ring: #d4899a;
+  --popover: #1c211e;
+  --popover-foreground: #f7f4f1;
+  --destructive: #f0a58a;
+
+  --gradient-from: #141614;
+  --gradient-mid: #171c19;
+  --gradient-to: #141614;
+  --glow-pink: rgb(212 137 154 / 0.14);
+  --glow-green: rgb(143 173 152 / 0.12);
+  --glow-blue: rgb(212 137 154 / 0.12);
+  --panel-bg: #1a211c;
+  --panel-border: rgb(212 137 154 / 0.14);
+  --tooltip: #d4899a;
+  --tooltip-foreground: #1c1a19;
+
+  --compare-primary: #d4899a;
+  --compare-comparison: #8fad98;
+  --compare-comparison-bar: #6f8f7a;
 }
 
 @theme inline {

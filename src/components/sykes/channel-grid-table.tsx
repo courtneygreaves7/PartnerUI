@@ -60,7 +60,7 @@ function MetricLabelHelp({ label }: { label: string }) {
           {label}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right" align="start" className="max-w-72 text-left">
+      <TooltipContent className="max-w-72 text-left">
         {getMetricHelp(label)}
       </TooltipContent>
     </Tooltip>

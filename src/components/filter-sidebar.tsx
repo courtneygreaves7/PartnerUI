@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react"
-import { Ban, Check, Download, Play, RefreshCw, TrendingUp } from "lucide-react"
+import { Ban, Check, ChevronsRight, Download, Play, RefreshCw, TrendingUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
@@ -48,9 +53,16 @@ type FilterSidebarProps = {
   hasRun?: boolean
   showCounty?: boolean
   onRun: (filters: ActiveFilters) => void
+  onClose?: () => void
 }
 
-export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRun }: FilterSidebarProps) {
+export function FilterSidebar({
+  filters,
+  hasRun = true,
+  showCounty = false,
+  onRun,
+  onClose,
+}: FilterSidebarProps) {
   const [brand, setBrand] = useState(filters.brand)
   const [county, setCounty] = useState(filters.county)
   const [region, setRegion] = useState(filters.region)
@@ -113,14 +125,32 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
   }
 
   return (
-    <aside className="relative flex min-h-0 flex-col bg-[#e8f0fc] dark:bg-[#141b28]">
+    <aside className="relative flex min-h-0 flex-col bg-[var(--brand-surface)] dark:bg-muted">
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-border" />
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
         <div>
-          <h2 className="text-sm font-semibold">Filters</h2>
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-sm font-semibold">Filters</h2>
+            {onClose ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-6 shrink-0"
+                    onClick={onClose}
+                    aria-label="Hide filters"
+                  >
+                    <ChevronsRight className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hide filters</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Refine metrics by brand, region, bedrooms, and period, then update the report.
+            Refine metrics by brand, region, bedrooms, and period, then update the insights.
           </p>
         </div>
 
@@ -275,19 +305,19 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
           onClick={handleRun}
           aria-label={
             hasRun
-              ? "Update report with selected filters"
-              : "Generate report from selected filters"
+              ? "Update insights with selected filters"
+              : "Generate insights from selected filters"
           }
         >
           {hasRun ? (
             <>
               <RefreshCw className="size-3.5" />
-              Update report
+              Update insights
             </>
           ) : (
             <>
               <Play className="size-3.5" />
-              Generate report
+              Generate insights
             </>
           )}
         </Button>
@@ -297,10 +327,10 @@ export function FilterSidebar({ filters, hasRun = true, showCounty = false, onRu
           className="w-full"
           onClick={handleDownload}
           disabled={isDownloading}
-          aria-label="Download insights report as PowerPoint"
+          aria-label="Download insights as PowerPoint"
         >
           <Download className="size-3.5" />
-          {isDownloading ? "Preparing download…" : "Download report"}
+          {isDownloading ? "Preparing download…" : "Download insights"}
         </Button>
       </div>
     </aside>

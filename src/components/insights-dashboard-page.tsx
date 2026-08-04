@@ -237,25 +237,25 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       label: "CAL sales",
       value: booking.calSales,
       icon: TrendingUp,
-      description: "Sales completed through the CAL payment method for the selected period.",
+      description: "Sales completed through Flexible Cancellation (FC / CAL) for the selected period.",
     },
     {
       label: "CAL take-up %",
       value: booking.calPct,
       icon: Percent,
-      description: "Percentage of eligible bookings that converted to CAL sales.",
+      description: "Share of eligible bookings that bought Flexible Cancellation (FC / CAL).",
     },
     {
       label: "DDL sales",
       value: booking.ddlSales,
       icon: CreditCard,
-      description: "Sales completed through direct debit (DDL) for the selected period.",
+      description: "Sales completed through Damage Deposit Waiver (DDL) for the selected period.",
     },
     {
       label: "DDL take-up %",
       value: booking.ddlPct,
       icon: Gauge,
-      description: "Percentage of eligible bookings that converted to DDL sales.",
+      description: "Share of eligible bookings that bought Damage Deposit Waiver (DDL).",
     },
   ]
 

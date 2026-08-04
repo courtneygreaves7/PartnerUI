@@ -4,12 +4,16 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
-  ChevronRight,
+  Check,
+  ArrowRight,
+  Clock,
   FileText,
   Info,
+  Lightbulb,
   MousePointerClick,
   PoundSterling,
   RefreshCcw,
+  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react"
@@ -108,7 +112,7 @@ function MeasureHelp({ title, help }: { title: string; help: string }) {
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-64 text-left">
+      <TooltipContent className="max-w-64 text-left">
         {help}
       </TooltipContent>
     </Tooltip>
@@ -204,7 +208,7 @@ function AccentKpiCards() {
                     {card.delta}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-56 text-left">
+                <TooltipContent className="max-w-56 text-left">
                   {card.delta}
                 </TooltipContent>
               </Tooltip>
@@ -744,7 +748,7 @@ function ReletVolumeVsForecast() {
               }}
             />
             <Bar dataKey="forecast" name="Forecast" fill="#99C4FF" radius={[0, 4, 4, 0]} barSize={10} />
-            <Bar dataKey="actual" name="Actual" fill="#006BFF" radius={[0, 4, 4, 0]} barSize={10} />
+            <Bar dataKey="actual" name="Actual" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={10} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -895,14 +899,14 @@ function PartialReletsInsight() {
       ringClass: "text-primary",
     },
     {
-      label: "Split recovery",
+      label: ">2 Rec",
       value: formatPercent(splitRecoveredPct),
       percent: splitRecoveredPct,
       hint: "of cancelled value",
       ringClass: "text-emerald-600 dark:text-emerald-400",
     },
     {
-      label: "Solo recovery",
+      label: "x1 Recovery",
       value: formatPercent(singleRecoveredPct),
       percent: singleRecoveredPct,
       hint: "of cancelled value",
@@ -936,7 +940,7 @@ function PartialReletsInsight() {
               key={metric.label}
               className="flex min-w-0 flex-col items-start px-0 sm:items-center sm:px-3 sm:text-center first:sm:pl-0 last:sm:pr-0"
             >
-              <p className={MONO_LABEL}>{metric.label}</p>
+              <p className={cn(MONO_LABEL, "whitespace-nowrap")}>{metric.label}</p>
               <div className="mt-2.5">
                 <SplitMetricRing percent={metric.percent} className={metric.ringClass} />
               </div>
@@ -997,12 +1001,68 @@ function PartialReletsInsight() {
   )
 }
 
+function LiveSummarySpark({ values }: { values: number[] }) {
+  return (
+    <div className="flex h-8 items-end gap-0.5" aria-hidden>
+      {values.map((value, index) => (
+        <span
+          key={index}
+          className="w-1 rounded-sm bg-primary/70"
+          style={{ height: `${Math.max(18, value)}%` }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function LiveCancellationsPanel() {
   const [filter, setFilter] = useState<LiveCancellationFilter>("awaiting")
   const summary = summariseLiveCancellations(LIVE_CANCELLATIONS)
   const rows = filterLiveCancellations(LIVE_CANCELLATIONS, filter)
   const channelLabel = (key: (typeof CHANNEL_META)[number]["key"]) =>
     CHANNEL_META.find((channel) => channel.key === key)?.label ?? key
+
+  const summaryCards: Array<{
+    id: LiveCancellationFilter
+    title: string
+    badge: string
+    badgeTone: "attention" | "risk" | "positive"
+    meta: string
+    value: string
+    valueHint: string
+    spark: number[]
+  }> = [
+    {
+      id: "awaiting",
+      title: "Not re-let",
+      badge: "Open",
+      badgeTone: "attention",
+      meta: "Live book · awaiting recovery",
+      value: String(summary.awaiting),
+      valueHint: "stays",
+      spark: [42, 55, 48, 62, 58, 70],
+    },
+    {
+      id: "awaiting",
+      title: "At risk",
+      badge: "Attention",
+      badgeTone: "risk",
+      meta: "Cancelled value still open",
+      value: formatCurrency(summary.valueAtRisk),
+      valueHint: "open",
+      spark: [35, 48, 52, 44, 60, 68],
+    },
+    {
+      id: "split",
+      title: "Split fills",
+      badge: "Recovered",
+      badgeTone: "positive",
+      meta: "Multi-booking re-lets",
+      value: String(summary.split),
+      valueHint: "fills",
+      spark: [28, 36, 40, 55, 48, 62],
+    },
+  ]
 
   const filters: Array<{ id: LiveCancellationFilter; label: string; count: number }> = [
     { id: "awaiting", label: "Not re-let", count: summary.awaiting },
@@ -1013,29 +1073,61 @@ function LiveCancellationsPanel() {
 
   return (
     <div className={PANEL}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className={MONO_LABEL}>Booking detail</p>
-          <PanelTitle title="Live cancellations" help={LIVE_CANCELLATIONS_HELP} className="mt-1" />
-          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
-            Focus on stays still open for re-let. Re-let rows show fill pattern, overlapping
-            nights of the cancelled stay, and recovered value.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums text-muted-foreground">
-          <span>
-            <span className="font-semibold text-foreground">{summary.awaiting}</span> not re-let
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">
-              {formatCurrency(summary.valueAtRisk)}
-            </span>{" "}
-            at risk
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">{summary.split}</span> split fills
-          </span>
-        </div>
+      <div>
+        <p className={MONO_LABEL}>Booking detail</p>
+        <PanelTitle title="Live cancellations" help={LIVE_CANCELLATIONS_HELP} className="mt-1" />
+        <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+          Focus on stays still open for re-let. Re-let rows show fill pattern, overlapping
+          nights of the cancelled stay, and recovered value.
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        {summaryCards.map((card) => {
+          const active = filter === card.id
+          return (
+            <button
+              key={card.title}
+              type="button"
+              onClick={() => setFilter(card.id)}
+              className={cn(
+                "flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left shadow-xs transition-colors",
+                active
+                  ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/20"
+                  : "hover:bg-muted/30"
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">{card.title}</p>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                    card.badgeTone === "positive"
+                      ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                      : card.badgeTone === "risk"
+                        ? "border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                        : "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  )}
+                >
+                  {card.badgeTone === "positive" ? (
+                    <Check className="size-3" strokeWidth={2.5} />
+                  ) : (
+                    <AlertCircle className="size-3" strokeWidth={2.5} />
+                  )}
+                  {card.badge}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">{card.meta}</p>
+              <div className="mt-auto flex items-end justify-between gap-3 pt-1">
+                <p className="text-sm font-medium tabular-nums text-foreground">
+                  <span className="font-semibold">{card.value}</span>{" "}
+                  <span className="font-normal text-muted-foreground">{card.valueHint}</span>
+                </p>
+                <LiveSummarySpark values={card.spark} />
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
@@ -1250,49 +1342,42 @@ function OpsValueLoopScorecard() {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch xl:gap-0">
-        {OPS_VALUE_LOOP.steps.map((step, index) => (
-          <div key={step.id} className="flex min-w-0 flex-1 items-stretch">
-            <div className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5">
-              <div className="flex items-center gap-2">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-semibold tabular-nums text-primary-foreground">
-                  {index + 1}
-                </span>
-                <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
-                  {step.label}
-                </p>
-                <MeasureHelp title={step.label} help={step.help} />
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <p className="text-[28px] font-bold tracking-tight tabular-nums text-foreground">
-                  {step.value}
-                </p>
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em]",
-                    step.badgeTone === "positive" &&
-                      "border-primary/20 bg-primary/5 text-primary",
-                    step.badgeTone === "attention" &&
-                      "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300",
-                    step.badgeTone === "neutral" &&
-                      "border-border/70 bg-muted/40 text-muted-foreground"
-                  )}
-                >
-                  {step.badge}
-                </span>
-              </div>
-              <p className="mt-auto pt-3 text-[11px] leading-snug text-muted-foreground">
-                {step.hint}
+      <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch">
+        {OPS_VALUE_LOOP.steps.map((step) => (
+          <div
+            key={step.id}
+            className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5"
+          >
+            <div className="flex items-center gap-2">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+              </span>
+              <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
+                {step.label}
               </p>
+              <MeasureHelp title={step.label} help={step.help} />
             </div>
-            {index < OPS_VALUE_LOOP.steps.length - 1 ? (
-              <div
-                className="hidden w-8 shrink-0 items-center justify-center xl:flex"
-                aria-hidden
+            <div className="mt-4 flex items-center gap-2">
+              <p className="text-[28px] font-bold tracking-tight tabular-nums leading-none text-foreground">
+                {step.value}
+              </p>
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em]",
+                  step.badgeTone === "positive" &&
+                    "border-primary/20 bg-primary/5 text-primary",
+                  step.badgeTone === "attention" &&
+                    "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+                  step.badgeTone === "neutral" &&
+                    "border-border/70 bg-muted/40 text-muted-foreground"
+                )}
               >
-                <ChevronRight className="size-4 text-border" strokeWidth={2} />
-              </div>
-            ) : null}
+                {step.badge}
+              </span>
+            </div>
+            <p className="mt-auto pt-3 text-[11px] leading-snug text-muted-foreground">
+              {step.hint}
+            </p>
           </div>
         ))}
       </div>
@@ -1303,54 +1388,123 @@ function OpsValueLoopScorecard() {
 function OpsRecoveryOpportunity() {
   const summary = summariseLiveCancellations(LIVE_CANCELLATIONS)
   const gapToStrongRelet = Math.max(0, 65 - PORTFOLIO.reletPct)
-  const upsideNote =
-    gapToStrongRelet > 0
-      ? `Closing ${gapToStrongRelet.toFixed(1)}pp toward a 65% re-let rate would shrink open cancels fastest.`
-      : "Re-let is already at a strong level — keep clearing the open book."
+
+  const metrics = [
+    {
+      label: "Open cancels",
+      value: String(summary.awaiting),
+      hint: "unfilled bookings",
+      icon: AlertCircle,
+      tone: "attention" as const,
+    },
+    {
+      label: "Avg days open",
+      value: String(round1(summary.avgDaysOpen)),
+      hint: "days since cancellation",
+      icon: Clock,
+      tone: "neutral" as const,
+    },
+    {
+      label: "Split re-lets",
+      value: String(summary.split),
+      hint: "partial fills in progress",
+      icon: Sparkles,
+      tone: "primary" as const,
+    },
+  ] as const
 
   return (
-    <div className={cn(PANEL, "border-primary/25 bg-primary/[0.04] p-5")}>
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className={MONO_LABEL}>Opportunity</p>
-          <h3 className="mt-1 text-sm font-semibold text-foreground">
-            Value still waiting to be re-let
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
+    <div className={cn(PANEL, "overflow-hidden p-0")}>
+      <div className="flex flex-col gap-4 border-b border-border/60 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:px-6">
+        <div className="min-w-0 flex-1">
+          <p className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
+            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
+            Opportunity
+          </p>
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <h3 className="text-base font-semibold tracking-tight text-foreground">
+              Value still waiting to be re-let
+            </h3>
+            <MeasureHelp
+              title="Value still waiting to be re-let"
+              help="Cancelled booking value on the live list that has not been filled yet — unrealised revenue still open for recovery."
+            />
+          </div>
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
             Cancelled booking value on the live list that has not been filled yet
           </p>
         </div>
-        <p className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
-          {formatCurrency(summary.valueAtRisk)}
+        <div className="shrink-0 text-left sm:text-right">
+          <p className={MONO_LABEL}>At stake</p>
+          <p className="mt-1 text-3xl font-bold tracking-tight tabular-nums text-amber-800 dark:text-amber-300">
+            {formatCurrency(summary.valueAtRisk)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">unrealised revenue</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 px-5 py-5 sm:grid-cols-3 sm:px-6">
+        {metrics.map((metric) => {
+          const Icon = metric.icon
+          return (
+            <div
+              key={metric.label}
+              className="relative rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                  {metric.label}
+                </p>
+                <span
+                  className={cn(
+                    "grid size-7 place-items-center rounded-lg",
+                    metric.tone === "attention" &&
+                      "bg-amber-500/10 text-amber-800 dark:text-amber-300",
+                    metric.tone === "neutral" && "bg-muted text-muted-foreground",
+                    metric.tone === "primary" && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <Icon className="size-3.5" />
+                </span>
+              </div>
+              <p
+                className={cn(
+                  "mt-3 text-2xl font-bold tracking-tight tabular-nums",
+                  metric.tone === "attention" && "text-amber-800 dark:text-amber-300",
+                  metric.tone === "neutral" && "text-foreground",
+                  metric.tone === "primary" && "text-primary"
+                )}
+              >
+                {metric.value}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{metric.hint}</p>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="border-t border-border/60 bg-muted/25 px-5 py-3 sm:px-6">
+        <p className="inline-flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+          <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span>
+            {gapToStrongRelet > 0 ? (
+              <>
+                Closing{" "}
+                <span className="font-semibold text-amber-800 dark:text-amber-300">
+                  {gapToStrongRelet.toFixed(1)}pp
+                </span>{" "}
+                toward a{" "}
+                <span className="font-semibold text-amber-800 dark:text-amber-300">
+                  65% re-let rate
+                </span>{" "}
+                would shrink open cancels fastest.
+              </>
+            ) : (
+              "Re-let is already at a strong level — keep clearing the open book."
+            )}
+          </span>
         </p>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-border/60 bg-card px-3 py-3">
-          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-            Open cancels
-          </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
-            {summary.awaiting}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/60 bg-card px-3 py-3">
-          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-            Avg days open
-          </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
-            {round1(summary.avgDaysOpen)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/60 bg-card px-3 py-3">
-          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-            Split re-lets
-          </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
-            {summary.split}
-          </p>
-        </div>
-      </div>
-      <p className="mt-4 text-xs text-muted-foreground">{upsideNote}</p>
     </div>
   )
 }
@@ -1359,6 +1513,7 @@ export function CancellationsReletsDashboard() {
   return (
     <div className="flex flex-col">
       <InsightsSection
+        id="insights-health"
         eyebrow="1 · How are we doing?"
         title="Ops performance"
         description="See cancel volume, re-let rate, and value still open this month — the live health check before you dig into recovery behaviour and channel detail."
@@ -1366,10 +1521,14 @@ export function CancellationsReletsDashboard() {
         showDivider={false}
       >
         <AccentKpiCards />
+        <div className="flex justify-center py-1" aria-hidden>
+          <div className="h-px w-12 bg-border" />
+        </div>
         <TargetProgressCards />
       </InsightsSection>
 
       <InsightsSection
+        id="insights-story"
         eyebrow="2 · The story"
         title="How cancellations still pay"
         description="Cancels are expected when guests have cover. Re-let turns those stays back into revenue — follow the loop from cancel volume to recovery, and see what is still open."
@@ -1383,6 +1542,7 @@ export function CancellationsReletsDashboard() {
       </InsightsSection>
 
       <InsightsSection
+        id="insights-act"
         eyebrow="3 · Where to act"
         title="What is driving recovery?"
         description="Use cancel and re-let heatmaps, partial re-let proof, and the live open book to decide where ops should act first."
@@ -1397,6 +1557,7 @@ export function CancellationsReletsDashboard() {
       </InsightsSection>
 
       <InsightsSection
+        id="insights-growth"
         eyebrow="4 · Growth opportunity"
         title="What happens if we recover more?"
         description="Value still sitting in open cancels — clearing these stays is the fastest ops lever to protect revenue."
@@ -1410,6 +1571,7 @@ export function CancellationsReletsDashboard() {
       </InsightsSection>
 
       <InsightsSection
+        id="insights-detail"
         eyebrow="5 · Full detail"
         title="Channel breakdown"
         description="Rates, volumes, and forecasts by channel — open when you need the audit view behind the ops story."

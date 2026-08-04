@@ -62,7 +62,7 @@ export function AiCoworkerCard({
           <div
             className={cn(
               "flex size-11 items-center justify-center rounded-full",
-              "bg-gradient-to-br from-primary to-[#0047b3] text-primary-foreground shadow-md",
+              "bg-gradient-to-br from-primary to-[var(--brand-primary-dark)] text-primary-foreground shadow-md",
               "ring-2 ring-white/40"
             )}
           >

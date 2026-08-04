@@ -35,7 +35,7 @@ function MeasureHelp({ title, help }: { title: string; help: string }) {
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-64 text-left">
+      <TooltipContent className="max-w-64 text-left">
         {help}
       </TooltipContent>
     </Tooltip>

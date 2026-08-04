@@ -16,16 +16,31 @@ export const CHANNEL_META: Array<{
   letter: "A" | "B" | "C" | "D"
   color: string
 }> = [
-  { key: "website", label: "Website", letter: "A", color: "#006BFF" },
-  { key: "app", label: "App", letter: "B", color: "#3389FF" },
-  { key: "offline", label: "Offline", letter: "C", color: "#66A6FF" },
-  { key: "ota", label: "OTA", letter: "D", color: "#99C4FF" },
+  { key: "website", label: "Website", letter: "A", color: "var(--primary)" },
+  {
+    key: "app",
+    label: "App",
+    letter: "B",
+    color: "color-mix(in oklab, var(--primary) 78%, white)",
+  },
+  {
+    key: "offline",
+    label: "Offline",
+    letter: "C",
+    color: "color-mix(in oklab, var(--primary) 55%, white)",
+  },
+  {
+    key: "ota",
+    label: "OTA",
+    letter: "D",
+    color: "color-mix(in oklab, var(--primary) 35%, white)",
+  },
 ]
 
 export const SERIES_COLORS = {
-  cancellations: "#006BFF",
-  relets: "#66A6FF",
-  forecast: "#99C4FF",
+  cancellations: "var(--primary)",
+  relets: "color-mix(in oklab, var(--primary) 55%, white)",
+  forecast: "color-mix(in oklab, var(--primary) 35%, white)",
 } as const
 
 function withRollups(channels: Record<ChannelKey, number>): ChannelBreakdown {
@@ -236,7 +251,7 @@ export const KPI_CARDS = [
     id: "total-cancellations",
     label: "Total cancellations",
     value: formatVolume(CANCEL_VOLUME.total),
-    help: "Cancellation Volume total across Website, App, Offline, and OTA. Compared with Cancellation Volume FC. Direct is Website + App + Offline.",
+    help: "Total cancellations across Website, App, Offline, and Online Travel Agency (OTA). Compared with the forecast (FC) volume. Direct means Website + App + Offline.",
     delta: `${formatSignedPct(
       ((CANCEL_VOLUME.total - CANCEL_VOLUME_FC.total) / CANCEL_VOLUME_FC.total) *
         100
@@ -252,7 +267,7 @@ export const KPI_CARDS = [
     id: "avg-cancel-rate",
     label: "Avg cancel rate",
     value: formatPercent(CANCEL_RATE.total),
-    help: "Cancellation Avg % total (all channels). Forecast is Cancellation % Avg FC total. Direct excludes OTA. Market figure is the Home market cancel-rate benchmark.",
+    help: "Average cancellation rate across all channels. Forecast (FC) is the planned rate. Direct excludes Online Travel Agency (OTA). Market is the Home cancel-rate benchmark.",
     delta: `${formatSignedPp(CANCEL_RATE.total - CANCEL_RATE_FC.total)} vs ${formatPercent(CANCEL_RATE_FC.total)} forecast`,
     higherIsBetter: false,
     tone: "accent" as const,
@@ -267,7 +282,7 @@ export const KPI_CARDS = [
     id: "total-relets",
     label: "Total re-lets",
     value: formatVolume(RELET_VOLUME.total),
-    help: "Relet Volume total. Compared with Re-Let Volume FC. Direct is Website + App + Offline.",
+    help: "Total cancelled stays that were filled again (re-let). Compared with the forecast (FC) volume. Direct means Website + App + Offline.",
     delta: `${formatSignedPct(
       ((RELET_VOLUME.total - RELET_VOLUME_FC.total) / RELET_VOLUME_FC.total) *
         100
@@ -283,7 +298,7 @@ export const KPI_CARDS = [
     id: "recovery-rate",
     label: "Recovery rate",
     value: formatPercent(RECOVERY_RATE),
-    help: "Re-lets ÷ cancellations (Relet Volume total ÷ Cancellation Volume total). Forecast uses the matching FC volume totals.",
+    help: "Re-lets ÷ cancellations. Forecast (FC) uses the matching planned volume totals.",
     delta: `${formatSignedPp(RECOVERY_RATE - RECOVERY_RATE_FC)} vs ${formatPercent(RECOVERY_RATE_FC)} forecast`,
     higherIsBetter: true,
     tone: "light" as const,
@@ -322,7 +337,7 @@ export const TARGET_CARDS = [
     label: "Re-let efficiency",
     value: "93.2%",
     targetLabel: "vs 90.0% target",
-    help: "Re-let efficiency against the 90.0% target. Status: On track.",
+    help: "How often cancelled stays were filled again (re-let), against the 90.0% target. Status: On track.",
     actual: 93.2,
     target: 90,
     status: "On track" as const,
@@ -333,7 +348,7 @@ export const TARGET_CARDS = [
     label: "Direct rollup value",
     value: "£141.20",
     targetLabel: "vs £135.00 target",
-    help: "Direct rollup value (Website + App + Offline) against the £135.00 target. Status: On track.",
+    help: "Direct channel value (Website + App + Offline) against the £135.00 target. Status: On track.",
     actual: 141.2,
     target: 135,
     status: "On track" as const,
@@ -385,7 +400,7 @@ export const WEEKLY_CANCEL_RELET = [
 ]
 
 export const VOLUME_TREND_HELP =
-  "Cancellations vs re-lets. Feb–Jul 2026. Jul uses Cancellation Volume total and Relet Volume total."
+  "Cancellations vs re-lets over Feb–Jul 2026. July uses actual total volumes."
 
 export const RELET_RATE_STAT = {
   label: "Re-let % avg",
@@ -393,7 +408,7 @@ export const RELET_RATE_STAT = {
   unit: "Rate",
   delta: "+1.8pp",
   deltaLabel: "vs prev. month",
-  help: "Average re-let rate across channels, with channel breakdown vs the market peer average.",
+  help: "Average re-let rate across channels, with a channel breakdown versus the market peer average.",
   marketPct: PORTFOLIO.market.reletPct,
   channels: CHANNEL_META.map((channel) => ({
     key: channel.key,
@@ -404,22 +419,22 @@ export const RELET_RATE_STAT = {
 } as const
 
 export const CHANNEL_MIX_HELP =
-  "Share of bookings by channel. Direct (A+B+C) is Website + App + Offline."
+  "Share of bookings by channel. Direct means Website + App + Offline."
 
 export const CANCEL_VS_RELET_HELP =
-  "Cancellation vs re-let by day of week."
+  "Cancellations versus re-lets by day of week."
 
 export const CANCEL_RATE_BY_CHANNEL_HELP =
-  "Cancellation Avg % by channel. Actual vs forecast % (Cancellation % Avg FC)."
+  "Average cancellation rate by channel. Actual versus forecast (FC)."
 
 export const RELET_VOLUME_VS_FORECAST_HELP =
-  "Relet Volume vs Re-Let Volume FC by channel. Jul 2026."
+  "Re-let volume versus forecast (FC) by channel. July 2026."
 
 export const AVG_RELET_VALUE_HELP =
-  "Re-Let Value Avg (£). Bar width uses Re-let % Avg for that channel. Units are Relet Volume."
+  "Average value recovered per re-let (£). Bar width uses that channel’s re-let rate. Counts are re-let volume."
 
 export const METRICS_SUMMARY_HELP =
-  "All channels · Actual and forecast · Jul 2026. Direct is Website + App + Offline. Total is Direct + OTA."
+  "All channels · Actual and forecast (FC) · July 2026. Direct means Website + App + Offline. Total is Direct + Online Travel Agency (OTA)."
 
 export type LiveCancelReletStatus = "awaiting" | "relet"
 
@@ -614,10 +629,10 @@ export const LIVE_CANCELLATIONS: LiveCancellationBooking[] = [
 export type LiveCancellationFilter = "awaiting" | "relet" | "split" | "all"
 
 export const LIVE_CANCELLATIONS_HELP =
-  "Recent cancellations at booking level. Not re-let stays are still open for recovery. Value is the cancelled booking value. Split re-lets are filled by more than one booking. Overlap shows how many cancelled nights were covered by re-let bookings."
+  "Recent cancellations at booking level. Stays not yet re-let are still open for recovery. Value is the cancelled booking value. Split re-lets are filled by more than one booking. Overlap shows how many cancelled nights were covered by re-let bookings."
 
 export const PARTIAL_RELETS_HELP =
-  "A split (partial) re-let fills one cancelled stay with two or more shorter bookings, for example a 7-night cancel filled as 3 + 4 nights. Overlapping days measure how much of the cancelled stay window was covered. Split fills can recover more revenue than rebooking the full stay to one guest."
+  "A split (partial) re-let fills one cancelled stay with two or more shorter bookings — for example a 7-night cancel filled as 3 + 4 nights. Overlapping days show how much of the cancelled stay window was covered. Split fills can recover more revenue than rebooking the full stay to one guest."
 
 export function getReletFills(booking: LiveCancellationBooking): ReletFill[] {
   if (booking.reletFills && booking.reletFills.length > 0) return booking.reletFills
@@ -767,21 +782,21 @@ export const OPS_VALUE_LOOP = {
   steps: [
     {
       id: "cancels",
-      label: "Cancels this month",
+      label: "Cancellations",
       value: formatVolume(CANCEL_VOLUME.total),
       hint: "Jul ops volume across channels",
       badge: "Ops volume",
       badgeTone: "neutral" as const,
-      help: "Cancelled stays in the current ops month (Jul). Includes Flexible Cancellation and other cancellations in the live ops slice.",
+      help: "Cancelled stays in the current ops month (July). Includes Flexible Cancellation (FC) and other cancellations in the live ops view.",
     },
     {
       id: "relet-rate",
       label: "Re-let rate",
       value: `${PORTFOLIO.reletPct}%`,
       hint: "Share of cancels filled again",
-      badge: "Higher is better",
+      badge: "High = better",
       badgeTone: "positive" as const,
-      help: "Share of cancelled stays that were re-let to another guest. Calculation: re-lets ÷ cancellations.",
+      help: "Share of cancelled stays that were filled again (re-let). How we calculate it: re-lets ÷ cancellations.",
     },
     {
       id: "relets",

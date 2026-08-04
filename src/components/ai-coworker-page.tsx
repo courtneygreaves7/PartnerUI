@@ -281,8 +281,8 @@ function Composer({
   return (
     <form
       className={cn(
-        "relative overflow-hidden rounded-[1.75rem] border border-border/70 bg-card shadow-[0_8px_30px_rgb(0_107_255_/_0.06)]",
-        large && "shadow-[0_12px_40px_rgb(0_107_255_/_0.08)]",
+        "relative overflow-hidden rounded-[1.75rem] border border-border/70 bg-card shadow-[0_8px_30px_rgb(var(--primary-rgb)_/_0.06)]",
+        large && "shadow-[0_12px_40px_rgb(var(--primary-rgb)_/_0.08)]",
         !large && "flex items-center"
       )}
       onSubmit={(event) => {
@@ -402,7 +402,7 @@ export function AiCoworkerPage({
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/50 bg-[#f7f9fc] shadow-xs dark:bg-card">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_top,_rgb(0_107_255_/_0.10),_transparent_65%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_top,_rgb(var(--primary-rgb)_/_0.12),_transparent_65%)]"
       />
 
       <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-5 py-4">
@@ -431,12 +431,12 @@ export function AiCoworkerPage({
                 aria-hidden
                 className="absolute inset-0 scale-150 rounded-full bg-primary/20 blur-2xl"
               />
-              <div className="relative grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#4d9fff] via-primary to-[#0047b3] shadow-[0_10px_32px_rgb(0_107_255_/_0.32)] ring-4 ring-white/60">
+              <div className="relative grid size-14 place-items-center rounded-full bg-gradient-to-br from-primary via-primary to-[var(--brand-primary-dark)] shadow-[0_10px_32px_rgb(var(--primary-rgb)_/_0.32)] ring-4 ring-white/60">
                 <Sparkles className="size-5 text-white" />
               </div>
             </div>
 
-            <h1 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-foreground">
               {timeOfDayGreeting()}, {partnerName}
             </h1>
             <p className="mt-1.5 max-w-lg text-center text-sm text-muted-foreground sm:text-base">
@@ -492,7 +492,7 @@ export function AiCoworkerPage({
                 >
                   {message.role === "assistant" ? (
                     <div className="flex max-w-full gap-3">
-                      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[#0047b3] text-[9px] font-bold text-primary-foreground">
+                      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[var(--brand-primary-dark)] text-[9px] font-bold text-primary-foreground">
                         AI
                       </span>
                       <div className="min-w-0 max-w-xl space-y-1.5 pt-0.5">
@@ -509,7 +509,7 @@ export function AiCoworkerPage({
 
               {isThinking ? (
                 <div className="flex gap-3">
-                  <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[#0047b3] text-[9px] font-bold text-primary-foreground">
+                  <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[var(--brand-primary-dark)] text-[9px] font-bold text-primary-foreground">
                     AI
                   </span>
                   <div className="flex items-center gap-1.5 pt-2 text-muted-foreground">

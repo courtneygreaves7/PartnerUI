@@ -1,4 +1,4 @@
-import { Info } from "lucide-react"
+import { BarChart3, BedDouble, CalendarDays, Info } from "lucide-react"
 import {
   CartesianGrid,
   Line,
@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts"
 
+import { InsightsSection } from "@/components/insights-section"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import {
   OCCUPANCY_BY_BEDROOM,
@@ -49,7 +50,7 @@ function MeasureHelp({ title, help }: { title: string; help: string }) {
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-64 text-left">
+      <TooltipContent className="max-w-64 text-left">
         {help}
       </TooltipContent>
     </Tooltip>
@@ -229,15 +230,12 @@ function BedroomOccupancyPanel() {
     <div className={PANEL}>
       <div className="mb-1 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className={MONO_LABEL}>Gold dust</p>
           <PanelTitle
             title="Occupancy by bedrooms"
             help={OCCUPANCY_BY_BEDROOM_HELP}
-            className="mt-1"
           />
           <p className="mt-1 max-w-xl text-xs text-muted-foreground">
-            Partner vs market by bedroom count, using days booked ÷ days available.
-            Larger homes often hide the biggest occupancy opportunity.
+            Days booked ÷ days available within each bedroom band.
           </p>
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
@@ -331,27 +329,43 @@ function BedroomOccupancyPanel() {
 
 export function OccupancyInsightsDashboard() {
   return (
-    <div className="space-y-8">
-      <div>
-        <p className={MONO_LABEL}>Capacity</p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-          Occupancy
-        </h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Partner vs market across departure weeks, with bedroom mix as the
-          high-value cut.
-        </p>
-        <div className="mt-3 flex max-w-2xl items-start gap-2 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5">
+    <div className="flex flex-col">
+      <InsightsSection
+        id="insights-health"
+        eyebrow="1 · How are we doing?"
+        title="Occupancy health"
+        description="Partner vs market across departure weeks, with bedroom mix as the high-value cut — the live capacity check before you dig into timing and stock."
+        badge={{ icon: BarChart3, label: "Health check" }}
+        showDivider={false}
+      >
+        <div className="flex items-start gap-2 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5">
           <MeasureHelp title="Occupancy method" help={OCCUPANCY_METHOD_HELP} />
           <p className="text-xs leading-relaxed text-muted-foreground">
             {OCCUPANCY_METHOD_NOTE}
           </p>
         </div>
-      </div>
+        <OccupancyKpiCards />
+      </InsightsSection>
 
-      <OccupancyKpiCards />
-      <DepartureWeekChart />
-      <BedroomOccupancyPanel />
+      <InsightsSection
+        id="insights-story"
+        eyebrow="2 · The story"
+        title="How occupancy moves by departure"
+        description="Follow partner vs market week by week through peak summer — see where the book fills hard and where capacity softens."
+        badge={{ icon: CalendarDays, label: "Timing" }}
+      >
+        <DepartureWeekChart />
+      </InsightsSection>
+
+      <InsightsSection
+        id="insights-act"
+        eyebrow="3 · Where to act"
+        title="Where bedroom mix hides the gap"
+        description="Partner vs market by bedroom count. Larger homes often hide the biggest occupancy opportunity for pricing and mix."
+        badge={{ icon: BedDouble, label: "Gold dust" }}
+      >
+        <BedroomOccupancyPanel />
+      </InsightsSection>
     </div>
   )
 }

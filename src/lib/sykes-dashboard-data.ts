@@ -1070,7 +1070,7 @@ export const FC_CANCEL_RATE_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => 
 export const FC_VALUE_LOOP = {
   title: "How Flexible Cancellation drives max revenue",
   story:
-    "This is how you run the book for more revenue: convert more guests onto cover, earn product margin, manage the cancels that follow, and re-let so cancelled holidays still pay. Not an add-on — the loop that keeps top-line moving.",
+    "This is how Flexible Cancellation (FC) drives revenue: more guests buy cover, you earn product margin, some cancel (expected), and you re-let so cancelled holidays still pay.",
   steps: [
     {
       id: "sales",
@@ -1078,7 +1078,7 @@ export const FC_VALUE_LOOP = {
       value: formatPct(PORTFOLIO.attachmentPct, 1),
       hint: "Conversion onto Flexible Cancellation",
       goodWhen: "higher" as const,
-      help: "Share of bookings where the guest bought Flexible Cancellation. This is booking conversion onto cover — the start of the revenue loop. Calculation: Flexible Cancellation bookings ÷ all bookings.",
+      help: "Share of bookings where the guest bought Flexible Cancellation (FC). This is take-up of cover — the start of the revenue loop. How we calculate it: FC bookings ÷ all bookings.",
     },
     {
       id: "cancel",
@@ -1086,7 +1086,7 @@ export const FC_VALUE_LOOP = {
       value: formatPct(PORTFOLIO.fcCancelPct, 1),
       hint: "Expected when guests have cover",
       goodWhen: "context" as const,
-      help: "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next. Calculation: cancellations ÷ Flexible Cancellation bookings.",
+      help: "Share of Flexible Cancellation (FC) bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next. How we calculate it: cancellations ÷ FC bookings.",
     },
     {
       id: "relet",
@@ -1094,7 +1094,7 @@ export const FC_VALUE_LOOP = {
       value: formatPct(PORTFOLIO.reletPct, 1),
       hint: "Cancelled stays filled again",
       goodWhen: "higher" as const,
-      help: "Share of cancelled stays that were re-let to another guest. This is how cancelled holidays turn back into revenue — and why the product is operational, not optional. Calculation: re-lets ÷ cancellations.",
+      help: "Share of cancelled stays that were filled again (re-let). This is how cancelled holidays turn back into revenue. How we calculate it: re-lets ÷ cancellations.",
     },
     {
       id: "incremental",
@@ -1102,7 +1102,7 @@ export const FC_VALUE_LOOP = {
       value: formatGbp(PORTFOLIO.incrementalTotal, "thousands"),
       hint: "Proof the loop is working",
       goodWhen: "higher" as const,
-      help: "Extra revenue from re-letting cancelled Flexible Cancellation stays. The commercial proof that cover + ops is a necessity for max revenue, not an ancillary add-on.",
+      help: "Extra revenue from re-letting cancelled Flexible Cancellation (FC) stays — proof that cover plus ops work together.",
     },
   ],
 } as const
@@ -1111,7 +1111,7 @@ export const FC_VALUE_LOOP = {
 export const DDL_VALUE_LOOP = {
   title: "How Damage Waiver drives incremental margin",
   story:
-    "Damage Waiver replaces a cash deposit with a paid product: guests take it up, you earn partner margin, and stronger conversion on direct channels lifts the book. Follow the loop to see where attachment is soft and where margin already pays.",
+    "Damage Deposit Waiver (DDL) replaces a cash deposit with a paid product: guests take it up, you earn partner margin, and stronger conversion on direct channels lifts the book. Follow the loop to see where attachment is soft and where margin already pays.",
   steps: [
     {
       id: "offered",
@@ -1119,7 +1119,7 @@ export const DDL_VALUE_LOOP = {
       value: formatPct(PORTFOLIO.offerRate * 100, 0),
       hint: "Share of bookings shown the waiver",
       goodWhen: "higher" as const,
-      help: "Share of bookings where Damage Waiver was available to the guest. Calculation: bookings offered Damage Waiver ÷ total bookings.",
+      help: "Share of bookings where Damage Deposit Waiver (DDL) was available to the guest. How we calculate it: bookings offered DDL ÷ total bookings.",
     },
     {
       id: "attach",
@@ -1127,7 +1127,7 @@ export const DDL_VALUE_LOOP = {
       value: DAMAGE_DEPOSIT_WAIVER_GRID[1].total.value,
       hint: "Conversion onto Damage Waiver",
       goodWhen: "higher" as const,
-      help: "Share of eligible bookings that attached Damage Waiver. Calculation: DDL bookings ÷ bookings offered Damage Waiver.",
+      help: "Share of eligible bookings that bought Damage Deposit Waiver (DDL). How we calculate it: DDL bookings ÷ bookings offered DDL.",
     },
     {
       id: "margin",
@@ -1135,7 +1135,7 @@ export const DDL_VALUE_LOOP = {
       value: DAMAGE_DEPOSIT_WAIVER_GRID[4].total.value,
       hint: "Earnings from waiver attachments",
       goodWhen: "higher" as const,
-      help: "Partner margin earned from Damage Waiver by channel, net of premium.",
+      help: "Partner margin earned from Damage Deposit Waiver (DDL) by channel, after premium.",
     },
     {
       id: "conversion",
@@ -1143,7 +1143,7 @@ export const DDL_VALUE_LOOP = {
       value: DAMAGE_DEPOSIT_WAIVER_GRID[5].total.value,
       hint: "Proof the product lifts the book",
       goodWhen: "higher" as const,
-      help: "Estimated partner margin from conversion lift linked to Damage Waiver on direct channels.",
+      help: "Estimated partner margin from conversion lift linked to Damage Deposit Waiver (DDL) on direct channels.",
     },
   ],
 } as const

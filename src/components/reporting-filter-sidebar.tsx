@@ -1,7 +1,12 @@
 import { useState } from "react"
-import { ArrowLeftRight, Play } from "lucide-react"
+import { ArrowLeftRight, ChevronsRight, Play } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Field } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -49,12 +54,14 @@ type ReportingFilterSidebarProps = {
   filters: ReportingFilters
   hasRun?: boolean
   onRun: (filters: ReportingFilters) => void
+  onClose?: () => void
 }
 
 export function ReportingFilterSidebar({
   filters,
   hasRun = false,
   onRun,
+  onClose,
 }: ReportingFilterSidebarProps) {
   const [period, setPeriod] = useState<ReportingPeriod>(filters.period)
   const [brandA, setBrandA] = useState(filters.brandA)
@@ -71,12 +78,30 @@ export function ReportingFilterSidebar({
   }
 
   return (
-    <aside className="relative flex min-h-0 flex-col bg-[#e8f0fc] dark:bg-[#141b28]">
+    <aside className="relative flex min-h-0 flex-col bg-[var(--brand-surface)] dark:bg-muted">
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-border" />
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
         <div>
-          <h2 className="text-sm font-semibold">Report filters</h2>
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-sm font-semibold">Report filters</h2>
+            {onClose ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-6 shrink-0"
+                    onClick={onClose}
+                    aria-label="Hide filters"
+                  >
+                    <ChevronsRight className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Hide filters</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Choose a period and brands, then run the report.
           </p>

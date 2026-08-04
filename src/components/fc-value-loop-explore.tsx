@@ -60,7 +60,7 @@ function MeasureHelp({ title, help }: { title: string; help: string }) {
           <Info className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-64 text-left">
+      <TooltipContent className="max-w-64 text-left">
         {help}
       </TooltipContent>
     </Tooltip>
@@ -107,8 +107,8 @@ function DimensionSelect({
 
 function heatBackground(value: number, min: number, max: number) {
   const t = max <= min ? 0.5 : (value - min) / (max - min)
-  // High contrast across the grid — still light enough for dark text.
-  const pct = Math.round(6 + t * 58)
+  // Soft primary wash — keeps dark text readable while staying on-palette.
+  const pct = Math.round(5 + t * 16)
   return `color-mix(in oklab, var(--color-primary) ${pct}%, var(--color-card))`
 }
 
@@ -157,7 +157,7 @@ function MatrixCellCard({
   const relet = Math.min(100, Math.max(0, cell.relet))
   const notRelet = Math.round((100 - relet) * 10) / 10
   const heatT = colourMax <= colourMin ? 0.5 : (relet - colourMin) / (colourMax - colourMin)
-  const borderAlpha = 0.35 + heatT * 0.45
+  const borderAlpha = 0.18 + heatT * 0.22
   const behaviour = describeFcLoopBehaviour(cell)
   const subheading = behaviourSubheading(behaviour.kind, behaviour.badge)
 
@@ -381,7 +381,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
               className="h-2.5 w-28 overflow-hidden rounded-full border border-border/60"
               style={{
                 background:
-                  "linear-gradient(to right, color-mix(in oklab, var(--color-primary) 6%, var(--color-card)), color-mix(in oklab, var(--color-primary) 64%, var(--color-card)))",
+                  "linear-gradient(to right, color-mix(in oklab, var(--color-primary) 5%, var(--color-card)), color-mix(in oklab, var(--color-primary) 21%, var(--color-card)))",
               }}
             />
             <span>Higher relet</span>

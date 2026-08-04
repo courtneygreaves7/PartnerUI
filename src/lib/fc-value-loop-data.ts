@@ -124,25 +124,25 @@ export const FC_LOOP_DISPLAY_METRICS: Array<{
   {
     id: "relet",
     label: "Relet rate",
-    help: "Colour shows relet rate. Higher means more cancelled stays were relet.",
+    help: "Colour shows re-let rate — how often cancelled stays were filled again. Higher is better.",
     higherIsBetter: true,
   },
   {
     id: "recoveredPct",
     label: "Recovered %",
-    help: "Colour shows recovered value versus cancelled booking value. Over 100% means you earned more than you lost.",
+    help: "Colour shows recovered value (REC) versus the cancelled booking value. Over 100% means you earned more than you lost.",
     higherIsBetter: true,
   },
   {
     id: "sales",
     label: "Attachment",
-    help: "Colour shows CAL attachment — how often guests bought Flexible Cancellation in that booking type.",
+    help: "Colour shows attachment (ATT) — how often guests bought Flexible Cancellation (FC / CAL) in that booking type.",
     higherIsBetter: true,
   },
   {
     id: "cancel",
     label: "Cancel rate",
-    help: "Colour shows cancellation rate on attached bookings. Read it next to relet — some cancel is normal with cover.",
+    help: "Colour shows cancel rate (CXL) on attached bookings. Read it next to re-let — some cancel is normal when guests have cover.",
     higherIsBetter: false,
   },
 ]
@@ -700,10 +700,10 @@ export const FC_LOOP_PROOF = {
 } as const
 
 export const FC_LOOP_MATRIX_HELP =
-  "Each card is a booking type. The top bar is re-let rate (volume filled). The subheading flags standout cancel vs fill behaviour (or ‘Re-let rate’ when steady). ATT = attachment, CXL = cancel rate, REC = value kept vs cancelled booking value (can exceed 100%)."
+  "Each card is a booking type. The top bar is re-let rate (how often cancelled stays were filled again). The subheading flags standout cancel vs fill behaviour. ATT (attachment), CXL (cancel rate), REC (value kept vs cancelled booking — can exceed 100%)."
 
 export const FC_LOOP_OPPORTUNITIES_HELP =
-  "Where to run the business harder for max revenue: weak re-let recovery, soft regions, under-sold cover where demand is strong, and proof points that show the loop already pays. Risk cards link to open cancels still awaiting a re-let."
+  "Where to push harder for revenue: weak re-let recovery, soft regions, under-sold Flexible Cancellation (FC) where demand is strong, and proof points that show the loop already pays. Risk cards link to open cancels still awaiting a re-let."
 
 export function formatCurrency(n: number) {
   return `£${Math.round(n).toLocaleString("en-GB")}`
