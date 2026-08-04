@@ -208,7 +208,13 @@ export function PartnerImpactHero({
                 />
               </div>
               <div className="min-w-0 pr-7">
-                <p className={MONO_LABEL}>{PARTNER_IMPACT_HERO.generatedLabel}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className={MONO_LABEL}>{PARTNER_IMPACT_HERO.generatedLabel}</p>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-800 uppercase dark:text-emerald-300">
+                    <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+                    Secured
+                  </span>
+                </div>
                 <p className="mt-2 text-[26px] font-bold tracking-tight tabular-nums text-primary sm:text-[28px]">
                   {formatGbp(impact.generated, "exact")}
                 </p>

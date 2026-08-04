@@ -74,20 +74,20 @@ export const MAP_COUNTRY_META: Record<
 }
 
 /**
- * 3D country framing — atlas-style north-up so shapes match what people know
- * from wall maps (not globe yaw, which can feel "wrong" at a glance).
+ * 3D country framing — recognisable atlas silhouettes (not globe-true yaw).
+ * UK sits north-up; islands are filtered out so the main island fills the frame.
  */
 export const COUNTRY_3D_VIEW: Record<
   MapCountryCode,
   {
     /** Tip of the map table toward the camera (radians). Near -π/2 keeps extrusion upright. */
     pitch: number
-    /** Keep near 0 for recognisable atlas orientation. */
+    /** Map-table spin (radians). 0 ≈ north-up atlas orientation. */
     yaw: number
   }
 > = {
   UK: {
-    pitch: -Math.PI / 2 + 0.28,
+    pitch: -Math.PI / 2 + 0.32,
     yaw: 0,
   },
   FR: {
@@ -99,6 +99,16 @@ export const COUNTRY_3D_VIEW: Record<
     yaw: 0,
   },
 }
+
+/** Offshore islands omitted from UK county relief so GB/NI sit normally in frame. */
+const UK_ISLAND_REGION_IDS = new Set([
+  "shetland-islands",
+  "orkney-islands",
+  "na-h-eileanan-siar",
+  "isles-of-scilly",
+  "isle-of-wight",
+  "isle-of-anglesey",
+])
 
 const regionCache = new Map<MapCountryCode, MapRegion[]>()
 
@@ -131,7 +141,9 @@ export async function loadMapRegions(country: MapCountryCode = "UK"): Promise<Ma
   const response = await fetch(meta.asset)
   if (!response.ok) throw new Error(`Failed to load ${meta.label} map data`)
   const raw = (await response.json()) as RawMapRegion[]
-  const next = raw.map(enrichRegionRecovery)
+  const filtered =
+    country === "UK" ? raw.filter((region) => !UK_ISLAND_REGION_IDS.has(region.id)) : raw
+  const next = filtered.map(enrichRegionRecovery)
   regionCache.set(country, next)
   return next
 }
