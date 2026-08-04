@@ -26,7 +26,9 @@ import {
 } from "@/components/ui/select"
 import { InsightsGlobe } from "@/components/insights-globe"
 import { InsightsUkCounties3d } from "@/components/insights-uk-counties-3d"
+import { CountryFlag } from "@/components/country-flag"
 import type { ActiveFilters } from "@/lib/chart-data"
+import { buildGlobeCountryStats } from "@/lib/insights-globe-data"
 import {
   formatCompactCurrency,
   formatMapMetric,
@@ -48,68 +50,12 @@ import {
 import { cn } from "@/lib/utils"
 
 const ALL_COUNTIES = "all-counties"
+
+/** Country detail tabs — only portfolio countries that have a 3D region map. */
+const DETAIL_COUNTRY_CODES = (Object.keys(MAP_COUNTRY_META) as MapCountryCode[]).filter((code) =>
+  buildGlobeCountryStats().some((row) => row.code === code && row.properties > 0)
+)
 const ALL_TOWNS = "all-towns"
-
-function BritishFlag({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 60 30"
-      preserveAspectRatio="xMidYMid meet"
-      className={cn("aspect-[2/1] h-4 w-auto shrink-0", className)}
-      aria-hidden
-      focusable="false"
-    >
-      <clipPath id="uk-flag-clip">
-        <rect width="60" height="30" rx="1.5" />
-      </clipPath>
-      <g clipPath="url(#uk-flag-clip)">
-        <rect width="60" height="30" fill="#012169" />
-        <path d="M0 0 L60 30 M60 0 L0 30" stroke="#fff" strokeWidth="6" />
-        <path d="M0 0 L60 30" stroke="#C8102E" strokeWidth="2" transform="translate(0 1.2)" />
-        <path d="M60 0 L0 30" stroke="#C8102E" strokeWidth="2" transform="translate(0 -1.2)" />
-        <path d="M30 0 V30 M0 15 H60" stroke="#fff" strokeWidth="10" />
-        <path d="M30 0 V30 M0 15 H60" stroke="#C8102E" strokeWidth="6" />
-      </g>
-    </svg>
-  )
-}
-
-function FrenchFlag({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 60 30"
-      preserveAspectRatio="xMidYMid meet"
-      className={cn("aspect-[2/1] h-4 w-auto shrink-0", className)}
-      aria-hidden
-      focusable="false"
-    >
-      <rect width="20" height="30" fill="#002395" />
-      <rect x="20" width="20" height="30" fill="#fff" />
-      <rect x="40" width="20" height="30" fill="#ED2939" />
-    </svg>
-  )
-}
-
-function SpanishFlag({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 60 30"
-      preserveAspectRatio="xMidYMid meet"
-      className={cn("aspect-[2/1] h-4 w-auto shrink-0", className)}
-      aria-hidden
-      focusable="false"
-    >
-      <rect width="60" height="30" fill="#AA151B" />
-      <rect y="7.5" width="60" height="15" fill="#F1BF00" />
-    </svg>
-  )
-}
-
-function CountryFlag({ code, className }: { code: MapCountryCode; className?: string }) {
-  if (code === "FR") return <FrenchFlag className={className} />
-  if (code === "ES") return <SpanishFlag className={className} />
-  return <BritishFlag className={className} />
-}
 
 type InsightsMapPageProps = {
   filters: ActiveFilters
@@ -458,9 +404,10 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
 
   const countryTabs: Array<{ id: "globe" | MapCountryCode; label: string }> = [
     { id: "globe", label: "Globe" },
-    { id: "UK", label: "UK" },
-    { id: "FR", label: "France" },
-    { id: "ES", label: "Spain" },
+    ...DETAIL_COUNTRY_CODES.map((code) => ({
+      id: code,
+      label: MAP_COUNTRY_META[code].shortLabel,
+    })),
   ]
 
   const regionPlaceLabel =
@@ -483,11 +430,6 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           <div className="hidden h-4 w-px bg-border sm:block" />
           <div className="hidden sm:block">
             <h1 className="text-base font-semibold tracking-tight">Map view</h1>
-            <p className="text-xs text-muted-foreground">
-              {viewMode === "globe"
-                ? "3D globe · click UK, France or Spain for detail"
-                : `3D ${countryMeta?.regionNoun} · drag to orbit · shaded by performance`}
-            </p>
           </div>
         </div>
 
@@ -538,44 +480,45 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
             className="absolute inset-0 h-full min-h-[360px] w-full"
             onOpenUkDetail={() => openCountryView("UK")}
             onOpenCountry={(code) => {
-              if (code === "UK" || code === "FR" || code === "ES") {
-                openCountryView(code)
+              if (DETAIL_COUNTRY_CODES.includes(code as MapCountryCode)) {
+                openCountryView(code as MapCountryCode)
               }
             }}
           />
         </div>
       ) : (
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="relative min-h-0 bg-[#0b1220] dark:bg-[#070b12]">
+        <div className="relative min-h-0 bg-[#f3f3f1]">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-4">
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/55 px-4 py-3 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm">
               <CountryFlag
                 code={countryView!}
-                className="rounded-[2px] shadow-xs ring-1 ring-white/20"
+                className="size-5 shadow-xs"
               />
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/55">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   {countryMeta?.label}
                 </p>
-                <p className="text-sm text-white/80">
-                  3D {countryMeta?.regionNoun} · shaded by {metricLabel}
+                <p className="text-sm text-foreground">
+                  Relief {countryMeta?.regionNoun} · shaded by {metricLabel}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/55 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-              <span className="text-[10px] text-white/50">Low</span>
-              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#385f42] via-[#5a9a58] to-[#7ec864]" />
-              <span className="text-[10px] text-white/50">High</span>
+            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+              <span className="text-[10px] text-muted-foreground">Low</span>
+              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#d8d4ce] via-[#f0eeea] to-[#006BFF]" />
+              <span className="text-[10px] text-muted-foreground">High</span>
             </div>
           </div>
 
           {isLoading ? (
-            <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-white/60">
+            <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-muted-foreground">
               Loading {countryMeta?.label}…
             </div>
           ) : (
             <InsightsUkCounties3d
               className="absolute inset-0"
+              country={countryView!}
               regions={scaledRegions}
               metric={metric}
               range={range}
@@ -587,14 +530,14 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           )}
 
           {hoveredCounty && metricLabel ? (
-            <div className="pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs rounded-xl border border-white/15 bg-black/70 px-4 py-3 shadow-md backdrop-blur-sm">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/50">
+            <div className="pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-md backdrop-blur-sm">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                 {hoveredCounty.name}
               </p>
-              <p className="mt-1 text-sm font-semibold text-white">
+              <p className="mt-1 text-sm font-semibold text-foreground">
                 {formatMapMetric(getMetricValue(hoveredCounty, metric), metric)} {metricLabel}
               </p>
-              <p className="mt-1 text-[10px] text-white/40">Click to pin in the side panel</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">Click to pin in the side panel</p>
             </div>
           ) : null}
         </div>

@@ -532,7 +532,7 @@ function App() {
                         <InsightsTopCards />
                       </div>
                       <div
-                        className="sticky top-0 z-30 isolate border-b border-border/50"
+                        className="sticky top-0 z-30 isolate border-t border-b border-border/50"
                         style={{ backgroundColor: "var(--panel-bg)" }}
                       >
                         <div className="flex w-full items-center gap-3 px-10 py-3 xl:px-16">
@@ -620,7 +620,7 @@ function App() {
                   />
                 )
               ) : showFilterSidebar && !filterSidebarOpen ? (
-                <div className="absolute inset-y-0 right-0 z-20 flex items-start pt-20">
+                <div className="absolute inset-y-0 right-0 z-20 flex items-start pt-10 xl:pt-14">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button

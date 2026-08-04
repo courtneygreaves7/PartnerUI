@@ -145,15 +145,15 @@ export function PartnerImpactHero({
               <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
               Partner Dashboard
             </span>
-            <h1 className="mt-4 text-[26px] font-semibold leading-tight tracking-tight text-foreground">
+            <h1 className="mt-3 text-[26px] font-semibold leading-tight tracking-tight text-foreground">
               {timeOfDayGreeting()}, {PARTNER_BRANDING.userDisplayName}
             </h1>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-[15px]">
+            <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
               Stays performance, product effect, and market benchmarks — pick a lens,
               then see what you have already made and what is still open.
             </p>
 
-            <div className="mt-5 w-fit">
+            <div className="mt-4 flex w-fit flex-col gap-2.5">
               <div
                 role="tablist"
                 aria-label="Impact period"
@@ -181,12 +181,16 @@ export function PartnerImpactHero({
                 })}
               </div>
 
-              <div className="mt-4 w-0 min-w-full rounded-xl border border-dashed border-emerald-500/45 bg-emerald-500/[0.06] px-3.5 py-2 dark:bg-emerald-500/10">
+              <div className="w-0 min-w-full rounded-full border border-dashed border-emerald-500/45 bg-emerald-500/[0.06] px-3 py-1.5 dark:bg-emerald-500/10">
                 <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden">
                   <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
                     <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
                     Live
                   </span>
+                  <span
+                    aria-hidden
+                    className="h-3 w-px shrink-0 bg-border/70"
+                  />
                   <span className="min-w-0 truncate text-[11px] leading-snug text-muted-foreground">
                     {refreshedLabel()}
                   </span>

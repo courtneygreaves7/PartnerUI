@@ -51,11 +51,53 @@ export type MapCountryCode = "UK" | "FR" | "ES"
 
 export const MAP_COUNTRY_META: Record<
   MapCountryCode,
-  { label: string; regionNoun: string; asset: string }
+  { label: string; regionNoun: string; asset: string; shortLabel: string }
 > = {
-  UK: { label: "United Kingdom", regionNoun: "counties", asset: "/uk-counties-map.json" },
-  FR: { label: "France", regionNoun: "regions", asset: "/france-regions-map.json" },
-  ES: { label: "Spain", regionNoun: "communities", asset: "/spain-regions-map.json" },
+  UK: {
+    label: "United Kingdom",
+    shortLabel: "UK",
+    regionNoun: "counties",
+    asset: "/uk-counties-map.json",
+  },
+  FR: {
+    label: "France",
+    shortLabel: "France",
+    regionNoun: "regions",
+    asset: "/france-regions-map.json",
+  },
+  ES: {
+    label: "Spain",
+    shortLabel: "Spain",
+    regionNoun: "communities",
+    asset: "/spain-regions-map.json",
+  },
+}
+
+/**
+ * 3D country framing — atlas-style north-up so shapes match what people know
+ * from wall maps (not globe yaw, which can feel "wrong" at a glance).
+ */
+export const COUNTRY_3D_VIEW: Record<
+  MapCountryCode,
+  {
+    /** Tip of the map table toward the camera (radians). Near -π/2 keeps extrusion upright. */
+    pitch: number
+    /** Keep near 0 for recognisable atlas orientation. */
+    yaw: number
+  }
+> = {
+  UK: {
+    pitch: -Math.PI / 2 + 0.28,
+    yaw: 0,
+  },
+  FR: {
+    pitch: -Math.PI / 2 + 0.28,
+    yaw: 0,
+  },
+  ES: {
+    pitch: -Math.PI / 2 + 0.28,
+    yaw: 0,
+  },
 }
 
 const regionCache = new Map<MapCountryCode, MapRegion[]>()

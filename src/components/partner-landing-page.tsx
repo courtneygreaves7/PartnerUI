@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   CalendarRange,
   ArrowRight,
+  FlagTriangleRight,
   Clock,
   Coins,
   FileText,
@@ -1452,14 +1453,14 @@ export function InsightsProductTabs({
   onChange: (id: InsightsProductId) => void
 }) {
   return (
-    <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-muted p-1">
+    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-muted p-1">
       {INSIGHTS_PRODUCT_TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onChange(tab.id)}
           className={cn(
-            "shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm",
+            "min-w-0 flex-1 rounded-lg px-2 py-2 text-center text-xs font-medium transition-colors sm:px-4 sm:text-sm",
             value === tab.id
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -1655,14 +1656,17 @@ function ProductValueLoopScorecard({
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch">
-        {loop.steps.map((step) => (
+        {loop.steps.map((step, index) => {
+          const isLast = index === loop.steps.length - 1
+          const StepIcon = isLast ? FlagTriangleRight : ArrowRight
+          return (
           <div
             key={step.id}
             className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5"
           >
             <div className="flex items-center gap-2">
               <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                <StepIcon className="size-3.5" strokeWidth={2.5} aria-hidden />
               </span>
               <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
                 {step.label}
@@ -1676,7 +1680,8 @@ function ProductValueLoopScorecard({
               {step.hint}
             </p>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

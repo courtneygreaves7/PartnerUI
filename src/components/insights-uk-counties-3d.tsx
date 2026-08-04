@@ -5,6 +5,8 @@ import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js"
 
 import {
   getMetricValue,
+  COUNTRY_3D_VIEW,
+  type MapCountryCode,
   type MapMetricId,
   type MapRegion,
 } from "@/lib/insights-map-data"
@@ -12,23 +14,29 @@ import { cn } from "@/lib/utils"
 
 const ALL_COUNTIES = "all-counties"
 
-/** Soft earth greens — reads like land on a globe, metric shifts tone within the range. */
+/** Plaster relief — same whites / soft sides as the globe Relief style. */
 const LAND = {
-  low: { r: 0.22, g: 0.4, b: 0.26 },
-  high: { r: 0.42, g: 0.72, b: 0.38 },
-  hover: { r: 0.55, g: 0.86, b: 0.48 },
-  selected: { r: 0.62, g: 0.9, b: 0.52 },
-  side: { r: 0.14, g: 0.26, b: 0.16 },
+  low: { r: 0.94, g: 0.93, b: 0.9 },
+  high: { r: 0.99, g: 0.98, b: 0.97 },
+  hover: { r: 0.12, g: 0.34, b: 0.23 },
+  selected: { r: 0.09, g: 0.28, b: 0.19 },
+  side: { r: 0.84, g: 0.82, b: 0.78 },
+  sideHover: { r: 0.08, g: 0.24, b: 0.16 },
 }
 
-const HOVER_LIFT = 10
+const HOVER_LIFT_WORLD = 1.4
+const STAGE_BG = "#f5f5f3"
+/** Target max XY size in world units after scale — keeps UK / FR / ES similarly framed. */
+const TARGET_SPAN = 88
 /**
- * Lay the SVG map on the XZ “table” (extrusion = up), then tip slightly
- * toward the camera so county thickness reads without skewing the outline.
+ * World-space relief height range (after scale). Kept independent of SVG units so
+ * fit-to-span never flattens the extrusion to a 2D plate.
  */
-const TABLE_PITCH = -Math.PI / 2 + 0.32
+const RELIEF_HEIGHT_MIN = 2.8
+const RELIEF_HEIGHT_MAX = 5.6
 
 type InsightsUkCounties3dProps = {
+  country: MapCountryCode
   regions: MapRegion[]
   metric: MapMetricId
   range: { min: number; max: number }
@@ -57,9 +65,11 @@ function metricT(value: number, min: number, max: number) {
   return Math.min(1, Math.max(0, (value - min) / (max - min)))
 }
 
-function metricDepth(value: number, min: number, max: number) {
+/** Extrusion depth in SVG units — converted later so world height hits RELIEF_HEIGHT_*. */
+function metricDepthSvg(value: number, min: number, max: number, mapScale: number) {
   const t = metricT(value, min, max)
-  return 10 + t * 12
+  const worldH = RELIEF_HEIGHT_MIN + t * (RELIEF_HEIGHT_MAX - RELIEF_HEIGHT_MIN)
+  return worldH / Math.max(mapScale, 0.0001)
 }
 
 function mix(
@@ -88,14 +98,18 @@ function paintMesh(
 ) {
   const t = metricT(value, range.min, range.max)
   const tone = selected ? LAND.selected : hovered ? LAND.hover : mix(LAND.low, LAND.high, t)
-  const sideTone = mix(tone, LAND.side, selected || hovered ? 0.25 : 0.4)
-  const dim = dimmed ? 0.38 : 1
+  const sideTone =
+    selected || hovered
+      ? mix(tone, LAND.sideHover, 0.35)
+      : mix(tone, LAND.side, 0.55)
+    const dim = dimmed ? 0.78 : 1
 
   const mats = meshMaterials(mesh)
   mats.forEach((material, index) => {
     const c = index === 0 ? sideTone : tone
     material.color.setRGB(c.r * dim, c.g * dim, c.b * dim)
-    material.emissive.setRGB(c.r * 0.05 * dim, c.g * 0.07 * dim, c.b * 0.04 * dim)
+    material.emissive.setRGB(c.r * 0.08 * dim, c.g * 0.08 * dim, c.b * 0.07 * dim)
+    material.emissiveIntensity = hovered || selected ? 0.22 : 0.12
     material.transparent = false
     material.opacity = 1
     material.depthWrite = true
@@ -105,14 +119,14 @@ function paintMesh(
 
 function makeCountyMaterial(isSide: boolean) {
   return new THREE.MeshStandardMaterial({
-    color: isSide ? 0x2a4530 : 0x4a8552,
-    emissive: 0x07120a,
-    roughness: isSide ? 0.92 : 0.78,
-    metalness: 0.02,
+    color: isSide ? 0xd6d0c6 : 0xfcfaf6,
+    emissive: isSide ? 0xcfc9bf : 0xf2f0eb,
+    emissiveIntensity: isSide ? 0.08 : 0.18,
+    roughness: isSide ? 0.9 : 0.78,
+    metalness: 0,
     flatShading: false,
     transparent: false,
-    side: THREE.FrontSide,
-    // Reduce z-fighting where neighbouring counties share an edge
+    side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: 1,
     polygonOffsetUnits: 1,
@@ -120,6 +134,7 @@ function makeCountyMaterial(isSide: boolean) {
 }
 
 export function InsightsUkCounties3d({
+  country,
   regions,
   metric,
   range,
@@ -147,40 +162,50 @@ export function InsightsUkCounties3d({
     const container = containerRef.current
     if (!container || regions.length === 0) return
 
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color("#0a1620")
+    const view = COUNTRY_3D_VIEW[country]
+    const basePitch = view.pitch
+    const baseYaw = view.yaw
 
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 2000)
-    // Above + slightly south — classic 3D map framing (north stays up on screen)
-    camera.position.set(0, 125, 88)
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(STAGE_BG)
+
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 4000)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(container.clientWidth, container.clientHeight)
+    renderer.outputColorSpace = THREE.SRGBColorSpace
     container.appendChild(renderer.domElement)
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.55)
+    // Soft plaster lighting — bright key so white caps read like the relief globe
+    const ambient = new THREE.AmbientLight(0xffffff, 0.88)
     scene.add(ambient)
-    const sun = new THREE.DirectionalLight(0xfff6e8, 1.15)
-    sun.position.set(-30, 180, 70)
+    const sun = new THREE.DirectionalLight(0xffffff, 0.95)
+    sun.position.set(-50, 180, 110)
     scene.add(sun)
-    const skyFill = new THREE.DirectionalLight(0xa8c8e8, 0.4)
-    skyFill.position.set(90, 60, -20)
+    const skyFill = new THREE.DirectionalLight(0xeef2f8, 0.4)
+    skyFill.position.set(110, 70, -40)
     scene.add(skyFill)
-    const rim = new THREE.DirectionalLight(0xffffff, 0.2)
-    rim.position.set(0, 40, -120)
+    const rim = new THREE.DirectionalLight(0xffffff, 0.28)
+    rim.position.set(20, 40, -120)
     scene.add(rim)
 
     const root = new THREE.Group()
-    // Added to scene via pitched `stage` after centering
-
     const loader = new SVGLoader()
     const counties: CountyEntry[] = []
     const meshList: any[] = []
 
+    // Pass 1 — measure SVG XY so we can size extrusion in true world units
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    const parsedRegions: Array<{
+      region: MapRegion
+      shapes: THREE.Shape[]
+    }> = []
+
     for (const region of regions) {
-      const value = getMetricValue(region, metric)
-      const depth = metricDepth(value, range.min, range.max)
       const svg = `<svg xmlns="http://www.w3.org/2000/svg"><path d="${region.path}"/></svg>`
       let parsed
       try {
@@ -188,34 +213,54 @@ export function InsightsUkCounties3d({
       } catch {
         continue
       }
-
-      const group = new THREE.Group()
-      group.userData = { id: region.id, name: region.name } satisfies CountyUserData
-      const meshes: any[] = []
-
+      const shapes: THREE.Shape[] = []
       for (const svgPath of parsed.paths) {
-        const shapes = SVGLoader.createShapes(svgPath)
-        for (const shape of shapes) {
-          // No bevel — coastlines + bevel = bristled/slatted side walls
-          const geometry = new THREE.ExtrudeGeometry(shape, {
-            depth,
-            bevelEnabled: false,
-            curveSegments: 3,
-            steps: 1,
-          })
-          geometry.computeVertexNormals()
-
-          const sideMat = makeCountyMaterial(true)
-          const capMat = makeCountyMaterial(false)
-          const mesh = new THREE.Mesh(geometry, [sideMat, capMat])
-          mesh.userData = { id: region.id, name: region.name } satisfies CountyUserData
-          group.add(mesh)
-          meshes.push(mesh)
-          meshList.push(mesh)
+        for (const shape of SVGLoader.createShapes(svgPath)) {
+          shapes.push(shape)
+          for (const point of shape.getPoints(16)) {
+            minX = Math.min(minX, point.x)
+            maxX = Math.max(maxX, point.x)
+            minY = Math.min(minY, point.y)
+            maxY = Math.max(maxY, point.y)
+          }
         }
       }
+      if (shapes.length) parsedRegions.push({ region, shapes })
+    }
 
-      if (!meshes.length) continue
+    const spanX = Math.max(1, maxX - minX)
+    const spanY = Math.max(1, maxY - minY)
+    const mapScale = TARGET_SPAN / Math.max(spanX, spanY)
+    const hoverLiftSvg = HOVER_LIFT_WORLD / mapScale
+
+    // Pass 2 — extrude with world-correct height, flip Y in geometry (keeps normals lit)
+    for (const { region, shapes } of parsedRegions) {
+      const value = getMetricValue(region, metric)
+      const depth = metricDepthSvg(value, range.min, range.max, mapScale)
+      const group = new THREE.Group()
+      group.userData = { id: region.id, name: region.name } satisfies CountyUserData
+      const meshes: THREE.Mesh[] = []
+
+      for (const shape of shapes) {
+        const geometry = new THREE.ExtrudeGeometry(shape, {
+          depth,
+          bevelEnabled: false,
+          curveSegments: 4,
+          steps: 1,
+        })
+        // North-up without negative root.scale (which inverted normals → flat grey look)
+        geometry.scale(1, -1, 1)
+        geometry.computeVertexNormals()
+
+        const sideMat = makeCountyMaterial(true)
+        const capMat = makeCountyMaterial(false)
+        const mesh = new THREE.Mesh(geometry, [sideMat, capMat])
+        mesh.userData = { id: region.id, name: region.name } satisfies CountyUserData
+        group.add(mesh)
+        meshes.push(mesh)
+        meshList.push(mesh)
+      }
+
       root.add(group)
       counties.push({
         id: region.id,
@@ -226,18 +271,18 @@ export function InsightsUkCounties3d({
       })
     }
 
-    // Flip SVG Y (north up); keep XYZ scale close so sides stay solid, not stretched shards
-    root.scale.set(0.09, -0.09, 0.09)
-    // Center in local space before pitching so orbit/yaw stays on the UK
-    const box = new THREE.Box3().setFromObject(root)
-    const center = box.getCenter(new THREE.Vector3())
-    root.position.set(-center.x, -center.y, -center.z)
+    root.scale.set(mapScale, mapScale, mapScale)
+    root.updateMatrixWorld(true)
+    const rawBox = new THREE.Box3().setFromObject(root)
+    const rawCenter = rawBox.getCenter(new THREE.Vector3())
+    root.position.set(-rawCenter.x, -rawCenter.y, -rawCenter.z)
 
     const stage = new THREE.Group()
     stage.add(root)
-    stage.rotation.x = TABLE_PITCH
+    stage.rotation.order = "YXZ"
+    stage.rotation.x = basePitch
+    stage.rotation.y = baseYaw
     scene.add(stage)
-    // Re-center after pitch so the UK sits in the middle of the frame
     stage.updateMatrixWorld(true)
     const pitchedBox = new THREE.Box3().setFromObject(stage)
     const pitchedCenter = pitchedBox.getCenter(new THREE.Vector3())
@@ -255,25 +300,35 @@ export function InsightsUkCounties3d({
       }
     }
 
+    // Oblique SE frame so extrusion sides read clearly (not top-down flat)
+    stage.updateMatrixWorld(true)
+    const frameBox = new THREE.Box3().setFromObject(stage)
+    const frameSize = frameBox.getSize(new THREE.Vector3())
+    const frameSpan = Math.max(frameSize.x, frameSize.y, frameSize.z, 40)
+    const distance = frameSpan * 1.7
+    camera.position.set(distance * 0.52, distance * 0.58, distance * 0.82)
+    camera.near = Math.max(0.1, distance / 100)
+    camera.far = distance * 20
+    camera.updateProjectionMatrix()
+
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = 0.08
     controls.autoRotate = false
     controls.enablePan = false
-    controls.minDistance = 110
-    controls.maxDistance = 220
-    // Keep framing near the default — slight yaw/pitch only
-    controls.minAzimuthAngle = -0.35
-    controls.maxAzimuthAngle = 0.35
-    controls.minPolarAngle = 0.55
-    controls.maxPolarAngle = 1.15
+    controls.minDistance = distance * 0.8
+    controls.maxDistance = distance * 2.2
+    controls.minAzimuthAngle = -0.5
+    controls.maxAzimuthAngle = 0.5
+    controls.minPolarAngle = 0.65
+    controls.maxPolarAngle = 1.2
     controls.target.set(0, 0, 0)
+    controls.update()
 
     const raycaster = new THREE.Raycaster()
     const pointer = new THREE.Vector2()
     let frame = 0
     let disposed = false
-    const started = performance.now()
 
     function resize() {
       if (!container) return
@@ -319,7 +374,7 @@ export function InsightsUkCounties3d({
         const isSelected = selected === entry.id
         const isHovered = hovered === entry.id
         const dimmed = selected !== ALL_COUNTIES && !isSelected
-        entry.targetZ = isHovered || isSelected ? HOVER_LIFT : 0
+        entry.targetZ = isHovered || isSelected ? hoverLiftSvg : 0
         for (const mesh of entry.meshes) {
           paintMesh(mesh, value, r, isSelected, isHovered, dimmed)
         }
@@ -330,10 +385,9 @@ export function InsightsUkCounties3d({
       if (disposed) return
       frame = requestAnimationFrame(tick)
 
-      // Subtle yaw only — outline stays north-up
-      const t = (performance.now() - started) * 0.00022
-      stage.rotation.y = Math.sin(t) * 0.03
-      stage.rotation.x = TABLE_PITCH
+      // Keep pitch/yaw locked — no sway (it made tall countries look unstable)
+      stage.rotation.x = basePitch
+      stage.rotation.y = baseYaw
 
       for (const entry of counties) {
         entry.group.position.z += (entry.targetZ - entry.group.position.z) * 0.18
@@ -379,7 +433,7 @@ export function InsightsUkCounties3d({
       delete (container as HTMLDivElement & { __uk3dSync?: unknown }).__uk3dSync
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regions])
+  }, [regions, country])
 
   useEffect(() => {
     const container = containerRef.current as

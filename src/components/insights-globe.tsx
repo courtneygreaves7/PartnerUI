@@ -1,9 +1,12 @@
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Globe, { type GlobeMethods } from "react-globe.gl"
+import { Globe2 } from "lucide-react"
+import { Color } from "three"
 import { feature } from "topojson-client"
 import type { Feature, FeatureCollection, Geometry, Position } from "geojson"
 import type { Topology } from "topojson-specification"
 
+import { CountryFlag } from "@/components/country-flag"
 import {
   buildGlobeCountryStats,
   GLOBE_COUNTRY_FOCUS,
@@ -13,6 +16,7 @@ import {
   type GlobeCountryStats,
   type GlobeFocusId,
 } from "@/lib/insights-globe-data"
+import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
 import { cn } from "@/lib/utils"
 
 type InsightsGlobeProps = {
@@ -22,9 +26,16 @@ type InsightsGlobeProps = {
   onOpenCountry?: (code: string) => void
 }
 
-type CountryFeature = Feature<Geometry, { stats: GlobeCountryStats }>
+type CountryFeature = Feature<
+  Geometry,
+  {
+    /** True when this country has mock portfolio properties. */
+    isPortfolio: boolean
+    stats: GlobeCountryStats | null
+  }
+>
 
-type GlobeStyleId = "classic" | "particles" | "relief" | "holo"
+type GlobeStyleId = "classic" | "relief" | "holo"
 
 class GlobeErrorBoundary extends Component<
   { children: ReactNode; onError: (message: string) => void },
@@ -50,16 +61,32 @@ const GLOBE_STYLES: {
   id: GlobeStyleId
   label: string
   hint: string
+  /** Hidden styles stay implemented but off the picker for now. */
+  hidden?: boolean
 }[] = [
-  { id: "classic", label: "Classic", hint: "Marble + UK / France / Spain glowing outlines" },
-  { id: "particles", label: "Particles", hint: "Point-cloud of all landmasses" },
-  { id: "relief", label: "Relief", hint: "Soft off-white globe · low extruded land" },
-  { id: "holo", label: "Holo", hint: "Wireframe + glow borders" },
+  { id: "classic", label: "Classic", hint: "Marble + UK / France / Spain glowing outlines", hidden: true },
+  { id: "relief", label: "Relief", hint: "White stage · plaster globe · soft land relief" },
+  { id: "holo", label: "Holo", hint: "Wireframe + glow borders", hidden: true },
 ]
 
-const PARTICLE_COLORS = ["#5ef0ff", "#b8ff4a", "#ffe566"] as const
+const GLOBE_STYLE_OPTIONS = GLOBE_STYLES.filter((style) => !style.hidden)
 
 const CDN = "//cdn.jsdelivr.net/npm/three-globe/example/img"
+
+/** Soft plaster ocean — cream (not pure white) so any cap gaps stay subtle. */
+const RELIEF_GLOBE_IMAGE =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="8"><rect width="16" height="8" fill="#dedcd7"/></svg>`
+  )
+
+/** Dark forest green for portfolio hover — reads clearly on plaster white. */
+const HOVER_GREEN = "#1F5C3D"
+
+/** Natural Earth numeric ids that break conic polygon caps (polar / antimeridian). */
+const RELIEF_SKIP_ISO = new Set([
+  "010", // Antarctica
+])
 
 function readCssColor(variable: string, fallback: string) {
   if (typeof window === "undefined") return fallback
@@ -76,61 +103,10 @@ function withAlpha(hex: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-function walkCoords(geometry: Geometry, visit: (coord: Position) => void) {
-  if (geometry.type === "Polygon") {
-    for (const ring of geometry.coordinates) for (const c of ring) visit(c)
-  } else if (geometry.type === "MultiPolygon") {
-    for (const poly of geometry.coordinates)
-      for (const ring of poly) for (const c of ring) visit(c)
-  }
-}
-
 /** Deterministic-ish jitter from a number seed. */
 function hashUnit(n: number) {
   const x = Math.sin(n * 12.9898) * 43758.5453
   return x - Math.floor(x)
-}
-
-function sampleLandParticles(geometries: Geometry[]) {
-  const groups: { particles: { lat: number; lng: number; alt: number }[]; color: string; size: number }[] =
-    PARTICLE_COLORS.map((color, index) => ({
-      particles: [],
-      color,
-      size: index === 0 ? 0.7 : index === 1 ? 0.9 : 0.55,
-    }))
-
-  const vertSets = geometries.map((geometry) => {
-    const verts: Position[] = []
-    walkCoords(geometry, (c) => verts.push(c))
-    return verts
-  })
-  const totalVerts = vertSets.reduce((sum, verts) => sum + verts.length, 0)
-  if (!totalVerts) return []
-
-  // Enough points to read continents without melting the GPU
-  const TARGET = 7800
-
-  vertSets.forEach((verts, featureIndex) => {
-    if (verts.length < 3) return
-    const share = verts.length / totalVerts
-    const density = Math.max(4, Math.round(share * TARGET))
-
-    for (let i = 0; i < density; i++) {
-      const base = verts[Math.floor(hashUnit(featureIndex * 997 + i) * verts.length)]
-      // Tight jitter so particles stay on land rather than drifting into ocean
-      const jitter = 0.06 + hashUnit(featureIndex + i * 17) * 0.28
-      const lat = base[1] + (hashUnit(i * 3.1 + featureIndex) - 0.5) * jitter
-      const lng = base[0] + (hashUnit(i * 7.7 + featureIndex) - 0.5) * jitter
-      const colorIndex = Math.floor(hashUnit(featureIndex * 13 + i) * 3)
-      groups[colorIndex].particles.push({
-        lat,
-        lng,
-        alt: 0.003 + hashUnit(i + featureIndex * 2) * 0.012,
-      })
-    }
-  })
-
-  return groups.filter((g) => g.particles.length > 0)
 }
 
 function buildGraticule() {
@@ -232,12 +208,15 @@ function buildInteriorStars(count = 520) {
 }
 
 type GlobeMaterialLike = {
-  color?: { set: (hex: string) => void }
+  color?: Color | null
   emissive?: { set: (hex: string) => void }
   emissiveIntensity?: number
   transparent?: boolean
   opacity?: number
   shininess?: number
+  map?: unknown | null
+  bumpMap?: unknown | null
+  needsUpdate?: boolean
 }
 
 function applyGlobeMaterialStyle(globe: GlobeMethods, style: GlobeStyleId) {
@@ -246,26 +225,24 @@ function applyGlobeMaterialStyle(globe: GlobeMethods, style: GlobeStyleId) {
     const mat = (globe as GlobeMethods & { globeMaterial: () => GlobeMaterialLike }).globeMaterial()
     if (!mat) return
     if (style === "relief") {
-      mat.color?.set("#efece6")
-      mat.emissive?.set("#e8e4dc")
-      mat.emissiveIntensity = 0.22
+      mat.bumpMap = null
+      // Solid plaster texture is set via RELIEF_GLOBE_IMAGE; keep colour white so it isn't tinted
+      if (!mat.color) mat.color = new Color("#ffffff")
+      else mat.color.set("#ffffff")
+      mat.emissive?.set("#f2f0eb")
+      mat.emissiveIntensity = 0.2
       mat.transparent = false
       mat.opacity = 1
-      mat.shininess = 4
+      mat.shininess = 2
+      mat.needsUpdate = true
     } else if (style === "holo") {
-      mat.color?.set("#0a0e16")
+      if (!mat.color) mat.color = new Color("#0a0e16")
+      else mat.color.set("#0a0e16")
       mat.emissive?.set("#121826")
       mat.emissiveIntensity = 0.35
       mat.transparent = true
       mat.opacity = 0.55
       mat.shininess = 40
-    } else if (style === "particles") {
-      mat.color?.set("#05070c")
-      mat.emissive?.set("#0a1018")
-      mat.emissiveIntensity = 0.2
-      mat.transparent = true
-      mat.opacity = 0.92
-      mat.shininess = 6
     }
   } catch {
     // Globe may be mid-remount (React Strict Mode) — skip until ready again
@@ -277,12 +254,13 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 800, height: 560 })
   const [focus, setFocus] = useState<GlobeFocusId>("world")
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null)
   const [hoveredCountry, setHoveredCountry] = useState<CountryFeature | null>(null)
   const [countries, setCountries] = useState<CountryFeature[]>([])
-  const [landGeometries, setLandGeometries] = useState<Geometry[]>([])
+  const [otherCountries, setOtherCountries] = useState<CountryFeature[]>([])
   const [outlineFeatures, setOutlineFeatures] = useState<OutlineFeature[]>([])
   const [ready, setReady] = useState(false)
-  const [globeStyle, setGlobeStyle] = useState<GlobeStyleId>("classic")
+  const [globeStyle, setGlobeStyle] = useState<GlobeStyleId>("relief")
   const [globeError, setGlobeError] = useState<string | null>(null)
   const [globeMountId, setGlobeMountId] = useState(0)
 
@@ -290,26 +268,32 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
   const primary = readCssColor("--primary", "#006BFF")
   const sage = readCssColor("--brand-accent", "#6F8F7A")
 
-  const isDarkStage = globeStyle === "particles" || globeStyle === "holo"
+  const isDarkStage = globeStyle === "holo"
   const isRelief = globeStyle === "relief"
-  const isParticles = globeStyle === "particles"
   const isHolo = globeStyle === "holo"
   const isClassic = globeStyle === "classic"
 
   const visibleCountries = useMemo(() => {
     const region = GLOBE_REGION_COUNTRIES[focus]
     if (region === "all") return countries
-    return countries.filter((item) => region.includes(item.properties.stats.code))
+    return countries.filter((item) => {
+      const code = item.properties.stats?.code
+      return code ? region.includes(code) : false
+    })
   }, [countries, focus])
 
-  const countryOptions = useMemo(
-    () => buildGlobeCountryStats().sort((a, b) => a.name.localeCompare(b.name)),
-    []
-  )
+  /** Relief shows full world landmasses; portfolio countries stay white on top. */
+  const polygonsData = useMemo(() => {
+    if (isRelief) return [...otherCountries, ...countries]
+    return visibleCountries
+  }, [isRelief, otherCountries, countries, visibleCountries])
 
-  const particleSets = useMemo(
-    () => (isParticles ? sampleLandParticles(landGeometries) : []),
-    [isParticles, landGeometries]
+  const countryOptions = useMemo(
+    () =>
+      buildGlobeCountryStats()
+        .filter((row) => row.properties > 0)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    []
   )
 
   const graticule = useMemo(() => (isHolo ? buildGraticule() : []), [isHolo])
@@ -323,16 +307,13 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
     // Glowing coast outlines are for Classic (and Holo grid); Relief stays clean monochrome
     if (isRelief) return []
     if (isHolo) return [...graticule, ...glowOutlines]
-    if (isParticles) return []
     return glowOutlines
-  }, [glowOutlines, graticule, isHolo, isParticles, isRelief])
+  }, [glowOutlines, graticule, isHolo, isRelief])
 
   const starSets = useMemo(() => (isHolo ? buildInteriorStars() : []), [isHolo])
 
   // Invisible hit polygons in classic — outlines carry the look
   const outlineOnlyVisual = isClassic
-  // Keep near-invisible polygons in particles mode so hover/click still work
-  const particlesOnlyVisual = isParticles
 
   useEffect(() => {
     let cancelled = false
@@ -350,20 +331,37 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
         ) as unknown as FeatureCollection
         const stats = buildGlobeCountryStats()
         const byIso = new Map(stats.map((row) => [row.isoId, row]))
-        const next = collection.features
-          .filter((item) => byIso.has(String(item.id)))
-          .map((item) => ({
-            ...item,
-            properties: {
-              stats: byIso.get(String(item.id))!,
-            },
-          })) as CountryFeature[]
-        const allLand = collection.features
-          .map((item) => item.geometry)
-          .filter((geom): geom is Geometry => Boolean(geom))
+        const portfolio: CountryFeature[] = []
+        const others: CountryFeature[] = []
+
+        for (const item of collection.features) {
+          if (!item.geometry) continue
+          const isoId = String(item.id)
+          const row = byIso.get(isoId)
+          if (row) {
+            portfolio.push({
+              ...item,
+              properties: {
+                isPortfolio: true,
+                stats: row,
+              },
+            } as CountryFeature)
+          } else {
+            // Skip polar shells that tear white shards through the relief mesh
+            if (RELIEF_SKIP_ISO.has(isoId)) continue
+            others.push({
+              ...item,
+              properties: {
+                isPortfolio: false,
+                stats: null,
+              },
+            } as CountryFeature)
+          }
+        }
+
         if (!cancelled) {
-          setCountries(next)
-          setLandGeometries(allLand)
+          setCountries(portfolio)
+          setOtherCountries(others)
         }
       } catch (error) {
         console.error("Failed to load country polygons:", error)
@@ -424,22 +422,39 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
       )
 
       const controls = globe.controls()
-      controls.autoRotate = !hoveredCountry
-      controls.autoRotateSpeed = 0.45
       controls.enableDamping = true
       controls.enableRotate = true
       controls.enableZoom = true
       controls.minDistance = 120
       controls.maxDistance = 500
+      // Allow looking at both poles (default orbit clamps can hide them)
+      controls.minPolarAngle = 0.05
+      controls.maxPolarAngle = Math.PI - 0.05
+      controls.autoRotateSpeed = 0.45
     } catch {
       // Ignore during Strict Mode remount / WebGL teardown
     }
-  }, [focus, ready, hoveredCountry])
+  }, [focus, ready])
+
+  // Pause spin on hover without resetting the camera
+  useEffect(() => {
+    const globe = globeRef.current
+    if (!globe || !ready) return
+    try {
+      globe.controls().autoRotate = !hoveredCountry
+    } catch {
+      // ignore mid-teardown
+    }
+  }, [hoveredCountry, ready])
 
   useEffect(() => {
     const globe = globeRef.current
     if (!globe || !ready) return
-    applyGlobeMaterialStyle(globe, globeStyle)
+    // Run after react-globe applies globeImageUrl (empty url otherwise forces black)
+    const frame = requestAnimationFrame(() => {
+      applyGlobeMaterialStyle(globe, globeStyle)
+    })
+    return () => cancelAnimationFrame(frame)
   }, [globeStyle, ready])
 
   // Reset readiness whenever the WebGL instance is torn down (Strict Mode / unmount)
@@ -449,17 +464,16 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
     }
   }, [])
 
-  const layerParticles = useMemo(
-    () => [...particleSets, ...starSets],
-    [particleSets, starSets]
-  )
+  const layerParticles = starSets
 
   function selectFocus(next: GlobeFocusId) {
     setFocus(next)
+    setSelectedCountryCode(null)
   }
 
   /** Open country detail map when available; otherwise fly the globe to that country. */
   function openCountry(code: string) {
+    setSelectedCountryCode(code)
     if (code === "UK" || code === "FR" || code === "ES") {
       if (onOpenCountry) {
         onOpenCountry(code)
@@ -485,17 +499,25 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
     else setFocus("europe")
   }
 
-  const activeHover = hoveredCountry
-    ? {
-        title: hoveredCountry.properties.stats.name,
-        meta: `${hoveredCountry.properties.stats.hubs} hubs · ${hoveredCountry.properties.stats.market === "us" ? "United States" : "Europe"}`,
-        detail: `${hoveredCountry.properties.stats.properties} properties · ${hoveredCountry.properties.stats.bookings.toLocaleString("en-GB")} bookings`,
-        code: hoveredCountry.properties.stats.code,
-      }
-    : null
-
+  const hoverStats = hoveredCountry?.properties.stats ?? null
   const focusLabel = GLOBE_FOCUS[focus].label
-  const styleHint = GLOBE_STYLES.find((s) => s.id === globeStyle)?.hint
+  const cardTitle = hoverStats?.name ?? "Global portfolio"
+  const cardProperties = hoverStats?.properties ?? summary.properties
+  const cardHubs = hoverStats?.hubs ?? summary.hubs
+  const cardBookings = hoverStats?.bookings ?? summary.bookings
+  const cardBadge = hoverStats
+    ? hoverStats.market === "us"
+      ? "United States"
+      : "Europe"
+    : focusLabel
+  const cardHint = hoverStats
+    ? hoverStats.code === "UK" || hoverStats.code === "FR" || hoverStats.code === "ES"
+      ? "Click to open country map"
+      : "Click to fly to country"
+    : "Hover · click for detail"
+  const cardSubline = hoverStats ? "properties in this market" : "properties across the book"
+
+  const activeStyle = GLOBE_STYLES.find((s) => s.id === globeStyle)
 
   return (
     <div
@@ -504,72 +526,185 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
         "relative h-full min-h-[360px] w-full overflow-hidden transition-colors duration-500",
         className,
         isDarkStage && "bg-[#05070c]",
-        isRelief && "bg-[#f3f1ec]",
+        isRelief && "bg-[#f5f5f3]",
         isClassic && "bg-transparent"
       )}
     >
+      {isRelief ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_#ffffff_0%,_#f3f4f6_55%,_#eceef2_100%)]"
+        />
+      ) : null}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <div
           className={cn(
-            "rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm",
+            "w-[min(100%,17.5rem)] overflow-hidden rounded-xl border shadow-xs backdrop-blur-sm transition-[box-shadow,border-color] duration-200",
             isDarkStage
-              ? "border-white/10 bg-black/55 text-white"
-              : "border-border/50 bg-background/90"
+              ? "border-white/12 bg-black/70 text-white"
+              : "border-border bg-card/95 text-card-foreground",
+            hoverStats &&
+              (isDarkStage
+                ? "border-white/25 shadow-md"
+                : "border-primary/25 shadow-md")
           )}
         >
-          <p
-            className={cn(
-              "text-[11px] font-medium uppercase tracking-[0.16em]",
-              isDarkStage ? "text-white/55" : "text-muted-foreground"
-            )}
-          >
-            Global portfolio
-          </p>
-          <p className={cn("mt-1 text-sm", isDarkStage ? "text-white" : "text-foreground")}>
-            {summary.properties.toLocaleString("en-GB")} properties · {focusLabel}
-          </p>
-          <p className={cn("mt-0.5 text-xs", isDarkStage ? "text-white/50" : "text-muted-foreground")}>
-            {styleHint}
-            {" · hover to lift · click a country for detail"}
-          </p>
-        </div>
-
-        <div
-          className={cn(
-            "pointer-events-auto rounded-xl border p-1.5 shadow-sm backdrop-blur-sm",
-            isDarkStage ? "border-white/10 bg-black/55" : "border-border/50 bg-background/90"
-          )}
-        >
-          <p
-            className={cn(
-              "px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-[0.14em]",
-              isDarkStage ? "text-white/45" : "text-muted-foreground"
-            )}
-          >
-            Globe style
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {GLOBE_STYLES.map((style) => (
-              <button
-                key={style.id}
-                type="button"
-                onClick={() => setGlobeStyle(style.id)}
+          <div className="flex items-center gap-2.5 px-4 pb-2 pt-4">
+            {hoverStats ? (
+              <CountryFlag
+                code={hoverStats.code}
+                className="size-9 shadow-xs"
+              />
+            ) : (
+              <span
                 className={cn(
-                  "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-                  globeStyle === style.id
-                    ? isDarkStage
-                      ? "bg-white text-black shadow-sm"
-                      : "bg-primary text-primary-foreground shadow-sm"
-                    : isDarkStage
-                      ? "text-white/60 hover:text-white"
-                      : "text-muted-foreground hover:text-foreground"
+                  "grid size-9 shrink-0 place-items-center rounded-xl",
+                  isDarkStage ? "bg-white/10 text-white" : "bg-muted text-foreground"
                 )}
               >
-                {style.label}
-              </button>
-            ))}
+                <Globe2 className="size-4" strokeWidth={2} />
+              </span>
+            )}
+            <h3
+              className={cn(
+                "min-w-0 text-sm font-semibold",
+                isDarkStage ? "text-white" : "text-foreground"
+              )}
+            >
+              {cardTitle}
+            </h3>
+          </div>
+
+          <div className="flex flex-col gap-2 px-4 pb-4">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <p
+                className={cn(
+                  "font-bold tracking-tight tabular-nums",
+                  FIGURE_24PX_CLASS,
+                  isDarkStage ? "text-white" : "text-foreground"
+                )}
+              >
+                {cardProperties.toLocaleString("en-GB")}
+              </p>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium",
+                  isDarkStage ? "bg-white/10 text-white/70" : "text-muted-foreground"
+                )}
+              >
+                {cardBadge}
+              </span>
+            </div>
+            <p
+              className={cn(
+                "text-xs italic",
+                isDarkStage ? "text-white/55" : "text-muted-foreground"
+              )}
+            >
+              {cardSubline}
+            </p>
+
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <div
+                className={cn(
+                  "rounded-lg border px-2.5 py-2",
+                  isDarkStage ? "border-white/10 bg-white/[0.04]" : "border-border/60 bg-muted/40"
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-[10px] font-medium uppercase tracking-wide",
+                    isDarkStage ? "text-white/45" : "text-muted-foreground"
+                  )}
+                >
+                  Hubs
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-sm font-semibold tabular-nums",
+                    isDarkStage ? "text-white" : "text-foreground"
+                  )}
+                >
+                  {cardHubs}
+                </p>
+              </div>
+              <div
+                className={cn(
+                  "rounded-lg border px-2.5 py-2",
+                  isDarkStage ? "border-white/10 bg-white/[0.04]" : "border-border/60 bg-muted/40"
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-[10px] font-medium uppercase tracking-wide",
+                    isDarkStage ? "text-white/45" : "text-muted-foreground"
+                  )}
+                >
+                  Bookings
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-sm font-semibold tabular-nums",
+                    isDarkStage ? "text-white" : "text-foreground"
+                  )}
+                >
+                  {cardBookings.toLocaleString("en-GB")}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                "mt-1 flex items-center justify-between gap-2 border-t pt-3 text-[10px]",
+                isDarkStage
+                  ? "border-white/10 text-white/45"
+                  : "border-border/60 text-muted-foreground"
+              )}
+            >
+              <span className="truncate font-medium">{activeStyle?.label ?? "Globe"}</span>
+              <span className="shrink-0">{cardHint}</span>
+            </div>
           </div>
         </div>
+
+        {GLOBE_STYLE_OPTIONS.length > 1 ? (
+          <div
+            className={cn(
+              "pointer-events-auto rounded-xl border p-1.5 shadow-xs backdrop-blur-sm",
+              isDarkStage ? "border-white/10 bg-black/55" : "border-border bg-card/95"
+            )}
+          >
+            <p
+              className={cn(
+                "px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-[0.14em]",
+                isDarkStage ? "text-white/45" : "text-muted-foreground"
+              )}
+            >
+              Globe style
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {GLOBE_STYLE_OPTIONS.map((style) => (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => setGlobeStyle(style.id)}
+                  className={cn(
+                    "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    globeStyle === style.id
+                      ? isDarkStage
+                        ? "bg-white text-black shadow-sm"
+                        : "bg-primary text-primary-foreground shadow-sm"
+                      : isDarkStage
+                        ? "text-white/60 hover:text-white"
+                        : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {style.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {globeError ? (
@@ -614,100 +749,132 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             showGlobe
             showAtmosphere
             atmosphereColor={
-              isParticles ? "#5ef0ff" : isRelief ? "#d9d4cb" : isHolo ? "#e8eef8" : primary
+              isRelief ? "#c9d0da" : isHolo ? "#e8eef8" : primary
             }
-            atmosphereAltitude={isHolo ? 0.22 : isRelief ? 0.1 : 0.14}
+            atmosphereAltitude={isHolo ? 0.22 : isRelief ? 0.12 : 0.14}
             globeImageUrl={
               isClassic
                 ? `${CDN}/earth-blue-marble.jpg`
                 : isHolo
                   ? `${CDN}/earth-night.jpg`
-                  : undefined
+                  : isRelief
+                    ? RELIEF_GLOBE_IMAGE
+                    : undefined
             }
             bumpImageUrl={
-              isParticles || isRelief
+              isRelief
                 ? undefined
                 : isClassic
                   ? `${CDN}/earth-topology.png`
                   : undefined
             }
-            polygonsData={visibleCountries}
+            polygonsData={polygonsData}
+            polygonCapCurvatureResolution={isRelief ? 2 : 5}
             polygonAltitude={(featureObj) => {
               const poly = featureObj as CountryFeature
-              const props = poly.properties.stats.properties
+              const isPortfolio = poly.properties.isPortfolio
+              const props = poly.properties.stats?.properties ?? 0
               const raised =
-                hoveredCountry?.properties.stats.code === poly.properties.stats.code
+                isPortfolio &&
+                hoveredCountry?.properties.stats?.code === poly.properties.stats?.code
 
+              // Classic: flat invisible hit targets — no altitude pop (avoids hover flicker)
               if (outlineOnlyVisual) {
-                return raised ? 0.012 : 0.002
-              }
-              if (particlesOnlyVisual) {
-                return raised ? 0.02 : 0.004
+                return 0.0015
               }
               if (isRelief) {
+                if (!isPortfolio) {
+                  // Slightly higher than sphere so grey caps seal over curvature gaps
+                  return 0.007
+                }
                 // Sit close to the globe — soft relief, not floating shells
-                const base = 0.008 + Math.min(0.016, props / 5200)
-                return raised ? base + 0.014 : base
+                const base = 0.01 + Math.min(0.014, props / 5200)
+                return raised ? base + 0.008 : base
               }
               if (isHolo) {
                 const base = 0.012
-                return raised ? base + 0.04 : base
+                return raised ? base + 0.025 : base
               }
               const base = 0.03 + Math.min(0.07, props / 4500)
-              return raised ? base + 0.1 : base
+              return raised ? base + 0.06 : base
             }}
             polygonCapColor={(featureObj) => {
               const poly = featureObj as CountryFeature
+              const isPortfolio = poly.properties.isPortfolio
               const raised =
-                hoveredCountry?.properties.stats.code === poly.properties.stats.code
+                isPortfolio &&
+                hoveredCountry?.properties.stats?.code === poly.properties.stats?.code
 
               if (outlineOnlyVisual) {
-                return raised ? withAlpha(primary, 0.18) : "rgba(0,0,0,0)"
-              }
-              if (particlesOnlyVisual) {
-                return raised ? "rgba(94,240,255,0.12)" : "rgba(94,240,255,0.03)"
+                // Soft wash only — no opaque pop that fights the marble texture
+                return raised ? withAlpha(HOVER_GREEN, 0.22) : "rgba(0,0,0,0)"
               }
               if (isRelief) {
-                return raised ? "rgba(255,255,255,1)" : "rgba(252,250,246,0.98)"
+                if (!isPortfolio) {
+                  return "rgba(198,198,194,1)"
+                }
+                // Portfolio hover — dark green so the country reads clearly on plaster
+                return raised ? withAlpha(HOVER_GREEN, 0.94) : "rgba(252,250,246,0.98)"
               }
               if (isHolo) {
                 return raised ? "rgba(220,230,245,0.55)" : "rgba(170,185,210,0.28)"
               }
-              const color = poly.properties.stats.market === "us" ? sage : primary
+              const color = poly.properties.stats?.market === "us" ? sage : primary
               return withAlpha(color, raised ? 0.88 : 0.45)
             }}
-            polygonSideColor={() => {
+            polygonSideColor={(featureObj) => {
+              const poly = featureObj as CountryFeature
+              const raised =
+                poly.properties.isPortfolio &&
+                hoveredCountry?.properties.stats?.code === poly.properties.stats?.code
               if (outlineOnlyVisual) return "rgba(0,0,0,0)"
-              if (particlesOnlyVisual) return "rgba(94,240,255,0.05)"
-              if (isRelief) return "rgba(214,208,198,0.95)"
+              if (isRelief) {
+                // Hide context sides — conic walls cause bright spike artifacts on large lands
+                if (!poly.properties.isPortfolio) return "rgba(0,0,0,0)"
+                return raised ? withAlpha(HOVER_GREEN, 0.82) : "rgba(214,208,198,0.95)"
+              }
               if (isHolo) return "rgba(210,220,240,0.35)"
               return "rgba(0,0,0,0)"
             }}
-            polygonStrokeColor={() => {
+            polygonStrokeColor={(featureObj) => {
+              const poly = featureObj as CountryFeature
+              const raised =
+                poly.properties.isPortfolio &&
+                hoveredCountry?.properties.stats?.code === poly.properties.stats?.code
               if (outlineOnlyVisual) return "rgba(0,0,0,0)"
-              if (particlesOnlyVisual) return "rgba(94,240,255,0.15)"
-              if (isRelief) return "rgba(198,192,182,0.45)"
+              if (isRelief) {
+                if (!poly.properties.isPortfolio) return "rgba(160,160,156,0.25)"
+                return raised ? withAlpha(HOVER_GREEN, 0.65) : "rgba(198,192,182,0.45)"
+              }
               if (isHolo) return "rgba(255,255,255,0.95)"
               return "rgba(0,0,0,0)"
             }}
-            polygonsTransitionDuration={320}
+            polygonsTransitionDuration={outlineOnlyVisual ? 0 : 180}
             onPolygonHover={(featureObj) => {
-              setHoveredCountry((featureObj as CountryFeature | null) ?? null)
+              const next = (featureObj as CountryFeature | null) ?? null
+              const usable = next?.properties.isPortfolio ? next : null
+              setHoveredCountry((prev) => {
+                const prevCode = prev?.properties.stats?.code
+                const nextCode = usable?.properties.stats?.code
+                if (prevCode === nextCode) return prev
+                return usable
+              })
             }}
             onPolygonClick={(featureObj) => {
               const poly = featureObj as CountryFeature | null
-              if (!poly) return
-              openCountry(poly.properties.stats.code)
+              const code = poly?.properties.stats?.code
+              if (!code) return
+              openCountry(code)
             }}
             pathsData={pathsData}
             pathPoints="coords"
             pathPointLat={(p) => (p as [number, number])[0]}
             pathPointLng={(p) => (p as [number, number])[1]}
-            pathPointAlt={0.012}
+            pathPointAlt={0.008}
             pathColor={(d) => (d as GlowPath).color}
             pathStroke={(d) => (d as GlowPath).stroke}
             pathResolution={1.2}
-            pathTransitionDuration={600}
+            pathTransitionDuration={0}
             particlesData={layerParticles}
             particlesList="particles"
             particlesColor={(d) => (d as { color?: string }).color ?? "#ffffff"}
@@ -720,118 +887,75 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
               setReady(true)
               setGlobeError(null)
               const globe = globeRef.current
-              if (globe) applyGlobeMaterialStyle(globe, globeStyle)
+              if (!globe) return
+              applyGlobeMaterialStyle(globe, globeStyle)
+              try {
+                const controls = globe.controls()
+                controls.autoRotate = true
+                controls.autoRotateSpeed = 0.45
+                controls.minPolarAngle = 0.05
+                controls.maxPolarAngle = Math.PI - 0.05
+              } catch {
+                // ignore
+              }
             }}
             animateIn={false}
           />
         </GlobeErrorBoundary>
       ) : null}
 
-      {activeHover ? (
-        <div
-          className={cn(
-            "pointer-events-none absolute bottom-28 left-4 z-10 max-w-xs rounded-xl border px-4 py-3 shadow-md backdrop-blur-sm",
-            isDarkStage
-              ? "border-white/15 bg-black/70 text-white"
-              : "border-border/60 bg-background/95"
-          )}
-        >
-          <p
-            className={cn(
-              "text-[10px] font-medium uppercase tracking-[0.14em]",
-              isDarkStage ? "text-white/50" : "text-muted-foreground"
-            )}
-          >
-            {activeHover.meta}
-          </p>
-          <p className={cn("mt-1 text-sm font-semibold", isDarkStage ? "text-white" : "text-foreground")}>
-            {activeHover.title}
-          </p>
-          <p className={cn("mt-1 text-xs", isDarkStage ? "text-white/55" : "text-muted-foreground")}>
-            {activeHover.detail}
-          </p>
-          <p className={cn("mt-1.5 text-[10px]", isDarkStage ? "text-white/40" : "text-muted-foreground")}>
-            {activeHover.code === "UK" || activeHover.code === "FR" || activeHover.code === "ES"
-              ? "Click to open country map"
-              : "Click to fly to country"}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div
-            className={cn(
-              "flex flex-wrap gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-sm",
-              isDarkStage ? "border-white/10 bg-black/55" : "border-border/50 bg-background/90"
-            )}
-          >
-            {(Object.keys(GLOBE_FOCUS) as GlobeFocusId[]).map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => selectFocus(id)}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                  focus === id
-                    ? isDarkStage
-                      ? "bg-white text-black shadow-sm"
-                      : "bg-primary text-primary-foreground shadow-sm"
-                    : isDarkStage
-                      ? "text-white/60 hover:text-white"
-                      : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {GLOBE_FOCUS[id].label}
-              </button>
-            ))}
-          </div>
-
-          {onOpenUkDetail ? (
-            <button
-              type="button"
-              onClick={onOpenUkDetail}
-              className={cn(
-                "rounded-xl border px-3.5 py-2 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors",
-                isDarkStage
-                  ? "border-white/10 bg-black/55 text-white hover:border-white/30"
-                  : "border-border/50 bg-background/90 text-foreground hover:border-primary/30 hover:text-primary"
-              )}
-            >
-              UK county map →
-            </button>
-          ) : null}
-        </div>
-
-        <div
-          className={cn(
-            "flex flex-wrap gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-sm",
-            isDarkStage ? "border-white/10 bg-black/55" : "border-border/50 bg-background/90"
-          )}
-        >
+      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-end gap-2 p-4">
+        <div className="flex max-w-[min(100%,36rem)] flex-col items-end gap-1.5">
           <span
             className={cn(
-              "px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.14em]",
+              "px-1 text-[10px] font-medium uppercase tracking-[0.14em]",
               isDarkStage ? "text-white/45" : "text-muted-foreground"
             )}
           >
             Countries
           </span>
-          {countryOptions.map((country) => (
+          <div className="flex flex-wrap justify-end gap-1.5">
             <button
-              key={country.code}
               type="button"
-              onClick={() => openCountry(country.code)}
+              onClick={() => selectFocus("world")}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                isDarkStage
-                  ? "text-white/60 hover:bg-white/10 hover:text-white"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors",
+                focus === "world"
+                  ? isDarkStage
+                    ? "border-white bg-white text-black"
+                    : "border-primary bg-primary text-primary-foreground"
+                  : isDarkStage
+                    ? "border-white/12 bg-black/55 text-white/80 hover:border-white/30 hover:bg-black/70 hover:text-white"
+                    : "border-border/60 bg-background/95 text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
               )}
             >
-              {country.name}
+              <Globe2 className="size-3.5 shrink-0" strokeWidth={2} />
+              <span>World</span>
             </button>
-          ))}
+            {countryOptions.map((country) => {
+              const isActive = selectedCountryCode === country.code
+              return (
+                <button
+                  key={country.code}
+                  type="button"
+                  onClick={() => openCountry(country.code)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors",
+                    isActive
+                      ? isDarkStage
+                        ? "border-white bg-white text-black"
+                        : "border-primary bg-primary text-primary-foreground"
+                      : isDarkStage
+                        ? "border-white/12 bg-black/55 text-white/80 hover:border-white/30 hover:bg-black/70 hover:text-white"
+                        : "border-border/60 bg-background/95 text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                  )}
+                >
+                  <CountryFlag code={country.code} />
+                  <span>{country.name}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

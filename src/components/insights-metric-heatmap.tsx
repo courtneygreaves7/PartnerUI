@@ -140,8 +140,9 @@ function DimensionSelect({
 function cellBackground(value: number | null, min: number, max: number) {
   if (value === null) return "transparent"
   const t = heatIntensity(value, min, max)
-  const alpha = 0.12 + t * 0.72
-  return `color-mix(in oklab, var(--color-primary) ${Math.round(alpha * 100)}%, transparent)`
+  // Pale → deep primary, matching swatch-style heatmaps.
+  const alpha = 0.14 + t * 0.82
+  return `color-mix(in oklab, var(--color-primary) ${Math.round(alpha * 100)}%, white)`
 }
 
 type InsightsMetricHeatmapProps = {
@@ -262,10 +263,10 @@ export function InsightsMetricHeatmap({
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[28rem] border-separate border-spacing-1">
+        <table className="w-full min-w-[28rem] border-separate border-spacing-1.5">
           <thead>
             <tr>
-              <th className="px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+              <th className="w-20 px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
                 {
                   HEAT_DIMENSION_OPTIONS.find((option) => option.id === rowDim)
                     ?.label
@@ -274,7 +275,7 @@ export function InsightsMetricHeatmap({
               {matrix.colBands.map((col) => (
                 <th
                   key={col.id}
-                  className="px-1 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+                  className="px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
                 >
                   {col.label}
                 </th>
@@ -284,35 +285,45 @@ export function InsightsMetricHeatmap({
           <tbody>
             {matrix.rowBands.map((row, rowIndex) => (
               <tr key={row.id}>
-                <th className="whitespace-nowrap px-1 py-1 text-left text-xs font-medium text-foreground">
+                <th className="whitespace-nowrap px-1 py-0.5 text-left text-[11px] font-medium text-muted-foreground">
                   {row.label}
                 </th>
                 {matrix.colBands.map((col, colIndex) => {
                   const value = matrix.values[rowIndex]?.[colIndex] ?? null
+                  if (value === null) {
+                    return (
+                      <td key={col.id} className="p-0">
+                        <div className="aspect-square w-full min-h-9 rounded-[0.55rem]" />
+                      </td>
+                    )
+                  }
+                  const label = `${row.label} · ${col.label}: ${formatHeatValue(value)}`
                   return (
                     <td key={col.id} className="p-0">
-                      <div
-                        className={cn(
-                          "flex h-11 items-center justify-center rounded-md border border-border/40 text-xs font-semibold tabular-nums",
-                          value === null
-                            ? "bg-muted/30 text-muted-foreground"
-                            : "text-foreground"
-                        )}
-                        style={{
-                          backgroundColor: cellBackground(
-                            value,
-                            matrix.min,
-                            matrix.max
-                          ),
-                        }}
-                        title={
-                          value === null
-                            ? "No data"
-                            : `${row.label} · ${col.label}: ${formatHeatValue(value)}`
-                        }
-                      >
-                        {formatHeatValue(value)}
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="block aspect-square w-full min-h-9 rounded-[0.55rem] outline-none transition-[transform,box-shadow] hover:scale-[1.04] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
+                            style={{
+                              backgroundColor: cellBackground(
+                                value,
+                                matrix.min,
+                                matrix.max
+                              ),
+                            }}
+                            aria-label={label}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="text-left">
+                          <p className="font-medium text-foreground">
+                            {formatHeatValue(value)}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {row.label} · {col.label}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </td>
                   )
                 })}
@@ -332,12 +343,19 @@ export function InsightsMetricHeatmap({
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>Lower</span>
           <div
-            className="h-2 w-24 rounded-full"
-            style={{
-              background:
-                "linear-gradient(to right, color-mix(in oklab, var(--color-primary) 12%, transparent), color-mix(in oklab, var(--color-primary) 84%, transparent))",
-            }}
-          />
+            className="flex h-3 items-center gap-0.5"
+            aria-hidden
+          >
+            {[0.14, 0.32, 0.5, 0.68, 0.86].map((alpha) => (
+              <span
+                key={alpha}
+                className="size-3 rounded-[3px]"
+                style={{
+                  backgroundColor: `color-mix(in oklab, var(--color-primary) ${Math.round(alpha * 100)}%, white)`,
+                }}
+              />
+            ))}
+          </div>
           <span>Higher</span>
         </div>
       </div>

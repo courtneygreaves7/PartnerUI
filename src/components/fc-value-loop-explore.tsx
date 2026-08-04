@@ -105,11 +105,10 @@ function DimensionSelect({
   )
 }
 
-function heatBackground(value: number, min: number, max: number) {
+function heatSwatchBackground(value: number, min: number, max: number) {
   const t = max <= min ? 0.5 : (value - min) / (max - min)
-  // Soft primary wash — keeps dark text readable while staying on-palette.
-  const pct = Math.round(5 + t * 16)
-  return `color-mix(in oklab, var(--color-primary) ${pct}%, var(--color-card))`
+  const pct = Math.round(14 + t * 82)
+  return `color-mix(in oklab, var(--color-primary) ${pct}%, white)`
 }
 
 function behaviourBadgeClass(kind: FcLoopBehaviourKind) {
@@ -125,25 +124,7 @@ function behaviourBadgeClass(kind: FcLoopBehaviourKind) {
   return "bg-foreground/5 text-foreground/70"
 }
 
-function behaviourSubheadingClass(kind: FcLoopBehaviourKind) {
-  if (kind === "high-cancel-soft-fill") {
-    return "text-amber-900 dark:text-amber-200"
-  }
-  if (kind === "strong-fill-weak-cover") {
-    return "text-primary"
-  }
-  if (kind === "low-cancel-strong-fill" || kind === "value-beat") {
-    return "text-emerald-800 dark:text-emerald-300"
-  }
-  return "text-foreground/55"
-}
-
-function behaviourSubheading(kind: FcLoopBehaviourKind, badge: string) {
-  if (kind === "balanced") return "Re-let rate"
-  return badge
-}
-
-function MatrixCellCard({
+function MatrixCellSwatch({
   cell,
   title,
   colourMin,
@@ -155,61 +136,47 @@ function MatrixCellCard({
   colourMax: number
 }) {
   const relet = Math.min(100, Math.max(0, cell.relet))
-  const notRelet = Math.round((100 - relet) * 10) / 10
-  const heatT = colourMax <= colourMin ? 0.5 : (relet - colourMin) / (colourMax - colourMin)
-  const borderAlpha = 0.18 + heatT * 0.22
   const behaviour = describeFcLoopBehaviour(cell)
-  const subheading = behaviourSubheading(behaviour.kind, behaviour.badge)
+  const label = `${title}: relet ${relet.toFixed(1)}%`
 
   return (
-    <div
-      className="rounded-xl border p-2.5 shadow-xs"
-      style={{
-        backgroundColor: heatBackground(relet, colourMin, colourMax),
-        borderColor: `color-mix(in oklab, var(--color-primary) ${Math.round(borderAlpha * 100)}%, var(--color-border))`,
-      }}
-      title={title}
-    >
-      <div
-        className="flex h-2 w-full overflow-hidden rounded-full bg-background/80"
-        aria-label={`Relet ${relet}% · Not relet ${notRelet}%`}
-      >
-        <div className="h-full bg-primary" style={{ width: `${relet}%` }} />
-        <div className="h-full bg-foreground/15" style={{ width: `${notRelet}%` }} />
-      </div>
-      <div className="mt-2 space-y-1.5">
-        <p
-          className={cn(
-            "text-[10px] font-semibold leading-tight tracking-wide",
-            behaviourSubheadingClass(behaviour.kind)
-          )}
-        >
-          {subheading}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="aspect-square w-full min-h-12 rounded-[0.65rem] outline-none transition-[transform,box-shadow] hover:scale-[1.04] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
+          style={{
+            backgroundColor: heatSwatchBackground(relet, colourMin, colourMax),
+          }}
+          aria-label={label}
+        />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-56 space-y-1.5 text-left">
+        <p className="text-[11px] font-medium text-muted-foreground">{title}</p>
+        <p className="text-sm font-semibold tabular-nums text-foreground">
+          Relet {relet.toFixed(1)}%
         </p>
-        <p className="text-lg font-bold leading-none tabular-nums tracking-tight text-foreground">
-          {relet.toFixed(1)}%
-        </p>
-        <div className="space-y-0.5 text-[10px] leading-tight tabular-nums">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold tracking-wide text-foreground/55">ATT</span>
-            <span className="font-medium text-foreground">{cell.sales.toFixed(1)}%</span>
+        {behaviour.kind !== "balanced" ? (
+          <p className="text-[11px] text-muted-foreground">{behaviour.badge}</p>
+        ) : null}
+        <div className="grid grid-cols-3 gap-2 border-t border-border/60 pt-1.5 text-[10px] tabular-nums">
+          <div>
+            <p className="text-muted-foreground">ATT</p>
+            <p className="font-medium text-foreground">{cell.sales.toFixed(1)}%</p>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold tracking-wide text-foreground/55">CXL</span>
-            <span className="font-medium text-foreground">{cell.cancel.toFixed(1)}%</span>
+          <div>
+            <p className="text-muted-foreground">CXL</p>
+            <p className="font-medium text-foreground">{cell.cancel.toFixed(1)}%</p>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span
-              className="font-semibold tracking-wide text-foreground/55"
-              title="Value kept vs cancelled booking value — can exceed 100%"
-            >
-              REC
-            </span>
-            <span className="font-medium text-foreground">{cell.recoveredPct.toFixed(1)}%</span>
+          <div>
+            <p className="text-muted-foreground">REC</p>
+            <p className="font-medium text-foreground">
+              {cell.recoveredPct.toFixed(1)}%
+            </p>
           </div>
         </div>
-      </div>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -266,7 +233,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
               <MeasureHelp title="By bedrooms and travel dates" help={FC_LOOP_MATRIX_HELP} />
             </div>
             <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-              Relet vs not on top. Subheading flags standout behaviour. ATT, CXL, REC underneath.
+              Colour shows relet strength. Hover a swatch for ATT, CXL, and REC.
             </p>
           </div>
 
@@ -308,10 +275,10 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[42rem] border-separate border-spacing-2">
+          <table className="w-full min-w-[28rem] border-separate border-spacing-1.5">
             <thead>
               <tr>
-                <th className="px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                <th className="w-20 px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
                   {
                     HEAT_DIMENSION_OPTIONS.find((option) => option.id === rowDim)
                       ?.label
@@ -320,7 +287,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
                 {matrix.colBands.map((col) => (
                   <th
                     key={col.id}
-                    className="px-1 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+                    className="px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
                   >
                     {col.label}
                   </th>
@@ -330,23 +297,21 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
             <tbody>
               {matrix.rowBands.map((row, rowIndex) => (
                 <tr key={row.id}>
-                  <th className="whitespace-nowrap px-1 py-1 text-left text-xs font-medium text-foreground">
+                  <th className="whitespace-nowrap px-1 py-0.5 text-left text-[11px] font-medium text-muted-foreground">
                     {row.label}
                   </th>
                   {matrix.colBands.map((col, colIndex) => {
                     const cell = matrix.cells[rowIndex]?.[colIndex] ?? null
                     if (!cell) {
                       return (
-                        <td key={col.id} className="p-0 align-top">
-                          <div className="flex min-h-[6.5rem] items-center justify-center rounded-xl border border-border/40 bg-muted/30 text-xs text-muted-foreground">
-                            —
-                          </div>
+                        <td key={col.id} className="p-0">
+                          <div className="aspect-square w-full min-h-12 rounded-[0.65rem] bg-transparent" />
                         </td>
                       )
                     }
                     return (
-                      <td key={col.id} className="p-0 align-top">
-                        <MatrixCellCard
+                      <td key={col.id} className="p-0">
+                        <MatrixCellSwatch
                           cell={cell}
                           title={`${row.label} · ${col.label}`}
                           colourMin={matrix.colourMin}
@@ -362,28 +327,22 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-primary" />
-              Re-let rate (volume filled)
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-foreground/20" />
-              Not re-let
-            </span>
-            <span className="text-muted-foreground/80">
-              ATT attachment · CXL cancel rate · REC value kept (may exceed 100%)
-            </span>
-          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Colour = relet rate · hover for ATT · CXL · REC
+          </p>
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
             <span>Lower relet</span>
-            <div
-              className="h-2.5 w-28 overflow-hidden rounded-full border border-border/60"
-              style={{
-                background:
-                  "linear-gradient(to right, color-mix(in oklab, var(--color-primary) 5%, var(--color-card)), color-mix(in oklab, var(--color-primary) 21%, var(--color-card)))",
-              }}
-            />
+            <div className="flex h-3 items-center gap-0.5" aria-hidden>
+              {[0.14, 0.32, 0.5, 0.68, 0.86].map((alpha) => (
+                <span
+                  key={alpha}
+                  className="size-3 rounded-[3px]"
+                  style={{
+                    backgroundColor: `color-mix(in oklab, var(--color-primary) ${Math.round(alpha * 100)}%, white)`,
+                  }}
+                />
+              ))}
+            </div>
             <span>Higher relet</span>
           </div>
         </div>

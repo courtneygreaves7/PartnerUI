@@ -52,6 +52,60 @@ function renderInline(text: string) {
   })
 }
 
+function signalMeta(signal: string) {
+  if (signal === "risk") {
+    return {
+      label: "Gap to close",
+      className: "border-destructive/25 bg-destructive/10 text-destructive",
+    }
+  }
+  if (signal === "opportunity") {
+    return {
+      label: "Growth chance",
+      className: "border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-200",
+    }
+  }
+  return {
+    label: "Working well",
+    className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200",
+  }
+}
+
+function renderSignalBadge(signal: string, key: string | number) {
+  const meta = signalMeta(signal.trim())
+  return (
+    <span
+      key={key}
+      className={cn(
+        "inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold tracking-wide",
+        meta.className
+      )}
+    >
+      {meta.label}
+    </span>
+  )
+}
+
+function renderMetricsRow(raw: string, key: string | number) {
+  const parts = raw
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  return (
+    <div key={key} className="flex flex-wrap gap-1.5">
+      {parts.map((part, partIndex) => (
+        <span
+          key={`${key}-${partIndex}`}
+          className="inline-flex items-center rounded-md border border-border/70 bg-muted/50 px-2 py-1 text-[12px] font-medium text-foreground"
+        >
+          {renderInline(part)}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function renderAskChip(
   prompt: string,
   key: string | number,
@@ -74,7 +128,7 @@ function renderAskChip(
     >
       <Sparkles className="mt-0.5 size-3.5 shrink-0" />
       <span>
-        <span className="font-medium">Ask me: </span>
+        <span className="font-medium">Explore: </span>
         {prompt}
       </span>
     </button>
@@ -130,6 +184,14 @@ function renderMessageLine(
 
   if (line.startsWith(">>> ")) {
     return renderAskChip(line.slice(4), key, onAsk)
+  }
+
+  if (line.startsWith(":::signal ")) {
+    return renderSignalBadge(line.slice(10), key)
+  }
+
+  if (line.startsWith(":::metrics ")) {
+    return renderMetricsRow(line.slice(11), key)
   }
 
   if (line.startsWith("> ")) {
@@ -216,26 +278,29 @@ function renderMessageText(text: string, onAsk?: (prompt: string) => void) {
       nodes.push(
         <div
           key={`card-${index}`}
-          className="rounded-xl border border-border/60 bg-card/80 px-3.5 py-3 shadow-xs"
+          className="rounded-xl border border-border/60 bg-card/80 px-3.5 py-3.5 shadow-xs"
         >
-          <h4 className="text-[13px] font-semibold text-foreground">
+          <h4 className="text-sm font-semibold tracking-tight text-foreground">
             {line.slice(5)}
           </h4>
-          <div className="mt-2 space-y-1.5">
+          <div className="mt-2.5 space-y-2">
             {body.map((bodyLine, bodyIndex) => {
+              const bodyKey = `${index}-b-${bodyIndex}`
+              if (bodyLine.startsWith(":::signal ")) {
+                return renderSignalBadge(bodyLine.slice(10), bodyKey)
+              }
+              if (bodyLine.startsWith(":::metrics ")) {
+                return renderMetricsRow(bodyLine.slice(11), bodyKey)
+              }
               if (bodyLine.startsWith(">>> ")) {
-                return renderAskChip(
-                  bodyLine.slice(4),
-                  `${index}-b-${bodyIndex}`,
-                  onAsk
-                )
+                return renderAskChip(bodyLine.slice(4), bodyKey, onAsk)
               }
               if (bodyLine.startsWith("• ") || bodyLine.startsWith("- ")) {
-                return renderBullet(bodyLine, `${index}-b-${bodyIndex}`, true)
+                return renderBullet(bodyLine, bodyKey, true)
               }
               return (
                 <p
-                  key={`${index}-b-${bodyIndex}`}
+                  key={bodyKey}
                   className="text-sm leading-relaxed text-muted-foreground"
                 >
                   {renderInline(bodyLine)}

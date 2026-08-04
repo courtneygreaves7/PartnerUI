@@ -6,6 +6,7 @@ import {
   BarChart3,
   Check,
   ArrowRight,
+  FlagTriangleRight,
   Clock,
   FileText,
   Info,
@@ -1343,14 +1344,17 @@ function OpsValueLoopScorecard() {
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:flex xl:flex-row xl:items-stretch">
-        {OPS_VALUE_LOOP.steps.map((step) => (
+        {OPS_VALUE_LOOP.steps.map((step, index) => {
+          const isLast = index === OPS_VALUE_LOOP.steps.length - 1
+          const StepIcon = isLast ? FlagTriangleRight : ArrowRight
+          return (
           <div
             key={step.id}
             className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-xs sm:px-5"
           >
             <div className="flex items-center gap-2">
               <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                <StepIcon className="size-3.5" strokeWidth={2.5} aria-hidden />
               </span>
               <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground">
                 {step.label}
@@ -1379,7 +1383,8 @@ function OpsValueLoopScorecard() {
               {step.hint}
             </p>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
