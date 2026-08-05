@@ -64,8 +64,8 @@ const GLOBE_STYLES: {
   /** Hidden styles stay implemented but off the picker for now. */
   hidden?: boolean
 }[] = [
-  { id: "classic", label: "Classic", hint: "Marble + UK / France / Spain glowing outlines", hidden: true },
-  { id: "relief", label: "Relief", hint: "White stage · plaster globe · soft land relief" },
+  { id: "classic", label: "Realistic", hint: "Blue marble Earth · natural oceans and land" },
+  { id: "relief", label: "Relief", hint: "White stage · plaster globe · soft land relief", hidden: true },
   { id: "holo", label: "Holo", hint: "Wireframe + glow borders", hidden: true },
 ]
 
@@ -260,7 +260,7 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
   const [otherCountries, setOtherCountries] = useState<CountryFeature[]>([])
   const [outlineFeatures, setOutlineFeatures] = useState<OutlineFeature[]>([])
   const [ready, setReady] = useState(false)
-  const [globeStyle, setGlobeStyle] = useState<GlobeStyleId>("relief")
+  const [globeStyle, setGlobeStyle] = useState<GlobeStyleId>("classic")
   const [globeError, setGlobeError] = useState<string | null>(null)
   const [globeMountId, setGlobeMountId] = useState(0)
 
@@ -304,11 +304,11 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
   )
 
   const pathsData = useMemo(() => {
-    // Glowing coast outlines are for Classic (and Holo grid); Relief stays clean monochrome
-    if (isRelief) return []
+    // Realistic marble stays clean — no glow outlines over the texture
+    if (isClassic || isRelief) return []
     if (isHolo) return [...graticule, ...glowOutlines]
     return glowOutlines
-  }, [glowOutlines, graticule, isHolo, isRelief])
+  }, [glowOutlines, graticule, isHolo, isRelief, isClassic])
 
   const starSets = useMemo(() => (isHolo ? buildInteriorStars() : []), [isHolo])
 
@@ -527,9 +527,15 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
         className,
         isDarkStage && "bg-[#05070c]",
         isRelief && "bg-[#f5f5f3]",
-        isClassic && "bg-transparent"
+        isClassic && "bg-[#020812]"
       )}
     >
+      {isClassic ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#0b1a33_0%,_#020812_70%)]"
+        />
+      ) : null}
       {isRelief ? (
         <div
           aria-hidden
@@ -749,9 +755,9 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             showGlobe
             showAtmosphere
             atmosphereColor={
-              isRelief ? "#c9d0da" : isHolo ? "#e8eef8" : primary
+              isClassic ? "#6ea8d8" : isRelief ? "#c9d0da" : isHolo ? "#e8eef8" : primary
             }
-            atmosphereAltitude={isHolo ? 0.22 : isRelief ? 0.12 : 0.14}
+            atmosphereAltitude={isHolo ? 0.22 : isClassic ? 0.16 : isRelief ? 0.12 : 0.14}
             globeImageUrl={
               isClassic
                 ? `${CDN}/earth-blue-marble.jpg`
@@ -806,8 +812,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                 hoveredCountry?.properties.stats?.code === poly.properties.stats?.code
 
               if (outlineOnlyVisual) {
-                // Soft wash only — no opaque pop that fights the marble texture
-                return raised ? withAlpha(HOVER_GREEN, 0.22) : "rgba(0,0,0,0)"
+                // Soft green wash on marble — hover only, so the texture stays readable
+                return raised ? withAlpha(HOVER_GREEN, 0.38) : "rgba(0,0,0,0)"
               }
               if (isRelief) {
                 if (!isPortfolio) {

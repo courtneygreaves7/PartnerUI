@@ -19,18 +19,18 @@ import { cn } from "@/lib/utils"
 
 const ALL_COUNTIES = "all-counties"
 
-/** Plaster relief — same whites / soft sides as the globe Relief style. */
+/** Natural terrain — grassland caps, earthy sides, deeper green for stronger metrics. */
 const LAND = {
-  low: { r: 0.94, g: 0.93, b: 0.9 },
-  high: { r: 0.99, g: 0.98, b: 0.97 },
-  hover: { r: 0.12, g: 0.34, b: 0.23 },
-  selected: { r: 0.09, g: 0.28, b: 0.19 },
-  side: { r: 0.84, g: 0.82, b: 0.78 },
-  sideHover: { r: 0.08, g: 0.24, b: 0.16 },
+  low: { r: 0.62, g: 0.68, b: 0.48 },
+  high: { r: 0.28, g: 0.52, b: 0.32 },
+  hover: { r: 0.14, g: 0.36, b: 0.22 },
+  selected: { r: 0.11, g: 0.3, b: 0.18 },
+  side: { r: 0.45, g: 0.4, b: 0.3 },
+  sideHover: { r: 0.26, g: 0.32, b: 0.18 },
 }
 
 const HOVER_LIFT_WORLD = 1.4
-const STAGE_BG = "#f5f5f3"
+const STAGE_BG = "#061428"
 /** Target max XY size in world units after scale — keeps UK / FR / ES similarly framed. */
 const TARGET_SPAN = 88
 /**
@@ -41,6 +41,9 @@ const RELIEF_HEIGHT_MIN = 2.8
 const RELIEF_HEIGHT_MAX = 5.6
 
 const ANNOTATION_OFFSET = { x: 108, y: -56 }
+const ANNOTATION_CARD_W = 216 // w-[13.5rem]
+const ANNOTATION_CARD_H = 188
+const ANNOTATION_PAD = 14
 
 type InsightsUkCounties3dProps = {
   country: MapCountryCode
@@ -126,8 +129,8 @@ function paintMesh(
     if (!(material instanceof THREE.MeshStandardMaterial)) return
     const c = index === 0 ? sideTone : tone
     material.color.setRGB(c.r * dim, c.g * dim, c.b * dim)
-    material.emissive.setRGB(c.r * 0.08 * dim, c.g * 0.08 * dim, c.b * 0.07 * dim)
-    material.emissiveIntensity = hovered || selected ? 0.22 : 0.12
+    material.emissive.setRGB(c.r * 0.1 * dim, c.g * 0.12 * dim, c.b * 0.08 * dim)
+    material.emissiveIntensity = hovered || selected ? 0.28 : 0.08
     material.transparent = false
     material.opacity = 1
     material.depthWrite = true
@@ -137,10 +140,10 @@ function paintMesh(
 
 function makeCountyMaterial(isSide: boolean) {
   return new THREE.MeshStandardMaterial({
-    color: isSide ? 0xd6d0c6 : 0xfcfaf6,
-    emissive: isSide ? 0xcfc9bf : 0xf2f0eb,
-    emissiveIntensity: isSide ? 0.08 : 0.18,
-    roughness: isSide ? 0.9 : 0.78,
+    color: isSide ? 0x73664d : 0x4f854f,
+    emissive: isSide ? 0x2a2418 : 0x1a2e1a,
+    emissiveIntensity: isSide ? 0.06 : 0.1,
+    roughness: isSide ? 0.92 : 0.82,
     metalness: 0,
     flatShading: false,
     transparent: false,
@@ -155,14 +158,47 @@ function placeAnnotation(
   ax: number,
   ay: number,
   width: number,
-  height: number
+  height: number,
+  islandCenterX: number
 ): Pick<AnnotationState, "bx" | "by" | "side"> {
-  const preferRight = ax < width * 0.58
-  const side: "left" | "right" = preferRight ? "right" : "left"
-  const bx = preferRight
-    ? Math.min(width - 24, ax + ANNOTATION_OFFSET.x)
-    : Math.max(24, ax - ANNOTATION_OFFSET.x)
-  const by = Math.min(height - 28, Math.max(28, ay + ANNOTATION_OFFSET.y))
+  // Prefer the seaward side — east of the landmass opens right, west opens left
+  let side: "left" | "right" = ax >= islandCenterX ? "right" : "left"
+
+  // Flip if that side can't fit the card in-frame
+  if (side === "right" && ax + 36 + ANNOTATION_CARD_W > width - ANNOTATION_PAD) {
+    side = "left"
+  } else if (side === "left" && ax - 36 - ANNOTATION_CARD_W < ANNOTATION_PAD) {
+    side = "right"
+  }
+
+  let bx =
+    side === "right" ? ax + ANNOTATION_OFFSET.x : ax - ANNOTATION_OFFSET.x
+
+  // Card is left-anchored (right side) or right-anchored via translateX(-100%)
+  if (side === "right") {
+    bx = Math.min(
+      width - ANNOTATION_PAD - ANNOTATION_CARD_W,
+      Math.max(ANNOTATION_PAD, bx)
+    )
+  } else {
+    bx = Math.min(
+      width - ANNOTATION_PAD,
+      Math.max(ANNOTATION_PAD + ANNOTATION_CARD_W, bx)
+    )
+  }
+
+  // by is the vertical centre of the card (translateY -50%)
+  const halfH = ANNOTATION_CARD_H / 2
+  let by = ay + ANNOTATION_OFFSET.y
+  // Near the top: drop the card below the pin instead of clipping
+  if (ay < ANNOTATION_PAD + halfH + 24) {
+    by = ay + Math.abs(ANNOTATION_OFFSET.y) + 8
+  }
+  by = Math.min(
+    height - ANNOTATION_PAD - halfH,
+    Math.max(ANNOTATION_PAD + halfH, by)
+  )
+
   return { bx, by, side }
 }
 
@@ -237,16 +273,16 @@ export function InsightsUkCounties3d({
     renderer.outputColorSpace = THREE.SRGBColorSpace
     container.appendChild(renderer.domElement)
 
-    // Soft plaster lighting — bright key so white caps read like the relief globe
-    const ambient = new THREE.AmbientLight(0xffffff, 0.88)
+    // Soft daylight over deep ocean — warm sun + cool fill
+    const ambient = new THREE.AmbientLight(0xd8e4f0, 0.62)
     scene.add(ambient)
-    const sun = new THREE.DirectionalLight(0xffffff, 0.95)
-    sun.position.set(-50, 180, 110)
+    const sun = new THREE.DirectionalLight(0xfff2dd, 1.1)
+    sun.position.set(-40, 160, 90)
     scene.add(sun)
-    const skyFill = new THREE.DirectionalLight(0xeef2f8, 0.4)
+    const skyFill = new THREE.DirectionalLight(0x7aa0c8, 0.35)
     skyFill.position.set(110, 70, -40)
     scene.add(skyFill)
-    const rim = new THREE.DirectionalLight(0xffffff, 0.28)
+    const rim = new THREE.DirectionalLight(0xffffff, 0.18)
     rim.position.set(20, 40, -120)
     scene.add(rim)
 
@@ -360,12 +396,12 @@ export function InsightsUkCounties3d({
       }
     }
 
-    // Shared SE isometric frame (Spain-style) for every country
+    // Shared SE isometric frame — pull in close so the country fills the stage
     stage.updateMatrixWorld(true)
     const frameBox = new THREE.Box3().setFromObject(stage)
     const frameSize = frameBox.getSize(new THREE.Vector3())
     const frameSpan = Math.max(frameSize.x, frameSize.y, frameSize.z, 40)
-    const distance = frameSpan * 1.7
+    const distance = frameSpan * 1.38
     camera.position.set(distance * 0.48, distance * 0.72, distance * 0.88)
     camera.near = Math.max(0.1, distance / 100)
     camera.far = distance * 20
@@ -376,8 +412,8 @@ export function InsightsUkCounties3d({
     controls.dampingFactor = 0.08
     controls.autoRotate = false
     controls.enablePan = false
-    controls.minDistance = distance * 0.8
-    controls.maxDistance = distance * 2.2
+    controls.minDistance = distance * 0.85
+    controls.maxDistance = distance * 1.65
     controls.minAzimuthAngle = -0.5
     controls.maxAzimuthAngle = 0.5
     controls.minPolarAngle = 0.65
@@ -388,6 +424,7 @@ export function InsightsUkCounties3d({
     const raycaster = new THREE.Raycaster()
     const pointer = new THREE.Vector2()
     const worldPoint = new THREE.Vector3()
+    const islandCenter = new THREE.Vector3()
     const ndc = new THREE.Vector3()
     let frame = 0
     let disposed = false
@@ -460,17 +497,24 @@ export function InsightsUkCounties3d({
       // Sit the pin on the raised cap, not buried in the extrusion
       worldPoint.y = box.max.y + 0.6
 
+      const width = container.clientWidth
+      const height = container.clientHeight
+
+      // Country silhouette centre — decide seaward annotation side from this, not the viewport
+      stage.updateWorldMatrix(true, false)
+      new THREE.Box3().setFromObject(stage).getCenter(islandCenter)
+      ndc.copy(islandCenter).project(camera)
+      const islandCenterX = (ndc.x * 0.5 + 0.5) * width
+
       ndc.copy(worldPoint).project(camera)
       if (ndc.z > 1) {
         clearAnnotation()
         return
       }
 
-      const width = container.clientWidth
-      const height = container.clientHeight
       const ax = (ndc.x * 0.5 + 0.5) * width
       const ay = (-ndc.y * 0.5 + 0.5) * height
-      const { bx, by, side } = placeAnnotation(ax, ay, width, height)
+      const { bx, by, side } = placeAnnotation(ax, ay, width, height, islandCenterX)
 
       if (annotationIdRef.current === hovered) {
         writeAnnotationDom(ax, ay, bx, by, side)
@@ -620,7 +664,7 @@ export function InsightsUkCounties3d({
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-foreground/55 county-annotation-line"
+              className="text-white county-annotation-line"
             />
             <circle
               key={`dot-${annotation.id}`}

@@ -199,12 +199,14 @@ export function PartnerImpactHero({
             </div>
           </div>
 
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-            <div className="relative flex flex-col gap-3 rounded-xl border border-border/60 bg-[var(--panel-bg)] p-4">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 sm:items-stretch">
+            <div className="relative flex min-h-0 flex-col gap-3 rounded-xl border border-border/60 bg-[var(--panel-bg)] p-4">
               <div className="absolute right-3 top-3">
                 <WidgetHelpButton
                   title="Your impact"
-                  helpText={`${PARTNER_IMPACT_HERO.generatedHint}. Chart shows how that value landed across months in the selected period.`}
+                  helpText={`${PARTNER_IMPACT_HERO.generatedHint}. Chart shows how that value landed across months in the selected period. Breakdown: ${breakdown
+                    .map((item) => `${item.label} ${item.value}`)
+                    .join(", ")}.`}
                 />
               </div>
               <div className="min-w-0 pr-7">
@@ -218,8 +220,11 @@ export function PartnerImpactHero({
                 <p className="mt-2 text-[26px] font-bold tracking-tight tabular-nums text-primary sm:text-[28px]">
                   {formatGbp(impact.generated, "exact")}
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
+                <p className="mt-1 min-h-[2.75rem] text-[11px] leading-snug text-muted-foreground">
                   Margin, conversion uplift, and re-let benefit
+                  <span className="mt-1 block text-[10px] font-medium text-primary/80">
+                    {breakdown.map((item) => `${item.label} ${item.value}`).join(" · ")}
+                  </span>
                 </p>
               </div>
 
@@ -234,20 +239,29 @@ export function PartnerImpactHero({
                 />
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                {breakdown.map((item) => (
-                  <span
-                    key={item.label}
-                    className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-primary"
+              <div className="mt-auto flex min-h-9 items-center">
+                {onOpenInsights ? (
+                  <button
+                    type="button"
+                    onClick={onOpenInsights}
+                    className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/35 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/15"
                   >
-                    <span className="text-primary/70">{item.label}</span>
-                    <span className="tabular-nums text-primary">{item.value}</span>
-                  </span>
-                ))}
+                    Explore secured value
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-[11px] font-semibold text-primary/70"
+                  >
+                    Secured this period
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="relative flex flex-col gap-3 rounded-xl border border-amber-500/25 bg-card p-4">
+            <div className="relative flex min-h-0 flex-col gap-3 rounded-xl border border-amber-500/25 bg-card p-4">
               <div className="absolute right-3 top-3">
                 <WidgetHelpButton
                   title="Still on the table"
@@ -268,7 +282,7 @@ export function PartnerImpactHero({
                 <p className="mt-2 text-[26px] font-bold tracking-tight tabular-nums text-amber-700 sm:text-[28px] dark:text-amber-400">
                   {formatGbp(periodMissed, "exact")}
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
+                <p className="mt-1 min-h-[2.75rem] text-[11px] leading-snug text-muted-foreground">
                   Margin left behind without{" "}
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -285,11 +299,11 @@ export function PartnerImpactHero({
                     </TooltipContent>
                   </Tooltip>{" "}
                   attachment
-                  {period !== "all" ? (
-                    <span className="mt-1 block text-[10px] font-medium text-amber-800/80 dark:text-amber-300/80">
-                      {formatGbp(impact.available, "exact")} full-year if the gap stays open
-                    </span>
-                  ) : null}
+                  <span className="mt-1 block text-[10px] font-medium text-amber-800/80 dark:text-amber-300/80">
+                    {period !== "all"
+                      ? `${formatGbp(impact.available, "exact")} full-year if the gap stays open`
+                      : "Opportunity still open across the book"}
+                  </span>
                 </p>
               </div>
 
@@ -304,16 +318,26 @@ export function PartnerImpactHero({
                 />
               </div>
 
-              {onOpenInsights ? (
-                <button
-                  type="button"
-                  onClick={onOpenInsights}
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-600/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold text-amber-900 transition-colors hover:border-amber-600/60 hover:bg-amber-500/15 dark:text-amber-200"
-                >
-                  See where to capture this
-                  <ArrowRight className="size-3.5" />
-                </button>
-              ) : null}
+              <div className="mt-auto flex min-h-9 items-center">
+                {onOpenInsights ? (
+                  <button
+                    type="button"
+                    onClick={onOpenInsights}
+                    className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-600/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold text-amber-900 transition-colors hover:border-amber-600/60 hover:bg-amber-500/15 dark:text-amber-200"
+                  >
+                    See where to capture this
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/5 px-3 py-1.5 text-[11px] font-semibold text-amber-800/70 dark:text-amber-300/70"
+                  >
+                    Capture with attachment
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -514,7 +514,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
         </div>
       ) : (
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="relative min-h-0 bg-[#f3f3f1]">
+        <div className="relative min-h-0 bg-[#061428]">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-4">
             <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm">
               <CountryFlag
@@ -526,13 +526,13 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
                   {countryMeta?.label}
                 </p>
                 <p className="text-sm text-foreground">
-                  Relief {countryMeta?.regionNoun} · shaded by {metricLabel}
+                  Terrain {countryMeta?.regionNoun} · shaded by {metricLabel}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur-sm">
               <span className="text-[10px] text-muted-foreground">Low</span>
-              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#d8d4ce] via-[#f0eeea] to-[#006BFF]" />
+              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#9eae7a] via-[#5f8a52] to-[#1f5c3d]" />
               <span className="text-[10px] text-muted-foreground">High</span>
             </div>
           </div>
