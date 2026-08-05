@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { InsightsGlobe } from "@/components/insights-globe"
+import { InsightsCountyDotHeatmap } from "@/components/insights-county-dot-heatmap"
 import { InsightsUkCounties3d } from "@/components/insights-uk-counties-3d"
 import { CountryFlag } from "@/components/country-flag"
 import type { ActiveFilters } from "@/lib/chart-data"
@@ -38,18 +39,22 @@ import {
   getTownsForCounty,
   loadMapRegions,
   MAP_COUNTRY_META,
+  MAP_HEATMAP_METRICS,
   MAP_METRICS,
+  metricHigherIsBetter,
   metricRange,
   metricRankBand,
   rankRegionByMetric,
   scaleRegionByTownShare,
   scaleRegionForFilters,
   type MapCountryCode,
+  type MapHeatmapMetricId,
   type MapMetricId,
   type MapRegion,
   type RegionDetailStats,
 } from "@/lib/insights-map-data"
 import { cn } from "@/lib/utils"
+import { mapStageGlass } from "@/lib/map-stage-glass"
 
 const ALL_COUNTIES = "all-counties"
 
@@ -308,6 +313,8 @@ function RegionStatsPanel({
 export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMapPageProps) {
   const [viewMode, setViewMode] = useState<"globe" | MapCountryCode>("globe")
   const [metric, setMetric] = useState<MapMetricId>("bookings")
+  const [heatmapOn, setHeatmapOn] = useState(false)
+  const [heatmapMetric, setHeatmapMetric] = useState<MapHeatmapMetricId>("calTakeUp")
   const [regions, setRegions] = useState<MapRegion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hoveredCountyId, setHoveredCountyId] = useState<string | null>(null)
@@ -386,8 +393,14 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
     return selectedCounty
   }, [selectedCounty, selectedTown])
 
-  const range = useMemo(() => metricRange(scaledRegions, metric), [scaledRegions, metric])
-  const metricLabel = MAP_METRICS.find((item) => item.id === metric)?.label.toLowerCase()
+  const activeMapMetric: MapMetricId = heatmapOn ? heatmapMetric : metric
+  const range = useMemo(
+    () => metricRange(scaledRegions, activeMapMetric),
+    [scaledRegions, activeMapMetric]
+  )
+  const metricLabel = heatmapOn
+    ? (MAP_HEATMAP_METRICS.find((item) => item.id === heatmapMetric)?.label ?? heatmapMetric)
+    : (MAP_METRICS.find((item) => item.id === metric)?.label.toLowerCase() ?? metric)
 
   const activeStats = useMemo(() => {
     if (!activeRegion) return null
@@ -478,9 +491,9 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
             ))}
           </div>
 
-          {countryView ? (
+          {countryView && !heatmapOn ? (
             <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
-              {MAP_METRICS.map((item) => (
+              {MAP_METRICS.filter((item) => item.id !== "ddlTakeUp").map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -514,26 +527,149 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
         </div>
       ) : (
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="relative min-h-0 bg-[#061428]">
+        <div
+          className={cn(
+            "relative min-h-0",
+            heatmapOn ? "bg-[#e8e6e1]" : "bg-[#061428]"
+          )}
+        >
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-4">
-            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm">
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-2xl px-4 py-3",
+                heatmapOn ? mapStageGlass.panelOnLight : mapStageGlass.panelOnDark
+              )}
+            >
               <CountryFlag
                 code={countryView!}
                 className="size-5 shadow-xs"
               />
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                <p
+                  className={cn(
+                    "text-[11px] font-medium uppercase tracking-[0.16em]",
+                    heatmapOn ? "text-muted-foreground" : "text-white/55"
+                  )}
+                >
                   {countryMeta?.label}
                 </p>
-                <p className="text-sm text-foreground">
-                  Terrain {countryMeta?.regionNoun} · shaded by {metricLabel}
+                <p
+                  className={cn(
+                    "text-sm",
+                    heatmapOn ? "text-foreground" : "text-white"
+                  )}
+                >
+                  {heatmapOn
+                    ? `Dot heatmap · ${metricLabel}`
+                    : `Terrain ${countryMeta?.regionNoun} · shaded by ${metricLabel}`}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-              <span className="text-[10px] text-muted-foreground">Low</span>
-              <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#9eae7a] via-[#5f8a52] to-[#1f5c3d]" />
-              <span className="text-[10px] text-muted-foreground">High</span>
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-3 py-2.5",
+                heatmapOn ? mapStageGlass.panelOnLight : mapStageGlass.panelOnDark
+              )}
+            >
+              <span
+                className={cn(
+                  "text-[10px]",
+                  heatmapOn ? "text-muted-foreground" : "text-white/55"
+                )}
+              >
+                Low
+              </span>
+              {heatmapOn ? (
+                <div
+                  className={cn(
+                    "h-2 w-20 rounded-full bg-gradient-to-r",
+                    metricHigherIsBetter(heatmapMetric)
+                      ? "from-[#dc2626] via-[#f59e0b] to-[#16a34a]"
+                      : "from-[#16a34a] via-[#f59e0b] to-[#dc2626]"
+                  )}
+                />
+              ) : (
+                <div className="h-2 w-20 rounded-full bg-gradient-to-r from-[#d1db94] via-[#3d8a5c] to-[#0f613d]" />
+              )}
+              <span
+                className={cn(
+                  "text-[10px]",
+                  heatmapOn ? "text-muted-foreground" : "text-white/55"
+                )}
+              >
+                High
+              </span>
+            </div>
+          </div>
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-start p-4">
+            <div
+              className={cn(
+                "pointer-events-auto max-w-[min(100%,44rem)] rounded-2xl p-2.5",
+                heatmapOn ? mapStageGlass.panelOnLight : mapStageGlass.panelOnDark
+              )}
+            >
+              <div className="flex flex-wrap items-center gap-2.5">
+                <label className="inline-flex cursor-pointer items-center gap-2.5 select-none">
+                  <span
+                    className={cn(
+                      "text-sm font-semibold",
+                      heatmapOn ? "text-foreground" : "text-white"
+                    )}
+                  >
+                    Heatmap
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={heatmapOn}
+                    aria-label="Toggle heatmap"
+                    onClick={() => setHeatmapOn((prev) => !prev)}
+                    className={cn(
+                      "relative h-7 w-12 shrink-0 rounded-full transition-colors",
+                      heatmapOn
+                        ? "bg-primary shadow-[inset_0_0_0_1px_rgb(255_255_255_/_0.2)]"
+                        : "bg-white/20 shadow-[inset_0_0_0_1px_rgb(255_255_255_/_0.25)]"
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute top-0.5 left-0.5 size-6 rounded-full bg-white shadow-sm transition-transform duration-200",
+                        heatmapOn && "translate-x-5"
+                      )}
+                    />
+                  </button>
+                </label>
+                {heatmapOn ? (
+                  <div
+                    className={cn(
+                      "flex flex-wrap gap-1 p-1",
+                      mapStageGlass.insetOnLight
+                    )}
+                  >
+                    {MAP_HEATMAP_METRICS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setHeatmapMetric(item.id)}
+                        className={cn(
+                          "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm",
+                          heatmapMetric === item.id
+                            ? "bg-white text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="max-w-[14rem] text-xs text-white/60 sm:max-w-[18rem]">
+                    Flexi Cancellation, Damage Waiver, cancellations &amp; re-lets
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -541,12 +677,23 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
             <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-muted-foreground">
               Loading {countryMeta?.label}…
             </div>
+          ) : heatmapOn ? (
+            <InsightsCountyDotHeatmap
+              className="absolute inset-0"
+              regions={scaledRegions}
+              metric={activeMapMetric}
+              range={range}
+              selectedCountyId={selectedCountyId}
+              hoveredCountyId={hoveredCountyId}
+              onHover={setHoveredCountyId}
+              onSelect={handleRegionClick}
+            />
           ) : (
             <InsightsUkCounties3d
               className="absolute inset-0"
               country={countryView!}
               regions={scaledRegions}
-              metric={metric}
+              metric={activeMapMetric}
               range={range}
               selectedCountyId={selectedCountyId}
               hoveredCountyId={hoveredCountyId}

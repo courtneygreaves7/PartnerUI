@@ -19,14 +19,14 @@ import { cn } from "@/lib/utils"
 
 const ALL_COUNTIES = "all-counties"
 
-/** Natural terrain — grassland caps, earthy sides, deeper green for stronger metrics. */
+/** Natural terrain — stronger low→high green contrast so metric banding reads clearly. */
 const LAND = {
-  low: { r: 0.62, g: 0.68, b: 0.48 },
-  high: { r: 0.28, g: 0.52, b: 0.32 },
-  hover: { r: 0.14, g: 0.36, b: 0.22 },
-  selected: { r: 0.11, g: 0.3, b: 0.18 },
-  side: { r: 0.45, g: 0.4, b: 0.3 },
-  sideHover: { r: 0.26, g: 0.32, b: 0.18 },
+  low: { r: 0.82, g: 0.86, b: 0.58 },
+  high: { r: 0.06, g: 0.38, b: 0.24 },
+  hover: { r: 0.04, g: 0.28, b: 0.18 },
+  selected: { r: 0.03, g: 0.24, b: 0.16 },
+  side: { r: 0.42, g: 0.36, b: 0.26 },
+  sideHover: { r: 0.2, g: 0.28, b: 0.16 },
 }
 
 const HOVER_LIFT_WORLD = 1.4
@@ -116,21 +116,21 @@ function paintMesh(
   hovered: boolean,
   dimmed: boolean
 ) {
-  const t = metricT(value, range.min, range.max)
+  const t = Math.pow(metricT(value, range.min, range.max), 0.78)
   const tone = selected ? LAND.selected : hovered ? LAND.hover : mix(LAND.low, LAND.high, t)
   const sideTone =
     selected || hovered
-      ? mix(tone, LAND.sideHover, 0.35)
-      : mix(tone, LAND.side, 0.55)
-  const dim = dimmed ? 0.78 : 1
+      ? mix(tone, LAND.sideHover, 0.28)
+      : mix(tone, LAND.side, 0.4)
+  const dim = dimmed ? 0.72 : 1
 
   const mats = meshMaterials(mesh)
   mats.forEach((material, index) => {
     if (!(material instanceof THREE.MeshStandardMaterial)) return
     const c = index === 0 ? sideTone : tone
     material.color.setRGB(c.r * dim, c.g * dim, c.b * dim)
-    material.emissive.setRGB(c.r * 0.1 * dim, c.g * 0.12 * dim, c.b * 0.08 * dim)
-    material.emissiveIntensity = hovered || selected ? 0.28 : 0.08
+    material.emissive.setRGB(c.r * 0.12 * dim, c.g * 0.14 * dim, c.b * 0.1 * dim)
+    material.emissiveIntensity = hovered || selected ? 0.32 : 0.1
     material.transparent = false
     material.opacity = 1
     material.depthWrite = true

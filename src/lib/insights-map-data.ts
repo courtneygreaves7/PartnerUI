@@ -54,10 +54,10 @@ export const MAP_METRICS: Array<{ id: MapMetricId; label: string }> = [
   { id: "recoveryRate", label: "Recovery rate" },
 ]
 
-/** County heatmap chips — FC / DDW / cancellations / re-lets. */
+/** County heatmap chips — product language for partners (not internal FC/DDW). */
 export const MAP_HEATMAP_METRICS: Array<{ id: MapHeatmapMetricId; label: string }> = [
-  { id: "calTakeUp", label: "FC" },
-  { id: "ddlTakeUp", label: "DDW" },
+  { id: "calTakeUp", label: "Flexi Cancellation" },
+  { id: "ddlTakeUp", label: "Damage Waiver" },
   { id: "cancellationRate", label: "Cancellations" },
   { id: "reletRate", label: "Re-lets" },
 ]
@@ -136,6 +136,12 @@ type RawMapRegion = Omit<MapRegion, "reletRate" | "recoveryRate" | "ddlTakeUp"> 
   ddlTakeUp?: number
 }
 
+function hashId(id: string): number {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  return hash
+}
+
 function enrichRegionRecovery(region: RawMapRegion): MapRegion {
   const seed = hashId(region.id)
   const reletRate =
@@ -160,7 +166,7 @@ function enrichRegionRecovery(region: RawMapRegion): MapRegion {
 
 export async function loadMapRegions(country: MapCountryCode = "UK"): Promise<MapRegion[]> {
   const cached = regionCache.get(country)
-  if (cached) return cached
+  if (cached?.[0] && typeof cached[0].ddlTakeUp === "number") return cached
   const meta = MAP_COUNTRY_META[country]
   const response = await fetch(meta.asset)
   if (!response.ok) throw new Error(`Failed to load ${meta.label} map data`)
@@ -309,12 +315,6 @@ export type RegionDetailStats = {
   cancellationRate: number
   reletRate: number
   recoveryRate: number
-}
-
-function hashId(id: string): number {
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
-  return hash
 }
 
 export function getRegionDetailStats(region: MapRegion, brand = "all-brands"): RegionDetailStats {
@@ -507,19 +507,29 @@ export function scaleRegionByTownShare(region: MapRegion, share: number): MapReg
   }
 }
 
-/** Yellow → orange → coral palette for county dotted heatmaps. */
-export function heatmapColor(t: number): { r: number; g: number; b: number } {
+/**
+ * Traffic-light scale for dotted heatmaps.
+ * - higherIsBetter false (cancellations): green = low, red = high
+ * - higherIsBetter true (flexi / waiver / re-lets): red = low, green = high
+ */
+export function heatmapColor(
+  t: number,
+  options?: { higherIsBetter?: boolean }
+): { r: number; g: number; b: number } {
   const clamped = Math.min(1, Math.max(0, t))
+  const polarity = options?.higherIsBetter ? 1 - clamped : clamped
+  // Three clear bands so counties read as green / amber / red at a glance
+  const banded = Math.round(polarity * 2) / 2
   const stops = [
-    { t: 0, r: 255, g: 230, b: 102 },
-    { t: 0.45, r: 255, g: 140, b: 66 },
-    { t: 1, r: 255, g: 92, b: 122 },
+    { t: 0, r: 22, g: 163, b: 74 }, // green-600 — favourable
+    { t: 0.5, r: 245, g: 158, b: 11 }, // amber-500
+    { t: 1, r: 220, g: 38, b: 38 }, // red-600 — unfavourable
   ]
   let i = 0
-  while (i < stops.length - 2 && clamped > stops[i + 1]!.t) i += 1
+  while (i < stops.length - 2 && banded > stops[i + 1]!.t) i += 1
   const a = stops[i]!
   const b = stops[i + 1]!
-  const u = (clamped - a.t) / Math.max(0.0001, b.t - a.t)
+  const u = (banded - a.t) / Math.max(0.0001, b.t - a.t)
   return {
     r: Math.round(a.r + (b.r - a.r) * u),
     g: Math.round(a.g + (b.g - a.g) * u),

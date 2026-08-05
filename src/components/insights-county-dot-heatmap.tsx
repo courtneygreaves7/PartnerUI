@@ -6,6 +6,7 @@ import {
   getMetricValue,
   heatmapColor,
   MAP_HEATMAP_METRICS,
+  metricHigherIsBetter,
   metricRankBand,
   rankRegionByMetric,
   type MapMetricId,
@@ -15,11 +16,15 @@ import { cn } from "@/lib/utils"
 
 const ALL_COUNTIES = "all-counties"
 const PAD = 28
+/** Fit the landmass a bit under the stage so overlays have room. */
+const FIT_SCALE = 0.8
 /** Map-space gap between land dots. */
-const DOT_STEP = 7.2
-const DOT_RADIUS = 2.55
+const DOT_STEP = 5.6
+const DOT_RADIUS = 3.05
 /** Background micro-grid step (map space). */
 const MICRO_STEP = 10
+/** Only test Path2D for regions whose label is within this distance. */
+const HIT_RADIUS = 130
 
 type InsightsCountyDotHeatmapProps = {
   regions: MapRegion[]
@@ -94,21 +99,6 @@ function boundsFromRegions(regions: MapRegion[]) {
   }
 }
 
-/** Encode region index 1..n as unique RGB (0 = empty). */
-function encodeIndex(index: number) {
-  const i = index + 1
-  return {
-    r: i & 255,
-    g: (i >> 8) & 255,
-    b: (i >> 16) & 255,
-  }
-}
-
-function decodeIndex(r: number, g: number, b: number) {
-  const i = r + (g << 8) + (b << 16)
-  return i === 0 ? -1 : i - 1
-}
-
 export function InsightsCountyDotHeatmap({
   regions,
   metric,
@@ -121,8 +111,6 @@ export function InsightsCountyDotHeatmap({
 }: InsightsCountyDotHeatmapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const preparedRef = useRef<PreparedRegion[]>([])
-  const dotsRef = useRef<LandDot[]>([])
   const transformRef = useRef<Transform>({
     scale: 1,
     ox: 0,
@@ -132,7 +120,6 @@ export function InsightsCountyDotHeatmap({
     mapW: 1,
     mapH: 1,
   })
-  const idMaskRef = useRef<HTMLCanvasElement | null>(null)
   const selectionRef = useRef({ selectedCountyId, hoveredCountyId })
   selectionRef.current = { selectedCountyId, hoveredCountyId }
 
@@ -166,8 +153,6 @@ export function InsightsCountyDotHeatmap({
       .filter((item): item is PreparedRegion => Boolean(item))
   }, [regions, metric, range.min, range.max])
 
-  preparedRef.current = prepared
-
   const hoveredRegion = hoverCard
     ? (regions.find((region) => region.id === hoverCard.id) ?? null)
     : null
@@ -178,7 +163,6 @@ export function InsightsCountyDotHeatmap({
     ? metricRankBand(hoverRank.rank, hoverRank.total)
     : null
 
-  // Build dots + heat colors when geography / metric changes
   useEffect(() => {
     const container = containerRef.current
     const canvas = canvasRef.current
@@ -188,85 +172,31 @@ export function InsightsCountyDotHeatmap({
     const mapW = Math.max(1, bounds.maxX - bounds.minX)
     const mapH = Math.max(1, bounds.maxY - bounds.minY)
 
-    // Identity mask — fill each region with unique RGB for fast hit tests & dots
-    const maskScale = 2
-    const maskW = Math.round(mapW * maskScale)
-    const maskH = Math.round(mapH * maskScale)
-    const idMask = document.createElement("canvas")
-    idMask.width = maskW
-    idMask.height = maskH
-    idMaskRef.current = idMask
-    const mctx = idMask.getContext("2d", { willReadFrequently: true })
-    if (!mctx) return
-
-    mctx.setTransform(maskScale, 0, 0, maskScale, -bounds.minX * maskScale, -bounds.minY * maskScale)
-    mctx.clearRect(bounds.minX, bounds.minY, mapW, mapH)
-    mctx.fillStyle = "#000000"
-    mctx.fillRect(bounds.minX, bounds.minY, mapW, mapH)
-    prepared.forEach((region, index) => {
-      const { r, g, b } = encodeIndex(index)
-      mctx.fillStyle = `rgb(${r},${g},${b})`
-      mctx.fill(region.path)
-    })
-
-    // Soft heat field
-    const heatW = 420
-    const heatH = Math.max(1, Math.round((mapH / mapW) * heatW))
-    const heat = document.createElement("canvas")
-    heat.width = heatW
-    heat.height = heatH
-    const hctx = heat.getContext("2d", { willReadFrequently: true })
-    if (!hctx) return
-
-    hctx.fillStyle = "#ffffff"
-    hctx.fillRect(0, 0, heatW, heatH)
-    const blobR = Math.max(heatW, heatH) * 0.16
-    for (const region of prepared) {
-      const hx = ((region.cx - bounds.minX) / mapW) * heatW
-      const hy = ((region.cy - bounds.minY) / mapH) * heatH
-      const color = heatmapColor(region.t)
-      const gradient = hctx.createRadialGradient(hx, hy, 0, hx, hy, blobR)
-      gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, 0.95)`)
-      gradient.addColorStop(0.4, `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`)
-      gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`)
-      hctx.fillStyle = gradient
-      hctx.beginPath()
-      hctx.arc(hx, hy, blobR, 0, Math.PI * 2)
-      hctx.fill()
-    }
-    hctx.filter = "blur(12px)"
-    hctx.drawImage(heat, 0, 0)
-    hctx.filter = "none"
-
-    const heatData = hctx.getImageData(0, 0, heatW, heatH).data
-    const maskData = mctx.getImageData(0, 0, maskW, maskH).data
+    const probe = document.createElement("canvas")
+    probe.width = 1
+    probe.height = 1
+    const pctx = probe.getContext("2d")
+    if (!pctx) return
 
     function regionAtMap(x: number, y: number): PreparedRegion | null {
-      const mx = Math.round((x - bounds.minX) * maskScale)
-      const my = Math.round((y - bounds.minY) * maskScale)
-      if (mx < 0 || my < 0 || mx >= maskW || my >= maskH) return null
-      const i = (my * maskW + mx) * 4
-      const idx = decodeIndex(maskData[i] ?? 0, maskData[i + 1] ?? 0, maskData[i + 2] ?? 0)
-      return idx >= 0 ? (prepared[idx] ?? null) : null
-    }
-
-    function sampleHeat(x: number, y: number) {
-      const hx = Math.min(
-        heatW - 1,
-        Math.max(0, Math.round(((x - bounds.minX) / mapW) * (heatW - 1)))
-      )
-      const hy = Math.min(
-        heatH - 1,
-        Math.max(0, Math.round(((y - bounds.minY) / mapH) * (heatH - 1)))
-      )
-      const i = (hy * heatW + hx) * 4
-      return {
-        r: heatData[i] ?? 255,
-        g: heatData[i + 1] ?? 230,
-        b: heatData[i + 2] ?? 102,
+      const near: PreparedRegion[] = []
+      for (const region of prepared) {
+        if (Math.hypot(region.cx - x, region.cy - y) <= HIT_RADIUS) near.push(region)
       }
+      near.sort(
+        (a, b) => Math.hypot(a.cx - x, a.cy - y) - Math.hypot(b.cx - x, b.cy - y)
+      )
+      for (const region of near) {
+        if (pctx!.isPointInPath(region.path, x, y)) return region
+      }
+      for (const region of prepared) {
+        if (near.includes(region)) continue
+        if (pctx!.isPointInPath(region.path, x, y)) return region
+      }
+      return null
     }
 
+    // Colour each land dot from its county metric (not a blurred field — that washed lows into white)
     const dots: LandDot[] = []
     const startX = Math.ceil(bounds.minX / DOT_STEP) * DOT_STEP
     const startY = Math.ceil(bounds.minY / DOT_STEP) * DOT_STEP
@@ -274,11 +204,12 @@ export function InsightsCountyDotHeatmap({
       for (let x = startX; x <= bounds.maxX; x += DOT_STEP) {
         const hit = regionAtMap(x, y)
         if (!hit) continue
-        const color = sampleHeat(x, y)
+        const color = heatmapColor(hit.t, {
+          higherIsBetter: metricHigherIsBetter(metric),
+        })
         dots.push({ x, y, regionId: hit.id, ...color })
       }
     }
-    dotsRef.current = dots
 
     function draw() {
       if (!container || !canvas) return
@@ -296,12 +227,12 @@ export function InsightsCountyDotHeatmap({
       if (!ctx) return
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-      ctx.fillStyle = "#f7f6f3"
+      ctx.fillStyle = "#e8e6e1"
       ctx.fillRect(0, 0, tw, th)
 
       const availW = tw - PAD * 2
       const availH = th - PAD * 2
-      const scale = Math.min(availW / mapW, availH / mapH)
+      const scale = Math.min(availW / mapW, availH / mapH) * FIT_SCALE
       const ox = (tw - mapW * scale) / 2
       const oy = (th - mapH * scale) / 2
       transformRef.current = {
@@ -340,11 +271,11 @@ export function InsightsCountyDotHeatmap({
         const isHovered = hovered === dot.regionId
         const dim = dimOthers && !isSelected ? 0.42 : 1
         const boost = isHovered || isSelected ? 1.1 : 1
-        const fr = Math.round(dot.r * dim + (1 - dim) * 247)
-        const fg = Math.round(dot.g * dim + (1 - dim) * 246)
-        const fb = Math.round(dot.b * dim + (1 - dim) * 243)
+        const fr = Math.round(dot.r * dim + (1 - dim) * 232)
+        const fg = Math.round(dot.g * dim + (1 - dim) * 230)
+        const fb = Math.round(dot.b * dim + (1 - dim) * 225)
         ctx.beginPath()
-        ctx.fillStyle = `rgba(${fr}, ${fg}, ${fb}, ${dimOthers && !isSelected ? 0.5 : 0.95})`
+        ctx.fillStyle = `rgb(${fr}, ${fg}, ${fb})`
         ctx.arc(
           ox + (dot.x - bounds.minX) * scale,
           oy + (dot.y - bounds.minY) * scale,
@@ -424,12 +355,9 @@ export function InsightsCountyDotHeatmap({
       canvas.removeEventListener("pointerleave", onPointerLeave)
       canvas.removeEventListener("click", onClick)
       drawRef.current = null
-      dotsRef.current = []
-      idMaskRef.current = null
     }
   }, [prepared, regions, metric, range.min, range.max])
 
-  // Redraw when hover / selection changes
   useEffect(() => {
     drawRef.current?.()
   }, [selectedCountyId, hoveredCountyId])

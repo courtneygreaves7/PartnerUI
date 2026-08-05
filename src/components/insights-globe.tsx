@@ -17,6 +17,7 @@ import {
   type GlobeFocusId,
 } from "@/lib/insights-globe-data"
 import { FIGURE_24PX_CLASS } from "@/lib/figure-styles"
+import { mapStageGlass } from "@/lib/map-stage-glass"
 import { cn } from "@/lib/utils"
 
 type InsightsGlobeProps = {
@@ -72,6 +73,14 @@ const GLOBE_STYLES: {
 const GLOBE_STYLE_OPTIONS = GLOBE_STYLES.filter((style) => !style.hidden)
 
 const CDN = "//cdn.jsdelivr.net/npm/three-globe/example/img"
+
+/** Local 4k equirectangular day map (avoids CDN / CORS texture failures). */
+const EARTH_DAY_HIRES = "/images/earth-day-4k.jpg"
+const EARTH_NIGHT = `${CDN}/earth-night.jpg`
+const EARTH_TOPOLOGY = `${CDN}/earth-topology.png`
+
+/** Idle spin — previous was 0.45, now ~7× slower. */
+const AUTO_ROTATE_SPEED = 0.45 / 7
 
 /** Soft plaster ocean — cream (not pure white) so any cap gaps stay subtle. */
 const RELIEF_GLOBE_IMAGE =
@@ -214,9 +223,33 @@ type GlobeMaterialLike = {
   transparent?: boolean
   opacity?: number
   shininess?: number
-  map?: unknown | null
-  bumpMap?: unknown | null
+  specular?: { set: (hex: string) => void }
+  bumpScale?: number
+  map?: {
+    anisotropy?: number
+    needsUpdate?: boolean
+  } | null
+  bumpMap?: {
+    anisotropy?: number
+    needsUpdate?: boolean
+  } | null
   needsUpdate?: boolean
+}
+
+type GlobeRendererLike = {
+  setPixelRatio: (ratio: number) => void
+  capabilities?: { getMaxAnisotropy: () => number }
+}
+
+function enhanceGlobeTextures(mat: GlobeMaterialLike, maxAnisotropy: number) {
+  if (mat.map) {
+    mat.map.anisotropy = maxAnisotropy
+    mat.map.needsUpdate = true
+  }
+  if (mat.bumpMap) {
+    mat.bumpMap.anisotropy = maxAnisotropy
+    mat.bumpMap.needsUpdate = true
+  }
 }
 
 function applyGlobeMaterialStyle(globe: GlobeMethods, style: GlobeStyleId) {
@@ -243,9 +276,40 @@ function applyGlobeMaterialStyle(globe: GlobeMethods, style: GlobeStyleId) {
       mat.transparent = true
       mat.opacity = 0.55
       mat.shininess = 40
+      mat.needsUpdate = true
+    } else {
+      // Realistic marble — clearer relief without fighting the base material
+      if (!mat.color) mat.color = new Color("#ffffff")
+      else mat.color.set("#ffffff")
+      mat.emissive?.set("#000000")
+      mat.emissiveIntensity = 0
+      mat.transparent = false
+      mat.opacity = 1
+      mat.shininess = 15
+      mat.specular?.set("#335566")
+      mat.bumpScale = 2.4
+      mat.needsUpdate = true
     }
   } catch {
     // Globe may be mid-remount (React Strict Mode) — skip until ready again
+  }
+}
+
+function applyGlobeRenderQuality(globe: GlobeMethods) {
+  try {
+    const withRenderer = globe as GlobeMethods & {
+      renderer: () => GlobeRendererLike
+      globeMaterial: () => GlobeMaterialLike
+    }
+    const renderer = withRenderer.renderer?.()
+    if (renderer?.setPixelRatio) {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    }
+    const mat = withRenderer.globeMaterial?.()
+    const maxAniso = Math.min(renderer?.capabilities?.getMaxAnisotropy?.() ?? 8, 16)
+    if (mat) enhanceGlobeTextures(mat, maxAniso)
+  } catch {
+    // ignore mid-teardown
   }
 }
 
@@ -430,7 +494,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
       // Allow looking at both poles (default orbit clamps can hide them)
       controls.minPolarAngle = 0.05
       controls.maxPolarAngle = Math.PI - 0.05
-      controls.autoRotateSpeed = 0.45
+      controls.autoRotateSpeed = AUTO_ROTATE_SPEED
+      controls.dampingFactor = 0.06
     } catch {
       // Ignore during Strict Mode remount / WebGL teardown
     }
@@ -453,8 +518,17 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
     // Run after react-globe applies globeImageUrl (empty url otherwise forces black)
     const frame = requestAnimationFrame(() => {
       applyGlobeMaterialStyle(globe, globeStyle)
+      applyGlobeRenderQuality(globe)
     })
-    return () => cancelAnimationFrame(frame)
+    // Textures may load a beat later — re-apply filtering once they land
+    const timer = window.setTimeout(() => {
+      applyGlobeMaterialStyle(globe, globeStyle)
+      applyGlobeRenderQuality(globe)
+    }, 800)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+    }
   }, [globeStyle, ready])
 
   // Reset readiness whenever the WebGL instance is torn down (Strict Mode / unmount)
@@ -545,14 +619,12 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <div
           className={cn(
-            "w-[min(100%,17.5rem)] overflow-hidden rounded-xl border shadow-xs backdrop-blur-sm transition-[box-shadow,border-color] duration-200",
-            isDarkStage
-              ? "border-white/12 bg-black/70 text-white"
-              : "border-border bg-card/95 text-card-foreground",
+            "w-[min(100%,17.5rem)] overflow-hidden rounded-2xl transition-[box-shadow,border-color] duration-200",
+            isDarkStage ? mapStageGlass.panelOnDark : mapStageGlass.panelOnLight,
             hoverStats &&
               (isDarkStage
-                ? "border-white/25 shadow-md"
-                : "border-primary/25 shadow-md")
+                ? "border-white/30 shadow-md"
+                : "border-primary/30 shadow-md")
           )}
         >
           <div className="flex items-center gap-2.5 px-4 pb-2 pt-4">
@@ -676,8 +748,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
         {GLOBE_STYLE_OPTIONS.length > 1 ? (
           <div
             className={cn(
-              "pointer-events-auto rounded-xl border p-1.5 shadow-xs backdrop-blur-sm",
-              isDarkStage ? "border-white/10 bg-black/55" : "border-border bg-card/95"
+              "pointer-events-auto rounded-2xl p-1.5",
+              isDarkStage ? mapStageGlass.panelOnDark : mapStageGlass.panelOnLight
             )}
           >
             <p
@@ -755,14 +827,15 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             showGlobe
             showAtmosphere
             atmosphereColor={
-              isClassic ? "#6ea8d8" : isRelief ? "#c9d0da" : isHolo ? "#e8eef8" : primary
+              isClassic ? "#8eb8dc" : isRelief ? "#c9d0da" : isHolo ? "#e8eef8" : primary
             }
-            atmosphereAltitude={isHolo ? 0.22 : isClassic ? 0.16 : isRelief ? 0.12 : 0.14}
+            atmosphereAltitude={isHolo ? 0.22 : isClassic ? 0.18 : isRelief ? 0.12 : 0.14}
+            globeCurvatureResolution={isClassic ? 2 : 3}
             globeImageUrl={
               isClassic
-                ? `${CDN}/earth-blue-marble.jpg`
+                ? EARTH_DAY_HIRES
                 : isHolo
-                  ? `${CDN}/earth-night.jpg`
+                  ? EARTH_NIGHT
                   : isRelief
                     ? RELIEF_GLOBE_IMAGE
                     : undefined
@@ -771,7 +844,7 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
               isRelief
                 ? undefined
                 : isClassic
-                  ? `${CDN}/earth-topology.png`
+                  ? EARTH_TOPOLOGY
                   : undefined
             }
             polygonsData={polygonsData}
@@ -877,8 +950,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
             pathPointLat={(p) => (p as [number, number])[0]}
             pathPointLng={(p) => (p as [number, number])[1]}
             pathPointAlt={0.008}
-            pathColor={(d) => (d as GlowPath).color}
-            pathStroke={(d) => (d as GlowPath).stroke}
+            pathColor="color"
+            pathStroke="stroke"
             pathResolution={1.2}
             pathTransitionDuration={0}
             particlesData={layerParticles}
@@ -895,10 +968,12 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
               const globe = globeRef.current
               if (!globe) return
               applyGlobeMaterialStyle(globe, globeStyle)
+              applyGlobeRenderQuality(globe)
               try {
                 const controls = globe.controls()
                 controls.autoRotate = true
-                controls.autoRotateSpeed = 0.45
+                controls.autoRotateSpeed = AUTO_ROTATE_SPEED
+                controls.dampingFactor = 0.06
                 controls.minPolarAngle = 0.05
                 controls.maxPolarAngle = Math.PI - 0.05
               } catch {
@@ -925,14 +1000,15 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
               type="button"
               onClick={() => selectFocus("world")}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors",
+                "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                isDarkStage ? mapStageGlass.panelOnDark : mapStageGlass.panelOnLight,
                 focus === "world"
                   ? isDarkStage
                     ? "border-white bg-white text-black"
                     : "border-primary bg-primary text-primary-foreground"
                   : isDarkStage
-                    ? "border-white/12 bg-black/55 text-white/80 hover:border-white/30 hover:bg-black/70 hover:text-white"
-                    : "border-border/60 bg-background/95 text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                    ? "text-white/80 hover:border-white/30 hover:bg-white/[0.14] hover:text-white"
+                    : "text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
               )}
             >
               <Globe2 className="size-3.5 shrink-0" strokeWidth={2} />
@@ -946,14 +1022,15 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                   type="button"
                   onClick={() => openCountry(country.code)}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors",
+                    "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    isDarkStage ? mapStageGlass.panelOnDark : mapStageGlass.panelOnLight,
                     isActive
                       ? isDarkStage
                         ? "border-white bg-white text-black"
                         : "border-primary bg-primary text-primary-foreground"
                       : isDarkStage
-                        ? "border-white/12 bg-black/55 text-white/80 hover:border-white/30 hover:bg-black/70 hover:text-white"
-                        : "border-border/60 bg-background/95 text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                        ? "text-white/80 hover:border-white/30 hover:bg-white/[0.14] hover:text-white"
+                        : "text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
                   )}
                 >
                   <CountryFlag code={country.code} />

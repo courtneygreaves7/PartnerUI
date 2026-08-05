@@ -155,6 +155,74 @@ function renderBullet(line: string, key: string | number, compact = false) {
   )
 }
 
+function parseTableCells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim())
+}
+
+function isTableSeparator(cells: string[]) {
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell))
+}
+
+function renderMarkdownTable(rawRows: string[], key: string | number) {
+  const parsed = rawRows.map(parseTableCells).filter((cells) => cells.length > 0)
+  if (parsed.length === 0) return null
+
+  const header = parsed[0]!
+  const body = parsed.slice(1).filter((cells) => !isTableSeparator(cells))
+
+  return (
+    <div
+      key={key}
+      className="overflow-x-auto rounded-xl border border-border/60 bg-card/60 shadow-xs"
+    >
+      <table className="w-full min-w-[18rem] border-collapse text-left text-sm">
+        <thead>
+          <tr className="border-b border-border/60 bg-muted/40">
+            {header.map((cell, cellIndex) => (
+              <th
+                key={`${key}-h-${cellIndex}`}
+                className={cn(
+                  "px-3 py-2.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase",
+                  cellIndex > 0 && "text-right tabular-nums"
+                )}
+              >
+                {renderInline(cell)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((row, rowIndex) => (
+            <tr
+              key={`${key}-r-${rowIndex}`}
+              className="border-b border-border/40 last:border-b-0"
+            >
+              {row.map((cell, cellIndex) => (
+                <td
+                  key={`${key}-r-${rowIndex}-c-${cellIndex}`}
+                  className={cn(
+                    "px-3 py-2.5 text-[13px] leading-snug text-foreground",
+                    cellIndex === 0
+                      ? "font-medium text-muted-foreground"
+                      : "text-right font-semibold tabular-nums"
+                  )}
+                >
+                  {renderInline(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function renderMessageLine(
   line: string,
   key: string | number,
@@ -205,17 +273,6 @@ function renderMessageLine(
     )
   }
 
-  if (line.startsWith("| ")) {
-    return (
-      <p
-        key={key}
-        className="font-mono text-[12px] leading-relaxed text-muted-foreground"
-      >
-        {line}
-      </p>
-    )
-  }
-
   const numbered = line.match(/^(\d+)\.\s+(.*)$/)
   if (numbered) {
     return (
@@ -255,6 +312,20 @@ function renderMessageText(text: string, onAsk?: (prompt: string) => void) {
     if (!line.trim()) {
       nodes.push(<div key={`gap-${index}`} className="h-2.5" />)
       index += 1
+      continue
+    }
+
+    // Markdown pipe tables → styled HTML table
+    if (line.trim().startsWith("|")) {
+      const tableLines: string[] = []
+      let cursor = index
+      while (cursor < lines.length && lines[cursor]!.trim().startsWith("|")) {
+        tableLines.push(lines[cursor]!.trim())
+        cursor += 1
+      }
+      const table = renderMarkdownTable(tableLines, `table-${index}`)
+      if (table) nodes.push(table)
+      index = cursor
       continue
     }
 

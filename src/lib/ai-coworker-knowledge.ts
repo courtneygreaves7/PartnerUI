@@ -418,8 +418,8 @@ function compareBrands(prompt: string): string {
     `| --- | --- | --- |`,
     `| Portfolio share | ${formatShare(BRAND_VOLUME_SHARE[a.brandId as (typeof BRAND_IDS)[number]])} | ${formatShare(BRAND_VOLUME_SHARE[b.brandId as (typeof BRAND_IDS)[number]])} |`,
     `| Cover take-up | ${formatPct(a.calAttachment)} | ${formatPct(b.calAttachment)} |`,
-    `| CAL margin | ${formatMoney(a.calMargin)} | ${formatMoney(b.calMargin)} |`,
-    `| DDL attachment | ${formatPct(a.ddlAttachment)} | ${formatPct(b.ddlAttachment)} |`,
+    `| Flexi Cancellation margin | ${formatMoney(a.calMargin)} | ${formatMoney(b.calMargin)} |`,
+    `| Damage Waiver attachment | ${formatPct(a.ddlAttachment)} | ${formatPct(b.ddlAttachment)} |`,
     `| Cancellation rate | ${formatPct(a.cancellationRate)} | ${formatPct(b.cancellationRate)} |`,
     `| Re-let rate | ${formatPct(a.reletRate)} | ${formatPct(b.reletRate)} |`,
     `| Avg lead time | ${formatDays(a.avgLeadTravel)} | ${formatDays(b.avgLeadTravel)} |`,
@@ -906,9 +906,9 @@ export function buildAiCoworkerReply(prompt: string, partnerName = "George"): st
         "",
         ...snap.summary.map((s) => `• **${s.label}:** ${s.value}`),
         "",
-        `CAL attachment **${formatPct(snap.calAttachment)}**, DDL **${formatPct(snap.ddlAttachment)}**, cancellation rate **${formatPct(snap.cancellationRate)}**.`,
+        `Flexi Cancellation attachment **${formatPct(snap.calAttachment)}**, Damage Waiver **${formatPct(snap.ddlAttachment)}**, cancellation rate **${formatPct(snap.cancellationRate)}**.`,
         "",
-        "Ask for CAL detail, cancellations, or a comparison with another brand.",
+        "Ask for Flexi Cancellation detail, cancellations, or a comparison with another brand.",
       ].join("\n")
     }
     return summarisePortfolio()
