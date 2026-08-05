@@ -1,11 +1,6 @@
 import { cn } from "@/lib/utils"
 import { PARTNER_BRANDING } from "@/lib/partner-branding"
-import {
-  BRAND_THEME_COPY,
-  type BrandThemeId,
-} from "@/lib/brand-theme"
-import sykesLogoBlue from "@/assets/sykes-holiday-cottages-logo.png"
-import sykesLogoMask from "@/assets/sykes-logo-mask.png"
+import { type BrandThemeId } from "@/lib/brand-theme"
 
 type PartnerLogoProps = {
   className?: string
@@ -126,79 +121,45 @@ export function PartnerLogo({
     return (
       <div className={cn("flex shrink-0 items-center justify-center", className)}>
         <SykesHouseMark inverted={inverted} />
-        <span className="sr-only">{PARTNER_BRANDING.name}</span>
+        <span className="sr-only">{PARTNER_BRANDING.shortName}</span>
       </div>
     )
   }
 
-  const sizeClass =
-    variant === "hero" ? "h-10 w-auto max-w-[220px]" : "h-6 w-auto max-w-[140px]"
-  const copy = BRAND_THEME_COPY.sykes
-
-  const poweredBy = copy.poweredBy ? (
-    <p
-      className={cn(
-        "mt-1 text-[9px] font-bold tracking-[0.14em] uppercase",
-        inverted ? "text-white/70" : "text-muted-foreground"
-      )}
-    >
-      {copy.poweredBy}
-    </p>
-  ) : null
-
-  const whiteLogo = (
-    <span
-      role="img"
-      aria-label={PARTNER_BRANDING.name}
-      className={cn("aspect-[1024/201] shrink-0 bg-white", sizeClass)}
-      style={{
-        WebkitMaskImage: `url(${sykesLogoMask})`,
-        maskImage: `url(${sykesLogoMask})`,
-        WebkitMaskRepeat: "no-repeat",
-        maskRepeat: "no-repeat",
-        WebkitMaskPosition: "center",
-        maskPosition: "center",
-        WebkitMaskSize: "contain",
-        maskSize: "contain",
-      }}
-    />
-  )
-
-  if (inverted) {
-    return (
-      <div className={cn("flex min-w-0 flex-col items-start", className)}>
-        {whiteLogo}
-        {poweredBy}
-      </div>
-    )
-  }
+  const markSize = variant === "hero" ? "size-9" : "size-7"
+  const wordSize = variant === "hero" ? "text-2xl" : "text-lg"
 
   return (
     <div className={cn("flex min-w-0 flex-col items-start", className)}>
-      <img
-        src={sykesLogoBlue}
-        alt={PARTNER_BRANDING.name}
-        className={cn("object-contain object-left dark:hidden", sizeClass)}
-      />
-      <span
-        role="img"
-        aria-label={PARTNER_BRANDING.name}
+      <div
         className={cn(
-          "hidden aspect-[1024/201] shrink-0 bg-white dark:inline-block",
-          sizeClass
+          "flex items-center gap-2.5",
+          inverted ? "text-white" : "text-foreground"
         )}
-        style={{
-          WebkitMaskImage: `url(${sykesLogoMask})`,
-          maskImage: `url(${sykesLogoMask})`,
-          WebkitMaskRepeat: "no-repeat",
-          maskRepeat: "no-repeat",
-          WebkitMaskPosition: "center",
-          maskPosition: "center",
-          WebkitMaskSize: "contain",
-          maskSize: "contain",
-        }}
-      />
-      {poweredBy}
+        role="img"
+        aria-label={PARTNER_BRANDING.shortName}
+      >
+        <SykesHouseMark
+          inverted={inverted}
+          className={markSize}
+        />
+        <span
+          aria-hidden
+          className={cn(
+            "h-5 w-px shrink-0 sm:h-6",
+            inverted ? "bg-white/45" : "bg-border"
+          )}
+        />
+        <span
+          className={cn(
+            "font-bold uppercase tracking-[0.04em]",
+            wordSize,
+            inverted ? "text-white" : "text-foreground"
+          )}
+        >
+          {PARTNER_BRANDING.shortName}
+        </span>
+      </div>
     </div>
   )
 }

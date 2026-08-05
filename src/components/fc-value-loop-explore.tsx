@@ -144,7 +144,7 @@ function MatrixCellSwatch({
       <TooltipTrigger asChild>
         <button
           type="button"
-          className="size-10 shrink-0 rounded-md outline-none transition-[transform,box-shadow] hover:scale-105 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="h-10 w-full rounded-md outline-none transition-[transform,box-shadow] hover:scale-[1.02] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/40"
           style={{
             backgroundColor: heatSwatchBackground(relet, colourMin, colourMax),
           }}
@@ -278,10 +278,10 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="border-separate border-spacing-1.5">
+          <table className="w-full table-fixed border-separate border-spacing-1.5">
             <thead>
               <tr>
-                <th className="px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
+                <th className="w-24 px-1 pb-2 text-left text-[10px] font-medium tracking-wide text-muted-foreground/80">
                   {
                     HEAT_DIMENSION_OPTIONS.find((option) => option.id === rowDim)
                       ?.label
@@ -290,7 +290,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
                 {matrix.colBands.map((col) => (
                   <th
                     key={col.id}
-                    className="w-10 px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
+                    className="px-0.5 pb-2 text-center text-[10px] font-medium tracking-wide text-muted-foreground/80"
                   >
                     {col.label}
                   </th>
@@ -308,7 +308,7 @@ export function FcValueLoopExplore({ onOpenRelets, onAskAi }: FcValueLoopExplore
                     if (!cell) {
                       return (
                         <td key={col.id} className="p-0">
-                          <div className="size-10 rounded-md bg-transparent" />
+                          <div className="h-10 w-full rounded-md bg-transparent" />
                         </td>
                       )
                     }

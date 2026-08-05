@@ -21,7 +21,6 @@ export const BRAND_THEME_COPY: Record<
   sykes: {
     name: "Sykes Holiday Cottages",
     shortName: "Sykes",
-    poweredBy: "Powered by Pikl.",
   },
   pikl: {
     name: "Pikl",
