@@ -201,7 +201,9 @@ function App() {
   const [insightsView, setInsightsView] = useState<InsightsView>("detail")
   const [insightsScrollTarget, setInsightsScrollTarget] = useState<string | null>(null)
   const [aiPendingPrompt, setAiPendingPrompt] = useState<string | null>(null)
+  const [insightsNavStuck, setInsightsNavStuck] = useState(false)
   const mainScrollRef = useRef<HTMLElement>(null)
+  const insightsNavSentinelRef = useRef<HTMLDivElement>(null)
 
   function handleLogout() {
     setIsAuthenticated(false)
@@ -249,6 +251,24 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.brand = brandTheme
   }, [brandTheme])
+
+  useEffect(() => {
+    if (activeSection !== "insights" || insightsView !== "detail" || SHOW_INSIGHTS_CONTENT) {
+      setInsightsNavStuck(false)
+      return
+    }
+
+    const sentinel = insightsNavSentinelRef.current
+    const root = mainScrollRef.current
+    if (!sentinel || !root) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setInsightsNavStuck(!entry.isIntersecting),
+      { root, threshold: 0 }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [activeSection, insightsView])
 
   const brandCopy = BRAND_THEME_COPY[brandTheme]
 
@@ -532,20 +552,35 @@ function App() {
                         <InsightsTopCards />
                       </div>
                       <div
-                        className="sticky top-0 z-30 isolate border-t border-b border-border/50"
-                        style={{ backgroundColor: "var(--panel-bg)" }}
+                        ref={insightsNavSentinelRef}
+                        className="h-px w-full"
+                        aria-hidden
+                      />
+                      <div
+                        className={cn(
+                          "sticky top-0 z-30 isolate border-t border-b transition-[background-color,border-color,box-shadow] duration-200",
+                          insightsNavStuck
+                            ? "border-border/60 bg-[var(--brand-surface)] shadow-[0_8px_24px_-16px_rgb(0_0_0_/_0.35)] dark:bg-muted"
+                            : "border-border/50 bg-[var(--panel-bg)]"
+                        )}
                       >
                         <div className="flex w-full items-center gap-3 px-10 py-3 xl:px-16">
                           <div className="min-w-0 flex-1">
                             <InsightsProductTabs
                               value={insightsProduct}
                               onChange={setInsightsProduct}
+                              elevated={insightsNavStuck}
                             />
                           </div>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-9 shrink-0 gap-1.5 bg-[var(--panel-bg)]"
+                            className={cn(
+                              "h-9 shrink-0 gap-1.5",
+                              insightsNavStuck
+                                ? "border-border/70 bg-[var(--panel-bg)] dark:bg-card"
+                                : "bg-[var(--panel-bg)]"
+                            )}
                             onClick={() => setInsightsView("map")}
                           >
                             <Map className="size-3.5" />
@@ -555,7 +590,12 @@ function App() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-9 shrink-0 gap-1.5 bg-[var(--panel-bg)]"
+                              className={cn(
+                                "h-9 shrink-0 gap-1.5",
+                                insightsNavStuck
+                                  ? "border-border/70 bg-[var(--panel-bg)] dark:bg-card"
+                                  : "bg-[var(--panel-bg)]"
+                              )}
                               onClick={() => setFilterSidebarOpen(true)}
                             >
                               <SlidersHorizontal className="size-3.5" />
@@ -566,8 +606,16 @@ function App() {
                             <FilterContextPill filters={activeFilters} />
                           ) : null}
                         </div>
-                        <div className="border-t border-border/40 px-10 py-2 xl:px-16">
-                          <InsightsAnchorNav product={insightsProduct} />
+                        <div
+                          className={cn(
+                            "border-t px-10 py-2 xl:px-16",
+                            insightsNavStuck ? "border-border/50" : "border-border/40"
+                          )}
+                        >
+                          <InsightsAnchorNav
+                            product={insightsProduct}
+                            elevated={insightsNavStuck}
+                          />
                         </div>
                       </div>
                       <div className="px-10 pt-10 pb-10 xl:px-16 xl:pb-14">

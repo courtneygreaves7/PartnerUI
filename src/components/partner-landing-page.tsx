@@ -1448,12 +1448,22 @@ export type InsightsProductId = (typeof INSIGHTS_PRODUCT_TABS)[number]["id"]
 export function InsightsProductTabs({
   value,
   onChange,
+  elevated = false,
 }: {
   value: InsightsProductId
   onChange: (id: InsightsProductId) => void
+  /** Stronger chrome when the sticky bar sits on the sidebar surface colour. */
+  elevated?: boolean
 }) {
   return (
-    <div className="flex w-full min-w-0 items-center gap-1 rounded-xl bg-muted p-1">
+    <div
+      className={cn(
+        "flex w-full min-w-0 items-center gap-1 rounded-xl p-1",
+        elevated
+          ? "bg-[var(--panel-bg)] ring-1 ring-border/50 dark:bg-card"
+          : "bg-muted"
+      )}
+    >
       {INSIGHTS_PRODUCT_TABS.map((tab) => (
         <button
           key={tab.id}
@@ -1462,8 +1472,10 @@ export function InsightsProductTabs({
           className={cn(
             "min-w-0 flex-1 rounded-lg px-2 py-2 text-center text-xs font-medium transition-colors sm:px-4 sm:text-sm",
             value === tab.id
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : elevated
+                ? "text-foreground/70 hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground"
           )}
         >
           {tab.label}

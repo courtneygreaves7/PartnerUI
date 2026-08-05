@@ -50,9 +50,15 @@ const STORY_ARCS: Record<InsightsProductId, InsightsAnchorItem[]> = {
 type InsightsAnchorNavProps = {
   product: InsightsProductId
   className?: string
+  /** Stronger chrome when the sticky bar sits on the sidebar surface colour. */
+  elevated?: boolean
 }
 
-export function InsightsAnchorNav({ product, className }: InsightsAnchorNavProps) {
+export function InsightsAnchorNav({
+  product,
+  className,
+  elevated = false,
+}: InsightsAnchorNavProps) {
   const items = STORY_ARCS[product]
   const [activeId, setActiveId] = useState(items[0]?.id ?? "")
 
@@ -110,7 +116,9 @@ export function InsightsAnchorNav({ product, className }: InsightsAnchorNavProps
               "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
               active
                 ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-border/60 bg-background/80 text-muted-foreground hover:border-border hover:text-foreground"
+                : elevated
+                  ? "border-border/70 bg-[var(--panel-bg)] text-foreground/75 hover:border-border hover:text-foreground dark:bg-card"
+                  : "border-border/60 bg-background/80 text-muted-foreground hover:border-border hover:text-foreground"
             )}
           >
             {item.step ? (
@@ -119,7 +127,9 @@ export function InsightsAnchorNav({ product, className }: InsightsAnchorNavProps
                   "inline-grid size-4 place-items-center rounded-full text-[9px] font-semibold",
                   active
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    : elevated
+                      ? "bg-background text-foreground/70 dark:bg-[var(--panel-bg)]"
+                      : "bg-muted text-muted-foreground"
                 )}
               >
                 {item.step}
