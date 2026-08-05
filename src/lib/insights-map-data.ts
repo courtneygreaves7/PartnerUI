@@ -2,10 +2,17 @@ export type MapMetricId =
   | "bookings"
   | "abv"
   | "calTakeUp"
+  | "ddlTakeUp"
   | "gwp"
   | "cancellationRate"
   | "reletRate"
   | "recoveryRate"
+
+/** Heatmap-only product metrics for county view. */
+export type MapHeatmapMetricId = Extract<
+  MapMetricId,
+  "calTakeUp" | "ddlTakeUp" | "cancellationRate" | "reletRate"
+>
 
 import {
   adjustAverageCurrency,
@@ -26,6 +33,8 @@ export type MapRegion = {
   bookings: number
   abv: number
   calTakeUp: number
+  /** Damage Deposit Waiver / DDL take-up % (derived mock when absent from geo JSON). */
+  ddlTakeUp: number
   gwp: number
   cancellationRate: number
   /** Share of cancelled stays re-let (derived mock when absent from geo JSON). */
@@ -38,10 +47,19 @@ export const MAP_METRICS: Array<{ id: MapMetricId; label: string }> = [
   { id: "bookings", label: "Bookings" },
   { id: "abv", label: "ABV" },
   { id: "calTakeUp", label: "CAL take-up" },
+  { id: "ddlTakeUp", label: "DDW take-up" },
   { id: "gwp", label: "GWP" },
   { id: "cancellationRate", label: "Cancellation rate" },
   { id: "reletRate", label: "Re-let rate" },
   { id: "recoveryRate", label: "Recovery rate" },
+]
+
+/** County heatmap chips — FC / DDW / cancellations / re-lets. */
+export const MAP_HEATMAP_METRICS: Array<{ id: MapHeatmapMetricId; label: string }> = [
+  { id: "calTakeUp", label: "FC" },
+  { id: "ddlTakeUp", label: "DDW" },
+  { id: "cancellationRate", label: "Cancellations" },
+  { id: "reletRate", label: "Re-lets" },
 ]
 
 /** SVG viewBox for the projected UK counties map (see public/uk-counties-map.json). */
@@ -112,9 +130,10 @@ const UK_ISLAND_REGION_IDS = new Set([
 
 const regionCache = new Map<MapCountryCode, MapRegion[]>()
 
-type RawMapRegion = Omit<MapRegion, "reletRate" | "recoveryRate"> & {
+type RawMapRegion = Omit<MapRegion, "reletRate" | "recoveryRate" | "ddlTakeUp"> & {
   reletRate?: number
   recoveryRate?: number
+  ddlTakeUp?: number
 }
 
 function enrichRegionRecovery(region: RawMapRegion): MapRegion {
@@ -130,8 +149,13 @@ function enrichRegionRecovery(region: RawMapRegion): MapRegion {
   const recoveryRate =
     region.recoveryRate ??
     Math.round(Math.min(128, Math.max(62, reletRate * 1.2 + (seed % 18) - 4)) * 10) / 10
+  const ddlTakeUp =
+    region.ddlTakeUp ??
+    Math.round(
+      Math.min(28, Math.max(11, 14 + (seed % 9) + region.calTakeUp * 0.12 - (seed % 5) * 0.4)) * 10
+    ) / 10
 
-  return { ...region, reletRate, recoveryRate }
+  return { ...region, reletRate, recoveryRate, ddlTakeUp }
 }
 
 export async function loadMapRegions(country: MapCountryCode = "UK"): Promise<MapRegion[]> {
@@ -260,6 +284,7 @@ export function scaleRegionForFilters(
     abv: adjustAverageCurrency(region.abv, filters.brand),
     gwp: scaleCurrencyValue(region.gwp, filters.brand),
     calTakeUp: adjustPercent(region.calTakeUp, filters.brand),
+    ddlTakeUp: adjustPercent(region.ddlTakeUp, filters.brand),
     cancellationRate: adjustPercent(region.cancellationRate, filters.brand),
     reletRate: adjustPercent(region.reletRate, filters.brand),
     recoveryRate: adjustPercent(region.recoveryRate, filters.brand),
@@ -280,6 +305,7 @@ export type RegionDetailStats = {
   abv: number
   gwp: number
   calTakeUp: number
+  ddlTakeUp: number
   cancellationRate: number
   reletRate: number
   recoveryRate: number
@@ -299,7 +325,7 @@ export function getRegionDetailStats(region: MapRegion, brand = "all-brands"): R
     Math.round(region.bookings / (10 + (seed % 6)) / (isAllBrands(brand) ? 1 : brands))
   )
   const withCal = Math.round(region.bookings * (region.calTakeUp / 100))
-  const withDdl = Math.round(region.bookings * (0.14 + (seed % 9) / 100))
+  const withDdl = Math.round(region.bookings * (region.ddlTakeUp / 100))
   const withCalPct = region.bookings > 0 ? (withCal / region.bookings) * 100 : 0
   const withDdlPct = region.bookings > 0 ? (withDdl / region.bookings) * 100 : 0
 
@@ -317,6 +343,7 @@ export function getRegionDetailStats(region: MapRegion, brand = "all-brands"): R
     abv: region.abv,
     gwp: region.gwp,
     calTakeUp: region.calTakeUp,
+    ddlTakeUp: region.ddlTakeUp,
     cancellationRate: region.cancellationRate,
     reletRate: region.reletRate,
     recoveryRate: region.recoveryRate,
@@ -349,6 +376,7 @@ export function getAggregateDetailStats(
       brands: 0,
       abv: 0,
       calTakeUp: 0,
+      ddlTakeUp: 0,
       cancellationRate: 0,
       reletRate: 0,
       recoveryRate: 0,
@@ -362,6 +390,10 @@ export function getAggregateDetailStats(
   const avgCal =
     regions.length > 0
       ? Math.round((regions.reduce((sum, r) => sum + r.calTakeUp, 0) / regions.length) * 10) / 10
+      : 0
+  const avgDdl =
+    regions.length > 0
+      ? Math.round((regions.reduce((sum, r) => sum + r.ddlTakeUp, 0) / regions.length) * 10) / 10
       : 0
   const avgCancel =
     regions.length > 0
@@ -391,6 +423,7 @@ export function getAggregateDetailStats(
     abv: avgAbv,
     gwp: totals.gwp,
     calTakeUp: avgCal,
+    ddlTakeUp: avgDdl,
     cancellationRate: avgCancel,
     reletRate: avgRelet,
     recoveryRate: avgRecovery,
@@ -467,8 +500,29 @@ export function scaleRegionByTownShare(region: MapRegion, share: number): MapReg
     gwp: Math.max(1, Math.round(region.gwp * share)),
     abv: region.abv,
     calTakeUp: region.calTakeUp,
+    ddlTakeUp: region.ddlTakeUp,
     cancellationRate: region.cancellationRate,
     reletRate: region.reletRate,
     recoveryRate: region.recoveryRate,
+  }
+}
+
+/** Yellow → orange → coral palette for county dotted heatmaps. */
+export function heatmapColor(t: number): { r: number; g: number; b: number } {
+  const clamped = Math.min(1, Math.max(0, t))
+  const stops = [
+    { t: 0, r: 255, g: 230, b: 102 },
+    { t: 0.45, r: 255, g: 140, b: 66 },
+    { t: 1, r: 255, g: 92, b: 122 },
+  ]
+  let i = 0
+  while (i < stops.length - 2 && clamped > stops[i + 1]!.t) i += 1
+  const a = stops[i]!
+  const b = stops[i + 1]!
+  const u = (clamped - a.t) / Math.max(0.0001, b.t - a.t)
+  return {
+    r: Math.round(a.r + (b.r - a.r) * u),
+    g: Math.round(a.g + (b.g - a.g) * u),
+    b: Math.round(a.b + (b.b - a.b) * u),
   }
 }
