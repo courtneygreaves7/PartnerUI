@@ -124,7 +124,7 @@ export const FC_LOOP_DISPLAY_METRICS: Array<{
   {
     id: "relet",
     label: "Relet rate",
-    help: "Colour shows re-let rate — how often cancelled stays were filled again. Higher is better.",
+    help: "Colour shows re-let rate: how often cancelled stays were filled again. Higher is better.",
     higherIsBetter: true,
   },
   {
@@ -136,13 +136,13 @@ export const FC_LOOP_DISPLAY_METRICS: Array<{
   {
     id: "sales",
     label: "Attachment",
-    help: "Colour shows attachment (ATT) — how often guests bought Flexible Cancellation (FC / CAL) in that booking type.",
+    help: "Colour shows attachment (ATT): how often guests bought Flexible Cancellation in that booking type.",
     higherIsBetter: true,
   },
   {
     id: "cancel",
     label: "Cancel rate",
-    help: "Colour shows cancel rate (CXL) on attached bookings. Read it next to re-let — some cancel is normal when guests have cover.",
+    help: "Colour shows cancel rate (CXL) on attached bookings. Read it next to re-let: some cancel is normal when guests have Flexible Cancellation.",
     higherIsBetter: false,
   },
 ]
@@ -290,34 +290,34 @@ export function describeFcLoopBehaviour(
     return {
       kind: "high-cancel-soft-fill",
       badge: "High CXL · soft fill",
-      read: "Cancels outpace re-lets — revenue at risk if stays stay empty.",
+      read: "Cancels outpace re-lets: revenue at risk if stays stay empty.",
     }
   }
   if (cell.relet >= 70 && cell.sales <= ref.sales - 1.5) {
     return {
       kind: "strong-fill-weak-cover",
       badge: "Strong fill · low ATT",
-      read: "Re-let demand is strong — room to sell more cover here.",
+      read: "Re-let demand is strong: room to sell more Flexible Cancellation here.",
     }
   }
   if (cell.cancel <= ref.cancel && cell.relet >= ref.relet + 5) {
     return {
       kind: "low-cancel-strong-fill",
       badge: "Low CXL · strong fill",
-      read: "Cancels are contained and fills are holding — a healthy slice.",
+      read: "Cancels are contained and fills are holding: a healthy slice.",
     }
   }
   if (cell.recoveredPct >= 110) {
     return {
       kind: "value-beat",
       badge: "Value beat",
-      read: `Re-lets kept ${Math.round(cell.recoveredPct)}% of cancelled value — more than you lost.`,
+      read: `Re-lets kept ${Math.round(cell.recoveredPct)}% of cancelled value: more than you lost.`,
     }
   }
   return {
     kind: "balanced",
     badge: "Steady",
-    read: "Cover, cancels, and fills are broadly in line with the book.",
+    read: "Flexible Cancellation take-up, cancels, and fills are broadly in line with the book.",
   }
 }
 
@@ -328,12 +328,12 @@ function askPromptFor(
 ) {
   const slice = `${bedroom} · ${departure}`
   if (kind === "leak" || kind === "region") {
-    return `Drill into ${slice} — cancel vs re-let by lead time`
+    return `Drill into ${slice}: cancel vs re-let by lead time`
   }
   if (kind === "undersold") {
-    return `Drill into ${slice} — cover take-up vs re-let demand`
+    return `Drill into ${slice}: Flexible Cancellation take-up vs re-let demand`
   }
-  return `Drill into ${slice} — value kept and how to repeat it`
+  return `Drill into ${slice}: value kept and how to repeat it`
 }
 
 function signalFor(kind: FcLoopOpportunity["kind"]): FcLoopOpportunity["signal"] {
@@ -500,7 +500,7 @@ export function getFcLoopOpportunities(): FcLoopOpportunity[] {
       detail: behaviour.read,
       kind: "undersold",
       signal: signalFor("undersold"),
-      metrics: `Cover ${undersold.sales}% · Re-let ${undersold.relet}%`,
+      metrics: `Attachment ${undersold.sales}% · Re-let ${undersold.relet}%`,
       metricsList: [
         { label: "Attachment", value: `${undersold.sales}%` },
         { label: "Re-let rate", value: `${undersold.relet}%` },
@@ -565,11 +565,11 @@ export function getFcLoopOpportunities(): FcLoopOpportunity[] {
       title: `${peakSales.bedroom} · ${peakSales.departure}`,
       detail:
         behaviour.kind === "balanced"
-          ? "Highest Flexible Cancellation take-up — keep offer quality and stay ready to re-let."
+          ? "Highest Flexible Cancellation take-up: keep offer quality and stay ready to re-let."
           : behaviour.read,
       kind: "undersold",
       signal: signalFor("undersold"),
-      metrics: `Cover ${peakSales.sales}% · Re-let ${peakSales.relet}%`,
+      metrics: `Attachment ${peakSales.sales}% · Re-let ${peakSales.relet}%`,
       metricsList: [
         { label: "Attachment", value: `${peakSales.sales}%` },
         { label: "Re-let rate", value: `${peakSales.relet}%` },
@@ -694,16 +694,16 @@ export function getLatestReletProofExamples(limit = 3): FcLoopProofExample[] {
 
 export const FC_LOOP_PROOF = {
   title: "Latest re-lets",
-  summary: "Recent cancels that came back as bookings — and what they made.",
+  summary: "Recent cancels that came back as bookings, and what they made.",
   help: "The most recent completed re-lets from live cancellations. Each row shows recovered revenue versus the cancelled booking. Open Cancellations & re-lets for full booking detail.",
   examples: getLatestReletProofExamples(3),
 } as const
 
 export const FC_LOOP_MATRIX_HELP =
-  "Each card is a booking type. The top bar is re-let rate (how often cancelled stays were filled again). The subheading flags standout cancel vs fill behaviour. ATT (attachment), CXL (cancel rate), REC (value kept vs cancelled booking — can exceed 100%)."
+  "Each card is a booking type. The top bar is re-let rate (how often cancelled stays were filled again). The subheading flags standout cancel vs fill behaviour. ATT (attachment), CXL (cancel rate), REC (value kept vs cancelled booking; can exceed 100%)."
 
 export const FC_LOOP_OPPORTUNITIES_HELP =
-  "Where to push harder for revenue: weak re-let recovery, soft regions, under-sold Flexible Cancellation (FC) where demand is strong, and proof points that show the loop already pays. Risk cards link to open cancels still awaiting a re-let."
+  "Where to push harder for revenue: weak re-let recovery, soft regions, under-sold Flexible Cancellation where demand is strong, and proof points that show the loop already pays. Risk cards link to open cancels still awaiting a re-let."
 
 export function formatCurrency(n: number) {
   return `£${Math.round(n).toLocaleString("en-GB")}`

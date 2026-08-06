@@ -277,7 +277,7 @@ export function AddProductPage({ onBack, onSubmit }: AddProductPageProps) {
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">Partners &amp; policies</p>
+          <p className="text-xs font-medium text-muted-foreground">Partners &amp; products</p>
           <h1 className="mt-1 text-[22px] font-semibold tracking-tight">New product</h1>
         </div>
 

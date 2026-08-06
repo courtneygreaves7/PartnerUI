@@ -17,11 +17,11 @@ import { type ActiveFilters, buildCalDdlTakeupData } from "@/lib/chart-data"
 import { CHART_HEIGHT } from "@/lib/chart-styles"
 
 const SERIES = [
-  { key: "CAL % (total)", color: "#10b981" },
-  { key: "Partner Alpha CAL %", color: "#3b82f6" },
-  { key: "Partner Beta CAL %", color: "#06b6d4" },
-  { key: "Partner Gamma CAL %", color: "#f97316" },
-  { key: "DDL % (total)", color: "#ef4444" },
+  { key: "Flexi Cancellation % (total)", color: "#10b981" },
+  { key: "Partner Alpha Flexi Cancellation %", color: "#3b82f6" },
+  { key: "Partner Beta Flexi Cancellation %", color: "#06b6d4" },
+  { key: "Partner Gamma Flexi Cancellation %", color: "#f97316" },
+  { key: "Damage Waiver % (total)", color: "#ef4444" },
 ]
 
 const SERIES_KEYS = SERIES.map(({ key }) => key)
@@ -95,7 +95,7 @@ export function CalDdlTakeupChart({ filters, compact }: CalDdlTakeupChartProps) 
 
   return (
     <ReportSection
-      title="CAL & DDL take-up % per day"
+      title="Flexi Cancellation & Damage Waiver take-up % per day"
       exportSlug="cal-ddl-takeup"
       filters={filters}
       headingClassName="mb-4"

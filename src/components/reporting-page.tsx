@@ -72,13 +72,13 @@ function BrandChannelBreakdown({
       </div>
 
       <ReportSection title="Flexible Cancellation" exportSlug={sectionSlug(`${snapshot.brandId}-cal`)}>
-        <CollapsibleDataTable title="FC channel breakdown" defaultOpen>
+        <CollapsibleDataTable title="Flexible Cancellation channel breakdown" defaultOpen>
           <ChannelGridTable rows={snapshot.calGrid} className="border-0 shadow-none" />
         </CollapsibleDataTable>
       </ReportSection>
 
       <ReportSection title="Damage Deposit Waiver" exportSlug={sectionSlug(`${snapshot.brandId}-ddl`)}>
-        <CollapsibleDataTable title="DDL channel breakdown" defaultOpen={false}>
+        <CollapsibleDataTable title="Damage Deposit Waiver channel breakdown" defaultOpen={false}>
           <ChannelGridTable rows={snapshot.ddlGrid} className="border-0 shadow-none" />
         </CollapsibleDataTable>
       </ReportSection>
@@ -162,25 +162,25 @@ function SingleBrandReport({ filters }: { filters: ReportingFilters }) {
         <ReportSection title="Flexible Cancellation" exportSlug={sectionSlug("cal")}>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <div className={cn(PANEL, "p-4")}>
-              <p className="text-xs text-muted-foreground">FC bookings</p>
+              <p className="text-xs text-muted-foreground">Flexible Cancellation bookings</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
                 {snapshot.calGrid[0]?.total.value}
               </p>
             </div>
             <div className={cn(PANEL, "p-4")}>
-              <p className="text-xs text-muted-foreground">FC attachment</p>
+              <p className="text-xs text-muted-foreground">Flexible Cancellation attachment</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
                 {snapshot.calGrid[1]?.total.value}
               </p>
             </div>
             <div className={cn(PANEL, "p-4")}>
-              <p className="text-xs text-muted-foreground">FC partner margin</p>
+              <p className="text-xs text-muted-foreground">Flexible Cancellation partner margin</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
                 {snapshot.calGrid[4]?.total.value}
               </p>
             </div>
           </div>
-          <CollapsibleDataTable title="FC channel breakdown" defaultOpen>
+          <CollapsibleDataTable title="Flexible Cancellation channel breakdown" defaultOpen>
             <ChannelGridTable rows={snapshot.calGrid} className="border-0 shadow-none" />
           </CollapsibleDataTable>
         </ReportSection>
@@ -188,25 +188,25 @@ function SingleBrandReport({ filters }: { filters: ReportingFilters }) {
         <ReportSection title="Damage Deposit Waiver" exportSlug={sectionSlug("ddl")}>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <div className={cn(PANEL, "p-4")}>
-              <p className="text-xs text-muted-foreground">DDL bookings</p>
+              <p className="text-xs text-muted-foreground">Damage Deposit Waiver bookings</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
                 {snapshot.ddlGrid[0]?.total.value}
               </p>
             </div>
             <div className={cn(PANEL, "p-4")}>
-              <p className="text-xs text-muted-foreground">DDL attachment</p>
+              <p className="text-xs text-muted-foreground">Damage Deposit Waiver attachment</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
                 {snapshot.ddlGrid[1]?.total.value}
               </p>
             </div>
             <div className={cn(PANEL, "p-4")}>
-              <p className="text-xs text-muted-foreground">DDL partner margin</p>
+              <p className="text-xs text-muted-foreground">Damage Deposit Waiver partner margin</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">
                 {snapshot.ddlGrid[4]?.total.value}
               </p>
             </div>
           </div>
-          <CollapsibleDataTable title="DDL channel breakdown" defaultOpen>
+          <CollapsibleDataTable title="Damage Deposit Waiver channel breakdown" defaultOpen>
             <ChannelGridTable rows={snapshot.ddlGrid} className="border-0 shadow-none" />
           </CollapsibleDataTable>
         </ReportSection>

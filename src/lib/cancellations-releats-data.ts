@@ -182,14 +182,14 @@ export const CONTENT_METRIC_ROWS: ContentMetricRow[] = [
   },
   {
     id: "cancellationVolumeFc",
-    label: "Cancellation Volume FC",
+    label: "Cancellation Volume Forecast",
     format: "volume",
     values: CANCEL_VOLUME_FC,
     muted: true,
   },
   {
     id: "cancellationAvgPctFc",
-    label: "Cancellation % Avg FC",
+    label: "Cancellation % Avg Forecast",
     format: "percent",
     values: CANCEL_RATE_FC,
     muted: true,
@@ -214,7 +214,7 @@ export const CONTENT_METRIC_ROWS: ContentMetricRow[] = [
   },
   {
     id: "reletVolumeFc",
-    label: "Re-Let Volume FC",
+    label: "Re-Let Volume Forecast",
     format: "volume",
     values: RELET_VOLUME_FC,
     muted: true,
@@ -359,7 +359,7 @@ export const TARGET_CARDS = [
     label: "Lost revenue",
     value: formatCurrency(LOST_REVENUE.actual),
     targetLabel: `vs ${formatCurrency(LOST_REVENUE.target)} target`,
-    help: "Cancelled booking value that was not re-let in the period — money already lost, not value still open on the live list. Lower is better.",
+    help: "Cancelled booking value that was not re-let in the period: money already lost, not value still open on the live list. Lower is better.",
     actual: LOST_REVENUE.actual,
     target: LOST_REVENUE.target,
     status: LOST_REVENUE.status,
@@ -632,7 +632,7 @@ export const LIVE_CANCELLATIONS_HELP =
   "Recent cancellations at booking level. Stays not yet re-let are still open for recovery. Value is the cancelled booking value. Split re-lets are filled by more than one booking. Overlap shows how many cancelled nights were covered by re-let bookings."
 
 export const PARTIAL_RELETS_HELP =
-  "A split (partial) re-let fills one cancelled stay with two or more shorter bookings — for example a 7-night cancel filled as 3 + 4 nights. Overlapping days show how much of the cancelled stay window was covered. Split fills can recover more revenue than rebooking the full stay to one guest."
+  "A split (partial) re-let fills one cancelled stay with two or more shorter bookings, for example a 7-night cancel filled as 3 + 4 nights. Overlapping days show how much of the cancelled stay window was covered. Split fills can recover more revenue than rebooking the full stay to one guest."
 
 export function getReletFills(booking: LiveCancellationBooking): ReletFill[] {
   if (booking.reletFills && booking.reletFills.length > 0) return booking.reletFills
@@ -778,7 +778,7 @@ export const TOP_KPI_CARDS = [...KPI_CARDS, VALUE_AT_RISK_CARD] as const
 export const OPS_VALUE_LOOP = {
   title: "How cancellations still pay when you re-let",
   story:
-    "Some guests cancel — that is normal when they have cover. The commercial question is recovery: re-let the stay, keep the revenue, and shrink the open book still waiting to fill.",
+    "Some guests cancel: that is normal when they have Flexible Cancellation. The commercial question is recovery: re-let the stay, keep the revenue, and shrink the open book still waiting to fill.",
   steps: [
     {
       id: "cancels",
@@ -787,7 +787,7 @@ export const OPS_VALUE_LOOP = {
       hint: "Jul ops volume across channels",
       badge: "Ops volume",
       badgeTone: "neutral" as const,
-      help: "Cancelled stays in the current ops month (July). Includes Flexible Cancellation (FC) and other cancellations in the live ops view.",
+      help: "Cancelled stays in the current ops month (July). Includes Flexible Cancellation and other cancellations in the live ops view.",
     },
     {
       id: "relet-rate",

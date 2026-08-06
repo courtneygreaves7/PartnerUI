@@ -437,7 +437,7 @@ function MetricsSummaryTable() {
                   {row.label}
                   {row.muted ? (
                     <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-[9px] font-semibold tracking-wide uppercase">
-                      FC
+                      Forecast
                     </span>
                   ) : null}
                 </td>
@@ -692,7 +692,7 @@ function CancellationRateByChannel() {
                   style={{ left: `${(forecast / barMax) * 100}%` }}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground">FC: {formatPercent(forecast)}</p>
+              <p className="text-[11px] text-muted-foreground">Forecast: {formatPercent(forecast)}</p>
             </li>
           )
         })}
@@ -931,7 +931,7 @@ function PartialReletsInsight() {
           <p className="mt-2 max-w-md text-xs leading-relaxed text-muted-foreground">
             Filling a cancelled stay with more than one shorter booking often recovers more
             than rebooking the full length to a single guest. Overlap shows how many cancelled
-            nights were covered.
+            nights were filled.
           </p>
         </div>
 
@@ -1160,7 +1160,7 @@ function LiveCancellationsPanel() {
               <TableHead className="px-3 text-xs">Cancelled</TableHead>
               <TableHead className="px-3 text-xs">Check-in</TableHead>
               <TableHead className="px-3 text-right text-xs">Value</TableHead>
-              <TableHead className="px-3 text-xs">FC</TableHead>
+              <TableHead className="px-3 text-xs">Flexible Cancellation</TableHead>
               <TableHead className="px-3 text-xs">Re-let</TableHead>
               <TableHead className="px-3 text-xs">
                 <span className="inline-flex items-center gap-1">
@@ -1275,7 +1275,7 @@ function LiveCancellationsPanel() {
                             </div>
                           ) : (
                             <div className="mt-1 text-[10px] text-muted-foreground">
-                              Full cover
+                              Full overlap
                             </div>
                           )}
                         </div>
@@ -1432,7 +1432,7 @@ function OpsRecoveryOpportunity() {
             </h3>
             <MeasureHelp
               title="Value still waiting to be re-let"
-              help="Cancelled booking value on the live list that has not been filled yet — unrealised revenue still open for recovery."
+              help="Cancelled booking value on the live list that has not been filled yet: unrealised revenue still open for recovery."
             />
           </div>
           <p className="mt-1 max-w-xl text-xs text-muted-foreground">
@@ -1505,7 +1505,7 @@ function OpsRecoveryOpportunity() {
                 would shrink open cancels fastest.
               </>
             ) : (
-              "Re-let is already at a strong level — keep clearing the open book."
+              "Re-let is already at a strong level. Keep clearing the open book."
             )}
           </span>
         </p>
@@ -1521,7 +1521,7 @@ export function CancellationsReletsDashboard() {
         id="insights-health"
         eyebrow="1 · How are we doing?"
         title="Ops performance"
-        description="See cancel volume, re-let rate, and value still open this month — the live health check before you dig into recovery behaviour and channel detail."
+        description="See cancel volume, re-let rate, and value still open this month: the live health check before you dig into recovery behaviour and channel detail."
         badge={{ icon: BarChart3, label: "Health check" }}
         showDivider={false}
       >
@@ -1536,7 +1536,7 @@ export function CancellationsReletsDashboard() {
         id="insights-story"
         eyebrow="2 · The story"
         title="How cancellations still pay"
-        description="Cancels are expected when guests have cover. Re-let turns those stays back into revenue — follow the loop from cancel volume to recovery, and see what is still open."
+        description="Cancels are expected when guests have Flexible Cancellation. Re-let turns those stays back into revenue: follow the loop from cancel volume to recovery, and see what is still open."
         badge={{ icon: RefreshCcw, label: "Value loop" }}
       >
         <OpsValueLoopScorecard />
@@ -1565,7 +1565,7 @@ export function CancellationsReletsDashboard() {
         id="insights-growth"
         eyebrow="4 · Growth opportunity"
         title="What happens if we recover more?"
-        description="Value still sitting in open cancels — clearing these stays is the fastest ops lever to protect revenue."
+        description="Value still sitting in open cancels: clearing these stays is the fastest ops lever to protect revenue."
         badge={{ icon: TrendingUp, label: "Upside" }}
       >
         <OpsRecoveryOpportunity />
@@ -1579,7 +1579,7 @@ export function CancellationsReletsDashboard() {
         id="insights-detail"
         eyebrow="5 · Full detail"
         title="Channel breakdown"
-        description="Rates, volumes, and forecasts by channel — open when you need the audit view behind the ops story."
+        description="Rates, volumes, and forecasts by channel: open when you need the audit view behind the ops story."
         badge={{ icon: FileText, label: "Audit" }}
       >
         <MetricsSummaryTable />

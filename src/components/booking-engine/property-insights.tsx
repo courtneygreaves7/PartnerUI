@@ -151,14 +151,14 @@ export function PropertyInsights() {
                 title="Payment coverage"
                 totalLabel={`${bookingSourceTotal} bookings`}
                 segmentA={{
-                  label: "CAL",
+                  label: "Flexible Cancellation",
                   value: calCoverage.subtext?.split(" ")[0] ?? "0",
                   sharePercent: 0,
                   takeUpLabel: calCoverage.subtext ?? "0 of 12",
                   trend: "neutral",
                 }}
                 segmentB={{
-                  label: "DDL",
+                  label: "Damage Deposit Waiver",
                   value: ddlCoverage.subtext?.split(" ")[0] ?? "0",
                   sharePercent: 0,
                   takeUpLabel: ddlCoverage.subtext ?? "0 of 12",

@@ -124,7 +124,7 @@ export function PhasingChartsVisual({
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <VisualCard
-        title="Margin earned from FC bookings"
+        title="Margin earned from Flexible Cancellation bookings"
         subtitle="Phasing of margin across the year"
         className="xl:col-span-2"
       >
@@ -143,7 +143,7 @@ export function PhasingChartsVisual({
             <Area
               type="monotone"
               dataKey="value"
-              name="FC Bookings Made"
+              name="Flexible Cancellation bookings made"
               stroke="var(--primary)"
               strokeWidth={2}
               fill="url(#marginFill)"
@@ -164,7 +164,7 @@ export function PhasingChartsVisual({
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell className="font-medium">FC Bookings Made</TableCell>
+                <TableCell className="font-medium">Flexible Cancellation bookings made</TableCell>
                 {MARGIN_EARNED_FC_DATA.map((row) => (
                   <TableCell key={row.month} className="text-center tabular-nums">
                     {row.value.toLocaleString("en-GB")}

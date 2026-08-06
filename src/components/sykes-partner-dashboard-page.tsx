@@ -99,7 +99,7 @@ function PerformanceMetricsVisual() {
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-3">
         {categories.map((category) => (
-          <VisualCard key={category.title} title={category.title} subtitle="Website · App · Offline · OTA">
+          <VisualCard key={category.title} title={category.title} subtitle="Website · App · Offline · Online Travel Agency (OTA)">
             <div className="max-h-80 overflow-y-auto pr-1">
               {category.rows.map((row) => (
                 <MetricNameRow key={row.label} label={row.label} />
@@ -171,13 +171,13 @@ export function SykesPartnerDashboardPage({ filters }: SykesPartnerDashboardPage
             { label: "Website", value: FLEXIBLE_CANCELLATION_GRID[0].website.value },
             { label: "App", value: FLEXIBLE_CANCELLATION_GRID[0].app.value },
             { label: "Offline", value: FLEXIBLE_CANCELLATION_GRID[0].offline.value },
-            { label: "OTA", value: FLEXIBLE_CANCELLATION_GRID[0].ota.value },
+            { label: "Online Travel Agency (OTA)", value: FLEXIBLE_CANCELLATION_GRID[0].ota.value },
           ]}
           rateCards={[
-            { label: "FC guest price avg", value: "10%", tone: "bg-muted/40" },
-            { label: "Insurance premium rate avg", value: "6.35%", tone: "bg-muted/40" },
             { label: "Out of test conversion", value: "1.0%", tone: "bg-muted/50" },
             { label: "Conversion benefit", value: `1% = ${formatGbp(PORTFOLIO.conversionUplift, "exact")}`, tone: "bg-muted/50" },
+            { label: "Guest price avg", value: "10%", tone: "bg-muted/40" },
+            { label: "Product rate avg", value: "6.35%", tone: "bg-muted/40" },
           ]}
           table={
             <CollapsibleDataTable title="View full flexible cancellation table">
@@ -198,13 +198,13 @@ export function SykesPartnerDashboardPage({ filters }: SykesPartnerDashboardPage
             { label: "Website", value: DAMAGE_DEPOSIT_WAIVER_GRID[0].website.value },
             { label: "App", value: DAMAGE_DEPOSIT_WAIVER_GRID[0].app.value },
             { label: "Offline", value: DAMAGE_DEPOSIT_WAIVER_GRID[0].offline.value },
-            { label: "OTA", value: DAMAGE_DEPOSIT_WAIVER_GRID[0].ota.value },
+            { label: "Online Travel Agency (OTA)", value: DAMAGE_DEPOSIT_WAIVER_GRID[0].ota.value },
           ]}
           rateCards={[
-            { label: "DDL guest price avg", value: "£30", tone: "bg-muted/40" },
-            { label: "Insurance premium rate avg", value: "2.12%", tone: "bg-muted/40" },
             { label: "Out of test conversion", value: "0.4%", tone: "bg-muted/50" },
             { label: "Conversion benefit", value: "£180k", tone: "bg-muted/30" },
+            { label: "Guest price avg", value: "£30", tone: "bg-muted/40" },
+            { label: "Product rate avg", value: "2.12%", tone: "bg-muted/40" },
           ]}
           table={
             <CollapsibleDataTable title="View full damage deposit waiver table">

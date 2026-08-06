@@ -154,6 +154,178 @@ function makeCountyMaterial(isSide: boolean) {
   })
 }
 
+/** One Chaikin pass on a closed ring — cuts corners so extruded walls lose stair-step ribs. */
+function chaikinClosed(points: THREE.Vector2[]): THREE.Vector2[] {
+  if (points.length < 4) return points
+  const closed =
+    points[0].distanceToSquared(points[points.length - 1]) < 1e-8
+  const ring = closed ? points.slice(0, -1) : points
+  const n = ring.length
+  if (n < 3) return points
+  const next: THREE.Vector2[] = []
+  for (let i = 0; i < n; i++) {
+    const p0 = ring[i]
+    const p1 = ring[(i + 1) % n]
+    next.push(
+      new THREE.Vector2(0.75 * p0.x + 0.25 * p1.x, 0.75 * p0.y + 0.25 * p1.y),
+      new THREE.Vector2(0.25 * p0.x + 0.75 * p1.x, 0.25 * p0.y + 0.75 * p1.y)
+    )
+  }
+  return next
+}
+
+/** Perpendicular distance from point to segment AB (for Ramer–Douglas–Peucker). */
+function perpDist(p: THREE.Vector2, a: THREE.Vector2, b: THREE.Vector2) {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const lenSq = dx * dx + dy * dy
+  if (lenSq < 1e-12) return p.distanceTo(a)
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq))
+  const x = a.x + t * dx
+  const y = a.y + t * dy
+  return Math.hypot(p.x - x, p.y - y)
+}
+
+/** Closed-ring RDP — removes coastal micro-jaggies that become vertical ribs when extruded. */
+function rdpClosed(points: THREE.Vector2[], epsilon: number): THREE.Vector2[] {
+  if (points.length < 5) return points
+  const closed =
+    points[0].distanceToSquared(points[points.length - 1]) < 1e-8
+  const ring = closed ? points.slice(0, -1) : points.slice()
+  if (ring.length < 4) return points
+
+  const keep = new Uint8Array(ring.length)
+  keep[0] = 1
+  keep[ring.length - 1] = 1
+
+  const stack: Array<[number, number]> = [[0, ring.length - 1]]
+  while (stack.length) {
+    const [start, end] = stack.pop()!
+    let maxD = 0
+    let maxI = start
+    const a = ring[start]
+    const b = ring[end]
+    for (let i = start + 1; i < end; i++) {
+      const d = perpDist(ring[i], a, b)
+      if (d > maxD) {
+        maxD = d
+        maxI = i
+      }
+    }
+    if (maxD > epsilon) {
+      keep[maxI] = 1
+      if (maxI - start > 1) stack.push([start, maxI])
+      if (end - maxI > 1) stack.push([maxI, end])
+    }
+  }
+
+  const out = ring.filter((_, i) => keep[i])
+  return out.length >= 3 ? out : ring
+}
+
+/**
+ * Spain paths are naturally soft (~40 pts). UK/FR SVG traces are denser and stair-step
+ * when extruded — push them toward the same softness Spain already has.
+ */
+const COUNTRY_EDGE_SOFT: Record<
+  MapCountryCode,
+  {
+    /** Fraction of local shape span used as RDP epsilon. */
+    localEps: number
+    /** Fraction of full-map span used as RDP epsilon floor. */
+    mapEps: number
+    chaikin: number
+    maxPts: number
+    sample: number
+    bevelSpan: number
+    bevelDepth: number
+    bevelSegments: number
+  }
+> = {
+  ES: {
+    localEps: 0.012,
+    mapEps: 0.0012,
+    chaikin: 2,
+    maxPts: 72,
+    sample: 18,
+    bevelSpan: 0.0022,
+    bevelDepth: 0.15,
+    bevelSegments: 3,
+  },
+  FR: {
+    localEps: 0.028,
+    mapEps: 0.0036,
+    chaikin: 3,
+    maxPts: 52,
+    sample: 28,
+    bevelSpan: 0.004,
+    bevelDepth: 0.2,
+    bevelSegments: 4,
+  },
+  UK: {
+    localEps: 0.032,
+    mapEps: 0.0042,
+    chaikin: 3,
+    maxPts: 44,
+    sample: 24,
+    bevelSpan: 0.0044,
+    bevelDepth: 0.22,
+    bevelSegments: 4,
+  },
+}
+
+function contourSpan(points: THREE.Vector2[]) {
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  for (const p of points) {
+    minX = Math.min(minX, p.x)
+    maxX = Math.max(maxX, p.x)
+    minY = Math.min(minY, p.y)
+    maxY = Math.max(maxY, p.y)
+  }
+  return Math.max(maxX - minX, maxY - minY, 1)
+}
+
+function smoothContour(
+  points: THREE.Vector2[],
+  spanHint: number,
+  country: MapCountryCode
+): THREE.Vector2[] {
+  const cfg = COUNTRY_EDGE_SOFT[country]
+  const local = contourSpan(points)
+  const epsilon = Math.max(local * cfg.localEps, spanHint * cfg.mapEps)
+  let pts = rdpClosed(points, epsilon)
+  for (let i = 0; i < cfg.chaikin; i++) {
+    pts = chaikinClosed(pts)
+  }
+  // Re-simplify after Chaikin densifies the ring
+  pts = rdpClosed(pts, epsilon * 0.85)
+  if (pts.length > cfg.maxPts) {
+    const step = Math.ceil(pts.length / cfg.maxPts)
+    pts = pts.filter((_, i) => i % step === 0)
+    if (pts.length < 3) pts = rdpClosed(points, epsilon)
+  }
+  return pts
+}
+
+function smoothShapeForExtrude(
+  shape: THREE.Shape,
+  spanHint: number,
+  country: MapCountryCode
+): THREE.Shape {
+  const cfg = COUNTRY_EDGE_SOFT[country]
+  const outline = smoothContour(shape.getPoints(cfg.sample), spanHint, country)
+  const out = new THREE.Shape(outline)
+  for (const hole of shape.holes) {
+    out.holes.push(
+      new THREE.Path(smoothContour(hole.getPoints(Math.max(8, cfg.sample - 8)), spanHint, country))
+    )
+  }
+  return out
+}
+
 function placeAnnotation(
   ax: number,
   ay: number,
@@ -338,10 +510,21 @@ export function InsightsUkCounties3d({
       const meshes: THREE.Mesh[] = []
 
       for (const shape of shapes) {
-        const geometry = new THREE.ExtrudeGeometry(shape, {
-          depth,
-          bevelEnabled: false,
-          curveSegments: 4,
+        const soft = COUNTRY_EDGE_SOFT[country]
+        const smoothed = smoothShapeForExtrude(shape, Math.max(spanX, spanY), country)
+        // Soft rim on the thickness edge — rounds the top lip instead of a hard stair-step wall
+        const bevelSize = Math.min(
+          depth * soft.bevelDepth,
+          Math.max(spanX, spanY) * soft.bevelSpan
+        )
+        const geometry = new THREE.ExtrudeGeometry(smoothed, {
+          depth: Math.max(depth - bevelSize, depth * 0.82),
+          bevelEnabled: true,
+          bevelThickness: bevelSize,
+          bevelSize,
+          bevelOffset: 0,
+          bevelSegments: soft.bevelSegments,
+          curveSegments: 12,
           steps: 1,
         })
         // North-up without negative root.scale (which inverted normals → flat grey look)

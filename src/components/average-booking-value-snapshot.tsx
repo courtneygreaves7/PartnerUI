@@ -113,7 +113,7 @@ export function AverageBookingValueSnapshot({ filters }: { filters: ActiveFilter
   return (
     <TooltipProvider>
       <ReportSection
-        title="Average booking value"
+        title="Average booking value (ABV)"
         exportSlug="abv"
         filters={filters}
         headerActions={
@@ -131,7 +131,7 @@ export function AverageBookingValueSnapshot({ filters }: { filters: ActiveFilter
             <TooltipContent variant="plain">
               {showBreakdown
                 ? "Hide partner breakdown"
-                : "View ABV per partner — shows ABV, CAL ABV, ABV inc. fee and CAL price % by brand"}
+                : "View ABV per partner: shows ABV, Flexible Cancellation ABV, ABV inc. fee and Flexible Cancellation price % by brand"}
             </TooltipContent>
           </Tooltip>
         }
@@ -144,7 +144,7 @@ export function AverageBookingValueSnapshot({ filters }: { filters: ActiveFilter
             )}
           >
             <MetricGaugeWidget
-              title="CAL customer price"
+              title="Flexible Cancellation (CAL) customer price"
               value={profile.calPct}
               gaugePercent={getGaugePercent(profile.calPct)}
               label="% of ABV inc. booking fee"

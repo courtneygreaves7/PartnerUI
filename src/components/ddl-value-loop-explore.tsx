@@ -212,7 +212,7 @@ type DdlValueLoopExploreProps = {
 export function DdlValueLoopExplore({ onAskAi }: DdlValueLoopExploreProps) {
   return (
     <div className="space-y-6">
-      <InsightsMetricHeatmap metricId="attachment" eyebrow="DDL attachment" />
+      <InsightsMetricHeatmap metricId="attachment" eyebrow="Damage Waiver attachment" />
       <DdlActSignals onAskAi={onAskAi} />
     </div>
   )

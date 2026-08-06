@@ -19,7 +19,7 @@ const CHANNEL_COLUMNS = [
   { key: "website", label: "Website" },
   { key: "app", label: "App" },
   { key: "offline", label: "Offline" },
-  { key: "ota", label: "OTA" },
+  { key: "ota", label: "Online Travel Agency (OTA)" },
   { key: "direct", label: "Direct" },
   { key: "total", label: "Total" },
 ] as const

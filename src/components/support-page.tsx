@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react"
 
-import piklPartnerPhoto from "@/assets/pikl-partner-contact.png"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -66,13 +65,7 @@ function PiklPartnerCard({ partner }: { partner: PiklPartner }) {
   return (
     <div className={cn(CARD_PANEL, "relative flex w-full flex-col gap-4")}>
       <div className="flex items-start justify-between gap-2">
-        {partner.photo === "amelia" ? (
-          <img
-            src={piklPartnerPhoto}
-            alt={partner.name}
-            className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-border/70"
-          />
-        ) : partner.photo === "support" ? (
+        {partner.photo === "support" ? (
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
             <LifeBuoy className="size-4" aria-hidden />
             <span className="sr-only">Support</span>

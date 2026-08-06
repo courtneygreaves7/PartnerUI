@@ -146,10 +146,11 @@ const TILE_ICONS: Array<{ match: string; icon: LucideIcon }> = [
   { match: "Pikl Index", icon: Gauge },
   { match: "Offer Conversion", icon: MousePointerClick },
   { match: "Guest Price", icon: Receipt },
+  { match: "Product Rate", icon: Shield },
   { match: "Insurance Premium", icon: Shield },
   { match: "Out of Test Conversion", icon: TrendingUp },
   { match: "Conversion Benefit", icon: Coins },
-  { match: "DDL Guest Price", icon: Receipt },
+  { match: "Guest price", icon: Receipt },
 ]
 
 function tileIcon(label: string): LucideIcon {
@@ -592,7 +593,7 @@ function PiklStaysTab() {
             {PARTNER_REVENUE.headline}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Net of insurance premium rate + IPT
+            After product cost
           </p>
           <div className="mt-auto flex items-end justify-between gap-4 border-t border-border/60 pt-4">
             <div>
@@ -658,7 +659,7 @@ function PiklStaysTab() {
           label="Avg Lead Time"
           value="125 Days"
           chip="+15d"
-          footnote="Bench: 110 Non-FC"
+          footnote="Bench: 110 without Flexible Cancellation"
         />
         <KpiStatTile label="Pikl Index Score" value={`${PIKL_INDEX} / 100`} chip="-39" chipTone="down">
           <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -672,7 +673,7 @@ function PiklStaysTab() {
           label="Offer Conversion"
           value={`${OFFER_CONVERSION_PCT}%`}
           chip="+4.2%"
-          footnote={`Gap-to-offer: ${GAP_TO_OFFER}pp`}
+          footnote={`Gap-to-offer: ${GAP_TO_OFFER} percentage points (${GAP_TO_OFFER}pp)`}
         />
       </div>
 
@@ -1067,7 +1068,7 @@ function PiklEffectDriverCards({
       versus: metrics.effect.spendVersus,
     },
     {
-      label: "Average Pikl'd Stay IPB",
+      label: "Average Pikl'd Stay income per booking (IPB)",
       value: metrics.effect.ipbLabel,
       trend: metrics.effect.ipbTrend,
       role: "profile" as const,
@@ -1232,7 +1233,7 @@ const EFFECT_CHANNEL_ATTACH = (
     { key: "website" as const, label: "Web" },
     { key: "app" as const, label: "App" },
     { key: "offline" as const, label: "Off" },
-    { key: "ota" as const, label: "OTA" },
+    { key: "ota" as const, label: "Online Travel Agency (OTA)" },
   ] as const
 ).map(({ key, label }) => ({
   label,
@@ -1295,7 +1296,7 @@ function StaysSecondRow({
         </div>
       </ChartRowCard>
       <ChartRowCard
-        eyebrow="FC margin by month"
+        eyebrow="Flexible Cancellation margin by month"
         sub="Partner margin (£k)"
         value={metrics.stays.marginLabel}
         className="xl:col-span-2"
@@ -1348,7 +1349,7 @@ function EffectSecondRow({
         />
       </ChartRowCard>
       <ChartRowCard
-        eyebrow="FC attachment by channel"
+        eyebrow="Flexible Cancellation attachment by channel"
         sub="Take-up %"
         value={metrics.stays.attachmentLabel}
         className="xl:col-span-2"
@@ -1501,18 +1502,6 @@ const CAL_RATE_CARDS: Array<{
   detail?: string
 }> = [
   {
-    label: "FC guest price avg",
-    value: "10%",
-    trend: "+0.4pp",
-    tone: "up",
-  },
-  {
-    label: "Insurance premium rate avg",
-    value: "6.35%",
-    trend: "-0.2pp",
-    tone: "down",
-  },
-  {
     label: "Out of test conversion",
     value: "1.0%",
     trend: "+0.3pp",
@@ -1523,6 +1512,18 @@ const CAL_RATE_CARDS: Array<{
     value: `1% = ${formatGbp(PORTFOLIO.conversionUplift, "thousands")}`,
     trend: "+£35k",
     tone: "up",
+  },
+  {
+    label: "Guest price avg",
+    value: "10%",
+    trend: "+0.4pp",
+    tone: "up",
+  },
+  {
+    label: "Product rate avg",
+    value: "6.35%",
+    trend: "-0.2pp",
+    tone: "down",
   },
 ]
 
@@ -1598,7 +1599,7 @@ function AttachmentOpportunityCard({
           <p className={MONO_LABEL}>Opportunity</p>
           <HeadingWithHelp
             className="mt-1"
-            title={`1pp of ${productLabel} attachment is worth`}
+            title={`1 percentage point (1pp) of ${productLabel} attachment is worth`}
             helpTitle="1pp attachment value"
           />
           <p className="mt-1 text-xs text-muted-foreground">
@@ -1718,13 +1719,13 @@ export function InsightsCalPanel({
   const bookingsRow = FLEXIBLE_CANCELLATION_GRID[0]
   const attachmentRowData = FLEXIBLE_CANCELLATION_GRID[1]
   const marginRow = FLEXIBLE_CANCELLATION_GRID[4]
-  const benefitRow = FLEXIBLE_CANCELLATION_GRID[5]
+  const benefitRow = FLEXIBLE_CANCELLATION_GRID[3]
 
   const bookingChannels = [
     { label: "Website", value: bookingsRow.website.value, color: CAL_CHANNEL_COLORS[0] },
     { label: "App", value: bookingsRow.app.value, color: CAL_CHANNEL_COLORS[1] },
     { label: "Offline", value: bookingsRow.offline.value, color: CAL_CHANNEL_COLORS[2] },
-    { label: "OTA", value: bookingsRow.ota.value, color: CAL_CHANNEL_COLORS[3] },
+    { label: "Online Travel Agency (OTA)", value: bookingsRow.ota.value, color: CAL_CHANNEL_COLORS[3] },
   ]
   const bookingsTotal = parseDisplayValue(bookingsRow.total.value)
   const bookingsDirect = parseDisplayValue(bookingsRow.direct.value)
@@ -1765,7 +1766,7 @@ export function InsightsCalPanel({
         id="insights-health"
         eyebrow="1 · How are we doing?"
         title="Commercial performance"
-        description="See whether Flexible Cancellation is priced right, converting guests, and earning margin — plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and ops."
+        description="See whether Flexible Cancellation is priced right, converting guests, and earning margin, plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and ops."
         badge={{ icon: BarChart3, label: "Health check" }}
         showDivider={false}
       >
@@ -1799,9 +1800,9 @@ export function InsightsCalPanel({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className={MONO_LABEL}>Volume</p>
-                <HeadingWithHelp className="mt-1" title="FC Bookings by channel" />
+                <HeadingWithHelp className="mt-1" title="Bookings by channel" />
               </div>
-              <TrendChip value="+4.2%" tone="up" label="FC Bookings by channel" />
+              <TrendChip value="+4.2%" tone="up" label="Bookings by channel" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -1883,7 +1884,7 @@ export function InsightsCalPanel({
 
             <div className="border-t border-border/60 pt-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs text-muted-foreground">When FC was purchased · monthly</p>
+                <p className="text-xs text-muted-foreground">When Flexible Cancellation was purchased · monthly</p>
                 <p className="text-xs font-semibold tabular-nums text-foreground">
                   {bookingsDirect.toLocaleString("en-GB")} direct
                 </p>
@@ -1905,7 +1906,7 @@ export function InsightsCalPanel({
             <div className="space-y-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
                 <div className="min-w-0">
-                  <LabelWithHelp title="FC Attachment" />
+                  <LabelWithHelp title="Attachment" />
                   <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
                     {attachmentRowData.total.value}
                   </p>
@@ -1916,7 +1917,7 @@ export function InsightsCalPanel({
                 <AttachmentDonut percent={parseDisplayValue(attachmentRowData.total.value)} />
               </div>
               <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-                <LabelWithHelp title="FC Partner Margin" />
+                <LabelWithHelp title="Partner Margin" />
                 <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                   {marginRow.total.value}
                 </p>
@@ -1987,8 +1988,8 @@ export function InsightsCalPanel({
       <InsightsSection
         id="insights-story"
         eyebrow="2 · The story"
-        title="How Flexible Cancellation pays"
-        description="Flexible Cancellation is not just cover sold. Guests convert onto it, some cancel (that is expected), ops re-lets the stay, and you keep — or even grow — the revenue. Follow that loop to see where money is made or lost."
+        title="How cancelled stays still earn"
+        description="Guests convert with more confidence, some cancel (that is expected), ops re-lets the stay, and you keep or even grow the revenue. Flexible Cancellation is the product that runs that loop. Follow it to see where money is made or lost."
         badge={{ icon: RefreshCcw, label: "Value loop" }}
       >
         <FcValueLoopScorecard />
@@ -1998,7 +1999,7 @@ export function InsightsCalPanel({
         id="insights-act"
         eyebrow="3 · Where to act"
         title="What is driving the results?"
-        description="Use bedrooms, travel dates, and lead time to find where attachment is weak, cancels are high, or relets need work — then act on the shortlist."
+        description="Use bedrooms, travel dates, and lead time to find where attachment is weak, cancels are high, or relets need work, then act on the shortlist."
         badge={{ icon: MousePointerClick, label: "Signals" }}
       >
         <FcValueLoopExplore onOpenRelets={onOpenRelets} onAskAi={onAskAi} />
@@ -2008,7 +2009,7 @@ export function InsightsCalPanel({
         id="insights-growth"
         eyebrow="4 · Growth opportunity"
         title="What happens if we sell a bit more?"
-        description="Value of raising attachment by 1 percentage point, plus when travelling guests booked cover by departure month."
+        description="Value of raising attachment by 1 percentage point, plus when travelling guests booked Flexible Cancellation by departure month."
         badge={{ icon: TrendingUp, label: "Upside" }}
       >
         <AttachmentOpportunityCard
@@ -2021,7 +2022,7 @@ export function InsightsCalPanel({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className={MONO_LABEL}>Timing</p>
-              <HeadingWithHelp className="mt-1" title="Departure period booked with FC" />
+              <HeadingWithHelp className="mt-1" title="Departure period booked with Flexible Cancellation" />
               <p className="mt-1 text-xs text-muted-foreground">
                 When travelling guests booked with Flexible Cancellation · by departure month
               </p>
@@ -2062,18 +2063,6 @@ const DDL_RATE_CARDS: Array<{
   detail?: string
 }> = [
   {
-    label: "DDL guest price avg",
-    value: "£30",
-    trend: "+£2",
-    tone: "up",
-  },
-  {
-    label: "Insurance premium rate avg",
-    value: "2.12%",
-    trend: "-0.1pp",
-    tone: "down",
-  },
-  {
     label: "Out of test conversion",
     value: "0.4%",
     trend: "+0.1pp",
@@ -2085,6 +2074,18 @@ const DDL_RATE_CARDS: Array<{
     trend: "+£20k",
     tone: "up",
   },
+  {
+    label: "Guest price avg",
+    value: "£30",
+    trend: "+£2",
+    tone: "up",
+  },
+  {
+    label: "Product rate avg",
+    value: "2.12%",
+    trend: "-0.1pp",
+    tone: "down",
+  },
 ]
 
 /** DDL Damage Waiver analytics — same story structure as FC Insights. */
@@ -2095,14 +2096,14 @@ export function InsightsDdlPanel({
 } = {}) {
   const bookingsRow = DAMAGE_DEPOSIT_WAIVER_GRID[0]
   const attachmentRowData = DAMAGE_DEPOSIT_WAIVER_GRID[1]
-  const marginRow = DAMAGE_DEPOSIT_WAIVER_GRID[4]
-  const conversionRow = DAMAGE_DEPOSIT_WAIVER_GRID[5]
+  const marginRow = DAMAGE_DEPOSIT_WAIVER_GRID[3]
+  const conversionRow = DAMAGE_DEPOSIT_WAIVER_GRID[2]
 
   const bookingChannels = [
     { label: "Website", value: bookingsRow.website.value, color: CAL_CHANNEL_COLORS[0] },
     { label: "App", value: bookingsRow.app.value, color: CAL_CHANNEL_COLORS[1] },
     { label: "Offline", value: bookingsRow.offline.value, color: CAL_CHANNEL_COLORS[2] },
-    { label: "OTA", value: bookingsRow.ota.value, color: CAL_CHANNEL_COLORS[3] },
+    { label: "Online Travel Agency (OTA)", value: bookingsRow.ota.value, color: CAL_CHANNEL_COLORS[3] },
   ]
   const bookingsTotal = parseDisplayValue(bookingsRow.total.value)
   const bookingsDirect = parseDisplayValue(bookingsRow.direct.value)
@@ -2142,7 +2143,7 @@ export function InsightsDdlPanel({
         id="insights-health"
         eyebrow="1 · How are we doing?"
         title="Commercial performance"
-        description="See whether Damage Waiver is priced right, converting guests, and earning margin — plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and growth."
+        description="See whether Damage Deposit Waiver is priced right, converting guests, and earning margin, plus how much booking volume it is carrying. This is the live commercial health check before you dig into behaviour and growth."
         badge={{ icon: BarChart3, label: "Health check" }}
         showDivider={false}
       >
@@ -2176,9 +2177,9 @@ export function InsightsDdlPanel({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className={MONO_LABEL}>Volume</p>
-                <HeadingWithHelp className="mt-1" title="DDL Bookings by channel" />
+                <HeadingWithHelp className="mt-1" title="Bookings by channel" />
               </div>
-              <TrendChip value="+3.1%" tone="up" label="DDL Bookings by channel" />
+              <TrendChip value="+3.1%" tone="up" label="Bookings by channel" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -2259,7 +2260,7 @@ export function InsightsDdlPanel({
 
             <div className="border-t border-border/60 pt-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs text-muted-foreground">DDL bookings made · monthly</p>
+                <p className="text-xs text-muted-foreground">Damage Deposit Waiver bookings made · monthly</p>
                 <p className="text-xs font-semibold tabular-nums text-foreground">
                   {bookingsDirect.toLocaleString("en-GB")} direct
                 </p>
@@ -2278,14 +2279,14 @@ export function InsightsDdlPanel({
               <HeadingWithHelp
                 className="mt-1"
                 title="Attachment & margin"
-                helpTitle="DDL Attachment & margin"
+                helpTitle="Attachment & margin"
               />
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-xl border border-border/70 bg-muted/20 p-4">
                 <div className="min-w-0">
-                  <LabelWithHelp title="DDL Attachment" />
+                  <LabelWithHelp title="Attachment" />
                   <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
                     {attachmentRowData.total.value}
                   </p>
@@ -2296,7 +2297,7 @@ export function InsightsDdlPanel({
                 <AttachmentDonut percent={parseDisplayValue(attachmentRowData.total.value)} />
               </div>
               <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-                <LabelWithHelp title="DDL Partner Margin" />
+                <LabelWithHelp title="Partner Margin" />
                 <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
                   {marginRow.total.value}
                 </p>
@@ -2357,8 +2358,8 @@ export function InsightsDdlPanel({
       <InsightsSection
         id="insights-story"
         eyebrow="2 · The story"
-        title="How Damage Waiver pays"
-        description="Damage Waiver is not just a deposit alternative. Guests convert onto it, you earn partner margin, and stronger take-up on direct channels lifts the book. Follow that loop to see where money is made or left behind."
+        title="How deposit-free stays pay"
+        description="Guests convert without a cash deposit, you earn partner margin, and stronger take-up on direct channels lifts the book. Damage Deposit Waiver is the product that runs that loop. Follow it to see where money is made or left behind."
         badge={{ icon: RefreshCcw, label: "Value loop" }}
       >
         <DdlValueLoopScorecard />
@@ -2368,7 +2369,7 @@ export function InsightsDdlPanel({
         id="insights-act"
         eyebrow="3 · Where to act"
         title="What is driving the results?"
-        description="Use bedrooms, travel dates, and lead time to find where attachment is weak — then act on the shortlist of channel and segment signals."
+        description="Use bedrooms, travel dates, and lead time to find where attachment is weak, then act on the shortlist of channel and segment signals."
         badge={{ icon: MousePointerClick, label: "Signals" }}
       >
         <DdlValueLoopExplore onAskAi={onAskAi} />
@@ -2378,7 +2379,7 @@ export function InsightsDdlPanel({
         id="insights-growth"
         eyebrow="4 · Growth opportunity"
         title="What happens if we sell a bit more?"
-        description="Value of raising Damage Waiver attachment by 1 percentage point, plus when travelling guests booked the waiver by departure month."
+        description="Value of raising Damage Deposit Waiver attachment by 1 percentage point, plus when travelling guests booked the waiver by departure month."
         badge={{ icon: TrendingUp, label: "Upside" }}
       >
         <AttachmentOpportunityCard
@@ -2391,7 +2392,7 @@ export function InsightsDdlPanel({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className={MONO_LABEL}>Timing</p>
-              <HeadingWithHelp className="mt-1" title="Departure period booked with DDL" />
+              <HeadingWithHelp className="mt-1" title="Departure period booked with Damage Deposit Waiver" />
               <p className="mt-1 text-xs text-muted-foreground">
                 When travelling guests booked with Damage Waiver · by departure month
               </p>

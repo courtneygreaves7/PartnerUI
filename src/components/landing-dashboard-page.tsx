@@ -497,8 +497,8 @@ export function LandingDashboardPage({
               )}
             >
               <QuickActionTile
-                title="New Policy"
-                description="Create a new policy"
+                title="New product setup"
+                description="Create a new product setup"
                 icon={FileText}
                 onClick={() =>
                   onNavigate({ section: "booking-engine", view: "partners", action: "add-policy" })
@@ -561,14 +561,14 @@ export function LandingDashboardPage({
                 className="min-w-0"
                 totalLabel={productSplit.totalLabel}
                 segmentA={{
-                  label: "CAL",
+                  label: "Flexible Cancellation",
                   value: booking.calSales,
                   sharePercent: productSplit.calSharePercent,
                   takeUpLabel: booking.calPct,
                   trend: productSplit.calTrend,
                 }}
                 segmentB={{
-                  label: "DDL",
+                  label: "Damage Deposit Waiver",
                   value: booking.ddlSales,
                   sharePercent: productSplit.ddlSharePercent,
                   takeUpLabel: booking.ddlPct,
@@ -657,7 +657,7 @@ export function LandingDashboardPage({
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Welcome back, Courtney</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            A quick overview across policy admin and insights — pick a snapshot to dive deeper.
+            A quick overview across Partner admin and insights. Pick a snapshot to dive deeper.
           </p>
         </div>
 

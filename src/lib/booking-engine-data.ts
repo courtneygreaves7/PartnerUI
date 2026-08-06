@@ -39,6 +39,16 @@ export type PartnerConnectionType = "API" | "S3" | "FTP"
 export type PartnerProduct = "CAL" | "DDL"
 export type PartnerCurrency = "GBP" | "EUR"
 
+export const PARTNER_PRODUCT_LABELS: Record<PartnerProduct, string> = {
+  CAL: "Flexible Cancellation",
+  DDL: "Damage Deposit Waiver",
+}
+
+export function formatPartnerProductLabel(product: PartnerProduct | string): string {
+  if (product === "CAL" || product === "DDL") return PARTNER_PRODUCT_LABELS[product]
+  return product
+}
+
 export type AddPartnerBrandValues = {
   name: string
   policyGroup: string
@@ -139,7 +149,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-a",
     name: "Partner Alpha",
     initials: "PRAL",
-    dataRoute: "API — EUR, GBP",
+    dataRoute: "API · EUR, GBP",
     connectionType: "API",
     products: ["CAL", "DDL"],
     activity: {
@@ -215,7 +225,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-b",
     name: "Partner Beta",
     initials: "PRBE",
-    dataRoute: "API — GBP",
+    dataRoute: "API · GBP",
     connectionType: "API",
     products: ["DDL"],
     activity: {
@@ -263,7 +273,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-c",
     name: "Partner Gamma",
     initials: "PRGM",
-    dataRoute: "S3 — GBP",
+    dataRoute: "S3 · GBP",
     connectionType: "S3",
     products: ["CAL"],
     activity: {
@@ -295,7 +305,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-d",
     name: "Partner Delta",
     initials: "PRDT",
-    dataRoute: "API — EUR",
+    dataRoute: "API · EUR",
     connectionType: "API",
     products: ["CAL"],
     activity: {
@@ -343,7 +353,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-e",
     name: "Partner Epsilon",
     initials: "PREP",
-    dataRoute: "FTP — GBP",
+    dataRoute: "FTP · GBP",
     connectionType: "FTP",
     products: ["DDL"],
     activity: {
@@ -375,7 +385,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-f",
     name: "Partner Zeta",
     initials: "PRZT",
-    dataRoute: "API — EUR, GBP",
+    dataRoute: "API · EUR, GBP",
     connectionType: "API",
     products: ["CAL", "DDL"],
     activity: {
@@ -423,7 +433,7 @@ export const BOOKING_ENGINE_PARTNERS: Partner[] = [
     id: "partner-g",
     name: "Partner Eta",
     initials: "PRETA",
-    dataRoute: "S3 — EUR",
+    dataRoute: "S3 · EUR",
     connectionType: "S3",
     products: ["CAL"],
     activity: {
@@ -524,7 +534,7 @@ export function formatBrandLabel(name: string) {
 }
 
 export function getPartnerTags(partner: Partner) {
-  const [method, currencies] = partner.dataRoute.split(" — ")
+  const [method, currencies] = partner.dataRoute.split(" · ")
   const routeTag = currencies ? `${method} → ${currencies}` : method
   return [method, routeTag, ...partner.currencies]
 }
@@ -662,7 +672,7 @@ export function buildPartnerDataRoute(
   connectionType: PartnerConnectionType,
   currencies: PartnerCurrency[]
 ) {
-  return `${connectionType} — ${currencies.join(", ")}`
+  return `${connectionType} · ${currencies.join(", ")}`
 }
 
 export type PolicyFormType = "policy" | "quote"
@@ -727,7 +737,7 @@ export function createPolicyFromForm(
   return {
     id: `policy-${partner.id}-${Date.now()}`,
     brandId: brand?.id ?? `${partner.id}-brand-1`,
-    name: reference || `${values.product || "Policy"} — ${partner.name}`,
+    name: reference || `${formatPartnerProductLabel(values.product || "Product")} · ${partner.name}`,
     validFrom: formatPolicyDate(values.inceptionDate),
     validTo: values.expiryDate.trim() ? formatPolicyDate(values.expiryDate) : "ongoing",
     status: "active",
@@ -927,10 +937,10 @@ export function getPartnerBookingTrend(partnerId: string) {
 }
 
 export const PRODUCT_TYPE_OPTIONS = [
-  "Cancellation",
-  "Damage deposit",
-  "Travel insurance",
-  "Liability",
+  "Flexible Cancellation",
+  "Damage Deposit Waiver",
+  "Travel cover",
+  "Guest protection",
 ] as const
 
 export const CAPACITY_TYPE_OPTIONS = [

@@ -242,11 +242,11 @@ export function buildCompareSections(
       title: "Financials (GBP)",
       metrics: [
         buildMetric("CAL total payable", parseMetric(leftCal.totalPayable), parseMetric(rightCal.totalPayable), "currency"),
-        buildMetric("IPT", parseMetric(leftCal.ipt), parseMetric(rightCal.ipt), "currency"),
+        buildMetric("Product tax (IPT)", parseMetric(leftCal.ipt), parseMetric(rightCal.ipt), "currency"),
         buildMetric("PISL commission", parseMetric(leftCal.pislComm), parseMetric(rightCal.pislComm), "currency"),
         buildMetric("Capacity net", parseMetric(leftCal.capacityNet), parseMetric(rightCal.capacityNet), "currency"),
         buildMetric("Premium inc. IPT", parseMetric(leftCal.premiumInc), parseMetric(rightCal.premiumInc), "currency"),
-        buildMetric("GWP", parseMetric(leftCal.gwp), parseMetric(rightCal.gwp), "currency"),
+        buildMetric("Product cost (GWP)", parseMetric(leftCal.gwp), parseMetric(rightCal.gwp), "currency"),
       ],
     },
     {

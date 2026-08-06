@@ -165,7 +165,7 @@ export function BookingEnginePage({
     setShowAddPartner(false)
     toast({
       title: "Partner added",
-      description: `${partner.name} is now in PAS.`,
+      description: `${partner.name} is now in Partner admin.`,
     })
   }
 
@@ -178,7 +178,7 @@ export function BookingEnginePage({
     setPartnerSearch("")
     setShowAddPolicy(false)
     toast({
-      title: "Policy added",
+      title: "Product setup added",
       description: `${policy.name} added to ${partner?.name ?? "partner"}.`,
     })
   }
@@ -394,7 +394,7 @@ export function BookingEnginePage({
         <div className="shrink-0 border-b border-border pb-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-[180px]">
-              <h1 className="text-[22px] font-semibold tracking-tight">Partners &amp; policies</h1>
+              <h1 className="text-[22px] font-semibold tracking-tight">Partners &amp; products</h1>
               <p className="mt-1 text-sm text-muted-foreground">YTD to June 2026</p>
             </div>
 
@@ -405,7 +405,7 @@ export function BookingEnginePage({
                 onClick={() => setShowAddPolicy(true)}
               >
                 <FileText className="size-3.5" />
-                Add policy
+                Add product setup
               </Button>
               <Button
                 variant="outline"
@@ -439,7 +439,7 @@ export function BookingEnginePage({
           <div className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground">
             <PencilLine className="size-3.5 shrink-0 text-foreground" />
             <span>
-              Editor mode — open the Brands tab and use Edit rates to update policy values.
+              Editor mode: open the Brands tab and use Edit rates to update product values.
             </span>
           </div>
         ) : null}

@@ -205,11 +205,11 @@ export function buildCalDdlTakeupData(filters: ActiveFilters, days = 174) {
   const seed = profileSeed(filters)
   const { base, amp, period, rateOffset } = getProfile(filters)
   const series = [
-    "CAL % (total)",
-    "Partner Alpha CAL %",
-    "Partner Beta CAL %",
-    "Partner Gamma CAL %",
-    "DDL % (total)",
+    "Flexi Cancellation % (total)",
+    "Partner Alpha Flexi Cancellation %",
+    "Partner Beta Flexi Cancellation %",
+    "Partner Gamma Flexi Cancellation %",
+    "Damage Waiver % (total)",
   ]
   return Array.from({ length: days }, (_, i) => {
     const row: Record<string, string | number> = { date: dateLabel(i) }

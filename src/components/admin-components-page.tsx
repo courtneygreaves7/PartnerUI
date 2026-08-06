@@ -77,7 +77,7 @@ export function AdminComponentsPage() {
 
         <WidgetSection
           title="Stacked data"
-          description="Two stacked data points with a primary title — useful for date ranges and paired metrics."
+          description="Two stacked data points with a primary title: useful for date ranges and paired metrics."
         >
           <StackedDataWidget
             title="Booking window"
@@ -96,14 +96,14 @@ export function AdminComponentsPage() {
           <DualDataWidget
             className="h-auto"
             primaryTitle="Product attachment"
-            helpText="CAL and DDL attachment for the current filter set."
+            helpText="Flexible Cancellation and Damage Deposit Waiver attachment for the current filter set."
             datasetA={{
-              title: "Flexible cancellation",
+              title: "Flexible Cancellation",
               value: formatPct(PORTFOLIO.attachmentPct, 1),
               clarification: "of offered bookings",
             }}
             datasetB={{
-              title: "Damage deposit waiver",
+              title: "Damage Deposit Waiver",
               value: "9%",
               clarification: "of offered bookings",
             }}
@@ -124,8 +124,8 @@ export function AdminComponentsPage() {
               { label: "Bookings", value: "45,959" },
               { label: "Revenue", value: "£88k" },
               { label: "ABV", value: "£933" },
-              { label: "CAL take-up", value: "3.0%" },
-              { label: "With CAL", value: "1,379" },
+              { label: "Guest take-up", value: "3.0%" },
+              { label: "With Flexible Cancellation", value: "1,379" },
               { label: "Cancel rate", value: "7.0%" },
             ]}
           />
@@ -140,7 +140,7 @@ export function AdminComponentsPage() {
           <BreakdownDataWidget
             title="Partner revenue"
             primaryValue={formatGbp(PORTFOLIO.generated, "compact")}
-            primaryLabel="net of premium + IPT"
+            primaryLabel="after product cost"
             subdataA={{
               label: "Margin (ex. VAT)",
               value: formatGbp(PORTFOLIO.fcMargin, "thousands"),
@@ -161,12 +161,12 @@ export function AdminComponentsPage() {
         <div className="grid gap-6 xl:grid-cols-2">
           <GraphWidget
             title="Attachment trend"
-            explanation="Monthly CAL and DDL attachment versus market."
+            explanation="Monthly Flexible Cancellation and Damage Deposit Waiver attachment versus market."
             xAxisKey="month"
             data={GRAPH_DATA}
             layers={[
-              { id: "cal", label: "CAL", color: "var(--primary)", dataKey: "cal" },
-              { id: "ddl", label: "DDL", color: "#F59E0B", dataKey: "ddl" },
+              { id: "cal", label: "Flexible Cancellation", color: "var(--primary)", dataKey: "cal" },
+              { id: "ddl", label: "Damage Deposit Waiver", color: "#F59E0B", dataKey: "ddl" },
               { id: "market", label: "Market", color: "#94A3B8", dataKey: "market" },
             ]}
           />
@@ -177,8 +177,8 @@ export function AdminComponentsPage() {
             xAxisKey="month"
             data={GRAPH_DATA}
             layers={[
-              { id: "cal", label: "CAL", color: "var(--primary)", dataKey: "cal" },
-              { id: "ddl", label: "DDL", color: "#F59E0B", dataKey: "ddl" },
+              { id: "cal", label: "Flexible Cancellation", color: "var(--primary)", dataKey: "cal" },
+              { id: "ddl", label: "Damage Deposit Waiver", color: "#F59E0B", dataKey: "ddl" },
             ]}
           />
         </div>

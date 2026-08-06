@@ -54,8 +54,8 @@ export function PartnerBreakdown() {
               <TableHead>Brand</TableHead>
               <TableHead>CCY</TableHead>
               <TableHead className="text-right">Bookings</TableHead>
-              <TableHead className="text-right">CAL</TableHead>
-              <TableHead className="text-right">DDL</TableHead>
+              <TableHead className="text-right">Flexible Cancellation (CAL)</TableHead>
+              <TableHead className="text-right">Damage Deposit Waiver (DDL)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

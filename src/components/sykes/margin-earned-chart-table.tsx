@@ -28,7 +28,7 @@ export function MarginEarnedChartTable() {
     <Card className="bg-card shadow-xs">
       <CardHeader className="pb-2">
         <h3 className="text-center text-sm font-semibold text-foreground">
-          Margin Earned from FC Bookings
+          Margin earned from Flexible Cancellation bookings
         </h3>
       </CardHeader>
       <CardContent className="space-y-4 pb-5">
@@ -47,13 +47,13 @@ export function MarginEarnedChartTable() {
             <Tooltip
               formatter={(value) => [
                 Number(value).toLocaleString("en-GB"),
-                "FC Bookings Made",
+                "Flexible Cancellation bookings made",
               ]}
             />
             <Legend />
             <Bar
               dataKey="value"
-              name="FC Bookings Made"
+              name="Flexible Cancellation bookings made"
               fill="var(--primary)"
               radius={[2, 2, 0, 0]}
             />
@@ -74,7 +74,7 @@ export function MarginEarnedChartTable() {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell className="font-medium">FC Bookings Made</TableCell>
+                <TableCell className="font-medium">Flexible Cancellation bookings made</TableCell>
                 {MARGIN_EARNED_FC_DATA.map((row) => (
                   <TableCell key={row.month} className="text-center tabular-nums">
                     {row.value.toLocaleString("en-GB")}

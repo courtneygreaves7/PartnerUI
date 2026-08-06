@@ -32,7 +32,7 @@ const FC_INCREMENTAL_SPLIT = splitByChannel(PORTFOLIO.incrementalTotal)
 export const PARTNER_REVENUE = {
   headline: formatGbp(PORTFOLIO.generated, "compact"),
   headlineExact: formatGbp(PORTFOLIO.generated, "exact"),
-  headlineNote: "(net of insurance premium rate + IPT)",
+  headlineNote: "(after product cost)",
   drivers: [
     { label: "Attachment (average)", value: formatPct(PORTFOLIO.attachmentPct, 1) },
     { label: "Margin (ex. VAT) £m", value: formatGbp(PORTFOLIO.fcMargin, "thousands") },
@@ -56,10 +56,10 @@ export const PARTNER_REVENUE = {
 export const PARTNER_IMPACT_HERO = {
   generated: formatGbp(PORTFOLIO.generated, "exact"),
   generatedLabel: "Generated with Pikl'd Stays",
-  generatedHint: "Margin, conversion uplift, and re-let benefit — net of premium + IPT",
+  generatedHint: "Margin, conversion uplift, and re-let benefit (after product cost)",
   available: formatGbp(PORTFOLIO.valuePerAttachmentPp, "exact"),
   availableLabel: "Still on the table",
-  availableHint: "Estimated value of +1pp more Flexible Cancellation attachment",
+  availableHint: "Estimated value of +1 percentage point (1pp) more Flexible Cancellation attachment",
 } as const
 
 export const ADDITIONAL_PARTNER_REVENUE = {
@@ -98,7 +98,7 @@ export const ADDITIONAL_PARTNER_REVENUE = {
       side: null,
     },
     {
-      label: "Average Pikl'd Stay IPB",
+      label: "Average Pikl'd Stay income per booking (IPB)",
       value: `£${PORTFOLIO.profile.ipb.toFixed(1)}`,
       trend: `+£${(PORTFOLIO.profile.ipb - PORTFOLIO.profile.ipbWithoutFc).toFixed(1)}`,
       versus: `£${PORTFOLIO.profile.ipbWithoutFc.toFixed(1)} without Flexible Cancellation`,
@@ -388,32 +388,18 @@ function metricRow(
  * Direct = Website+App+Offline; Total = Direct+OTA.
  */
 export const FLEXIBLE_CANCELLATION_GRID: ChannelGridRow[] = [
-  volumeRow("FC Bookings", {
+  volumeRow("Bookings", {
     website: FC_BOOKINGS_SPLIT.website,
     app: FC_BOOKINGS_SPLIT.app,
     offline: FC_BOOKINGS_SPLIT.offline,
     ota: FC_BOOKINGS_SPLIT.ota,
   }),
   attachmentRow(
-    "FC Attachment",
+    "Attachment",
     { website: 14.5, app: 12, offline: 9, ota: 11 },
     13.2,
     PORTFOLIO.attachmentPct
   ),
-  flatRateRow("FC Guest Price Avg %", "9.5%"),
-  flatRateRow("FC Insurance Premium Rate Avg %", "6.1%"),
-  moneyRow("FC Partner Margin £", {
-    website: FC_MARGIN_SPLIT.website,
-    app: FC_MARGIN_SPLIT.app,
-    offline: FC_MARGIN_SPLIT.offline,
-    ota: FC_MARGIN_SPLIT.ota,
-  }),
-  moneyRow("Incremental Cancellations & Relets", {
-    website: FC_INCREMENTAL_SPLIT.website,
-    app: FC_INCREMENTAL_SPLIT.app,
-    offline: FC_INCREMENTAL_SPLIT.offline,
-    ota: FC_INCREMENTAL_SPLIT.ota,
-  }),
   {
     label: `Out of Test Conversion Benefit (1% ≈ ${formatGbp(PORTFOLIO.conversionUplift, "thousands")})`,
     website: { value: "0.8%", variant: "rate" },
@@ -429,14 +415,25 @@ export const FLEXIBLE_CANCELLATION_GRID: ChannelGridRow[] = [
       variant: "total",
     },
   },
+  moneyRow("Incremental Cancellations & Relets", {
+    website: FC_INCREMENTAL_SPLIT.website,
+    app: FC_INCREMENTAL_SPLIT.app,
+    offline: FC_INCREMENTAL_SPLIT.offline,
+    ota: FC_INCREMENTAL_SPLIT.ota,
+  }),
+  moneyRow("Partner Margin £", {
+    website: FC_MARGIN_SPLIT.website,
+    app: FC_MARGIN_SPLIT.app,
+    offline: FC_MARGIN_SPLIT.offline,
+    ota: FC_MARGIN_SPLIT.ota,
+  }),
+  flatRateRow("Guest Price Avg %", "9.5%"),
+  flatRateRow("Product Rate Avg %", "6.1%"),
 ]
 
 export const DAMAGE_DEPOSIT_WAIVER_GRID: ChannelGridRow[] = [
-  volumeRow("DDL Bookings", { website: 22000, app: 8000, offline: 4000, ota: 6000 }),
-  attachmentRow("DDL Attachment", { website: 8, app: 6, offline: 4, ota: 5 }, 7, 6.8),
-  flatRateRow("DDL Guest Price Avg %", "£30"),
-  flatRateRow("DDL Insurance Premium Rate Avg%", "2.12%"),
-  moneyRow("DDL Partner Margin £", { website: 180000, app: 60000, offline: 30000, ota: 40000 }),
+  volumeRow("Bookings", { website: 22000, app: 8000, offline: 4000, ota: 6000 }),
+  attachmentRow("Attachment", { website: 8, app: 6, offline: 4, ota: 5 }, 7, 6.8),
   {
     label: "Out of Test Conversion Benefit",
     website: { value: "0.4%", variant: "attachment" },
@@ -446,6 +443,9 @@ export const DAMAGE_DEPOSIT_WAIVER_GRID: ChannelGridRow[] = [
     direct: { value: "£180k", variant: "direct" },
     total: { value: "£180k", variant: "total" },
   },
+  moneyRow("Partner Margin £", { website: 180000, app: 60000, offline: 30000, ota: 40000 }),
+  flatRateRow("Guest Price Avg %", "£30"),
+  flatRateRow("Product Rate Avg %", "2.12%"),
 ]
 
 export type AttachmentValueChannel = {
@@ -481,7 +481,7 @@ export function getAttachmentValuePerPp(
     { key: "website" as const, label: "Website" },
     { key: "app" as const, label: "App" },
     { key: "offline" as const, label: "Offline" },
-    { key: "ota" as const, label: "OTA" },
+    { key: "ota" as const, label: "Online Travel Agency (OTA)" },
     { key: "direct" as const, label: "Direct" },
     { key: "total" as const, label: "Total" },
   ]
@@ -506,7 +506,7 @@ export const FC_ATTACHMENT_VALUE_PER_PP = getAttachmentValuePerPp(
 
 export const DDL_ATTACHMENT_VALUE_PER_PP = getAttachmentValuePerPp(
   DAMAGE_DEPOSIT_WAIVER_GRID[1],
-  DAMAGE_DEPOSIT_WAIVER_GRID[4]
+  DAMAGE_DEPOSIT_WAIVER_GRID[3]
 )
 
 function parseGridValue(value: string): number {
@@ -850,7 +850,7 @@ export const PERFORMANCE_METRICS_GRID: ChannelGridRow[] =
   CONTRIBUTION_TO_PERFORMANCE_GRID.slice(2)
 
 export const FINANCIALS_GRID: ChannelGridRow[] = [
-  moneyRow("Insurance Premium Paid £", { website: 310000, app: 110000, offline: 50000, ota: 80000 }),
+  moneyRow("Product Cost Paid £", { website: 310000, app: 110000, offline: 50000, ota: 80000 }),
   moneyRow("Claims Made £", { website: 62000, app: 22000, offline: 10000, ota: 16000 }),
   moneyRow("Re-Let Rental Charges Paid to Insurer £", {
     website: 48000,
@@ -1068,25 +1068,25 @@ export const FC_CANCEL_RATE_BY_DEPARTURE = DEPARTURES_BY_DATE_DATA.map((row) => 
  * Figures come from mock-portfolio anchors (same truth as Home / grids).
  */
 export const FC_VALUE_LOOP = {
-  title: "How Flexible Cancellation drives max revenue",
+  title: "How guest flexibility drives max revenue",
   story:
-    "This is how Flexible Cancellation (FC) drives revenue: more guests buy cover, you earn product margin, some cancel (expected), and you re-let so cancelled holidays still pay.",
+    "Guests book with more confidence when plans can change. You earn product margin, some cancel (expected), and you re-let so cancelled holidays still pay. Flexible Cancellation is how that loop runs.",
   steps: [
     {
       id: "sales",
-      label: "Cover take-up",
+      label: "Guest take-up",
       value: formatPct(PORTFOLIO.attachmentPct, 1),
       hint: "Conversion onto Flexible Cancellation",
       goodWhen: "higher" as const,
-      help: "Share of bookings where the guest bought Flexible Cancellation (FC). This is take-up of cover — the start of the revenue loop. How we calculate it: FC bookings ÷ all bookings.",
+      help: "Share of bookings where the guest bought Flexible Cancellation. This is the start of the revenue loop. How we calculate it: Flexible Cancellation bookings ÷ all bookings.",
     },
     {
       id: "cancel",
       label: "Cancel",
       value: formatPct(PORTFOLIO.fcCancelPct, 1),
-      hint: "Expected when guests have cover",
+      hint: "Expected when guests have Flexible Cancellation",
       goodWhen: "context" as const,
-      help: "Share of Flexible Cancellation (FC) bookings that were cancelled. Some cancellation is normal when guests have cover — the point is what you recover next. How we calculate it: cancellations ÷ FC bookings.",
+      help: "Share of Flexible Cancellation bookings that were cancelled. Some cancellation is normal when guests can change plans. The point is what you recover next. How we calculate it: cancellations ÷ Flexible Cancellation bookings.",
     },
     {
       id: "relet",
@@ -1102,16 +1102,16 @@ export const FC_VALUE_LOOP = {
       value: formatGbp(PORTFOLIO.incrementalTotal, "thousands"),
       hint: "Proof the loop is working",
       goodWhen: "higher" as const,
-      help: "Extra revenue from re-letting cancelled Flexible Cancellation (FC) stays — proof that cover plus ops work together.",
+      help: "Extra revenue from re-letting cancelled Flexible Cancellation stays. Proof that the product and ops work together.",
     },
   ],
 } as const
 
 /** DDL value loop — offer → attach → margin → conversion benefit. */
 export const DDL_VALUE_LOOP = {
-  title: "How Damage Waiver drives incremental margin",
+  title: "How deposit-free stays add incremental margin",
   story:
-    "Damage Deposit Waiver (DDL) replaces a cash deposit with a paid product: guests take it up, you earn partner margin, and stronger conversion on direct channels lifts the book. Follow the loop to see where attachment is soft and where margin already pays.",
+    "Replacing a cash deposit with a paid product helps guests convert. They take Damage Deposit Waiver up, you earn partner margin, and stronger conversion on direct channels lifts the book. Follow the loop to see where attachment is soft and where margin already pays.",
   steps: [
     {
       id: "offered",
@@ -1119,31 +1119,31 @@ export const DDL_VALUE_LOOP = {
       value: formatPct(PORTFOLIO.offerRate * 100, 0),
       hint: "Share of bookings shown the waiver",
       goodWhen: "higher" as const,
-      help: "Share of bookings where Damage Deposit Waiver (DDL) was available to the guest. How we calculate it: bookings offered DDL ÷ total bookings.",
+      help: "Share of bookings where Damage Deposit Waiver was available to the guest. How we calculate it: bookings offered Damage Deposit Waiver ÷ total bookings.",
     },
     {
       id: "attach",
       label: "Waiver take-up",
       value: DAMAGE_DEPOSIT_WAIVER_GRID[1].total.value,
-      hint: "Conversion onto Damage Waiver",
+      hint: "Conversion onto Damage Deposit Waiver",
       goodWhen: "higher" as const,
-      help: "Share of eligible bookings that bought Damage Deposit Waiver (DDL). How we calculate it: DDL bookings ÷ bookings offered DDL.",
+      help: "Share of eligible bookings that bought Damage Deposit Waiver. How we calculate it: Damage Deposit Waiver bookings ÷ bookings offered Damage Deposit Waiver.",
     },
     {
       id: "margin",
       label: "Partner margin",
-      value: DAMAGE_DEPOSIT_WAIVER_GRID[4].total.value,
+      value: DAMAGE_DEPOSIT_WAIVER_GRID[3].total.value,
       hint: "Earnings from waiver attachments",
       goodWhen: "higher" as const,
-      help: "Partner margin earned from Damage Deposit Waiver (DDL) by channel, after premium.",
+      help: "Partner margin earned from Damage Deposit Waiver by channel, after product cost.",
     },
     {
       id: "conversion",
       label: "Conversion benefit",
-      value: DAMAGE_DEPOSIT_WAIVER_GRID[5].total.value,
+      value: DAMAGE_DEPOSIT_WAIVER_GRID[2].total.value,
       hint: "Proof the product lifts the book",
       goodWhen: "higher" as const,
-      help: "Estimated partner margin from conversion lift linked to Damage Deposit Waiver (DDL) on direct channels.",
+      help: "Estimated partner margin from conversion lift linked to Damage Deposit Waiver on direct channels.",
     },
   ],
 } as const
@@ -1155,7 +1155,7 @@ export const TRIPLE_SERIES_COLORS = {
 } as const
 
 export const TRIPLE_SERIES_LABELS = {
-  bookings: "FC Bookings Made",
-  cancellations: "FC Cancellations",
-  relets: "FC Relets",
+  bookings: "Flexible Cancellation bookings made",
+  cancellations: "Flexible Cancellation cancellations",
+  relets: "Flexible Cancellation relets",
 } as const

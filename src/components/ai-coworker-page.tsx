@@ -576,8 +576,8 @@ export function AiCoworkerPage({
               {timeOfDayGreeting()}, {partnerName}
             </h1>
             <p className="mt-1.5 max-w-lg text-center text-sm text-muted-foreground sm:text-base">
-              Ask how Flexible Cancellation drives max revenue — conversion, margin, behaviour, and
-              re-lets.
+              Ask how to drive max revenue with Flexible Cancellation: conversion, margin, behaviour,
+              and re-lets.
             </p>
 
             <div className="mt-8 w-full max-w-2xl">

@@ -237,7 +237,7 @@ function OverviewTab({
         </SectionCard>
 
         <SectionCard
-          title="Active policies"
+          title="Active products"
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
           contentClassName="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
@@ -356,7 +356,7 @@ function BrandsTab({
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-              Policy rates
+              Product rates
             </p>
             {selectedBrand ? (
               <p className="mt-1 text-sm text-foreground">
@@ -456,7 +456,7 @@ function BookingsTab({ partner }: { partner: Partner }) {
           {(
             [
               { id: "all", label: `All (${bookings.length})` },
-              { id: "cal", label: `CAL (${bookings.filter((b) => b.hasCal).length})` },
+              { id: "cal", label: `Flexible Cancellation (${bookings.filter((b) => b.hasCal).length})` },
               {
                 id: "confirmed",
                 label: `Confirmed (${bookings.filter((b) => b.status === "confirmed").length})`,
@@ -502,8 +502,8 @@ function PropertiesTab({
         metrics={[
           { label: "Properties", value: formatCount(properties.length) },
           { label: "Bookings", value: formatCount(partner.activity.bookings) },
-          { label: "With CAL", value: formatCount(partner.activity.withCal) },
-          { label: "With DDL", value: formatCount(partner.activity.withDdl) },
+          { label: "With Flexible Cancellation", value: formatCount(partner.activity.withCal) },
+          { label: "With Damage Deposit Waiver", value: formatCount(partner.activity.withDdl) },
         ]}
       />
       <PropertiesTable properties={properties} onViewProperty={onViewProperty} embedded />
@@ -577,7 +577,7 @@ export function PartnerDetailPanel({
     if (!canDeletePolicy?.(policyId) || !onDeletePolicy) return
     const policy = partner.policies.find((item) => item.id === policyId)
     if (
-      window.confirm(`Delete policy ${policy?.name ?? "record"}? This cannot be undone.`)
+      window.confirm(`Delete product setup ${policy?.name ?? "record"}? This cannot be undone.`)
     ) {
       onDeletePolicy(policyId)
       setInfoView(null)
@@ -638,7 +638,7 @@ export function PartnerDetailPanel({
               label="Revenue"
               value={formatCompactCurrency(partner.activity.revenue)}
             />
-            <PartnerStat label="CAL" value={formatCount(partner.activity.withCal)} />
+            <PartnerStat label="Flexible Cancellation" value={formatCount(partner.activity.withCal)} />
             <PartnerStat label="Brands" value={String(partner.brands.length)} />
           </div>
         </div>
@@ -785,13 +785,13 @@ export function PartnerDetailPanel({
       <PasInfoDrawer
         open={infoView?.type === "policy" && Boolean(viewedPolicy)}
         size="wide"
-        title={viewedPolicy?.name ?? "Policy"}
+        title={viewedPolicy?.name ?? "Product setup"}
         subtitle={viewedPolicyBrand ? formatBrandLabel(viewedPolicyBrand.name) : undefined}
         onClose={() => setInfoView(null)}
         footer={
           viewedPolicy && canDeletePolicy?.(viewedPolicy.id) && onDeletePolicy ? (
             <PasDeleteButton
-              label="Delete policy"
+              label="Delete product setup"
               onDelete={() => handleDeletePolicy(viewedPolicy.id)}
             />
           ) : undefined

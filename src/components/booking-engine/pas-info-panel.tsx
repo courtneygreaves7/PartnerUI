@@ -30,6 +30,7 @@ import {
   PARTNER_CONNECTION_LABELS,
   formatBrandLabel,
   formatCount,
+  formatPartnerProductLabel,
   type AddPolicyFormValues,
   type Brand,
   type Partner,
@@ -134,8 +135,8 @@ function InfoEmpty({ children }: { children: ReactNode }) {
 }
 
 function formatPartnerSetupStatus(status?: "draft" | "active") {
-  if (status === "draft") return "Draft — setup in progress"
-  if (status === "active") return "Active — ready for bookings"
+  if (status === "draft") return "Draft · setup in progress"
+  if (status === "active") return "Active · ready for bookings"
   return ""
 }
 
@@ -151,7 +152,7 @@ function formatDisplayDate(value: string) {
 }
 
 function formatPolicyType(value: AddPolicyFormValues["policyType"]) {
-  return value === "quote" ? "Quote" : "Policy"
+  return value === "quote" ? "Quote" : "Product setup"
 }
 
 function InfoGrid({ children, className }: { children: ReactNode; className?: string }) {
@@ -433,7 +434,7 @@ export function PartnerInfoContent({
               label: "Setup status",
               value:
                 formatPartnerSetupStatus(onboarding?.status) ||
-                (onboarding ? "" : "Active — ready for bookings"),
+                (onboarding ? "" : "Active · ready for bookings"),
             },
             {
               label: "Supported currencies",
@@ -522,7 +523,7 @@ export function BrandInfoContent({ partner, brand, policies, onViewPolicy }: Bra
             { label: "Brand name", value: formatBrandLabel(brand.name) },
             { label: "Partner", value: partner.name },
             { label: "Partner code", value: partner.initials },
-            { label: "Products", value: partner.products.join(", ") },
+            { label: "Products", value: partner.products.map(formatPartnerProductLabel).join(", ") },
             { label: "Currencies", value: partner.currencies.join(", ") },
           ]}
         />
@@ -531,16 +532,16 @@ export function BrandInfoContent({ partner, brand, policies, onViewPolicy }: Bra
       <InfoSection title="Summary" icon={BarChart3}>
         <InfoList
           items={[
-            { label: "Total policies", value: String(policies.length) },
-            { label: "Active policies", value: String(activePolicies.length) },
+            { label: "Total products", value: String(policies.length) },
+            { label: "Active products", value: String(activePolicies.length) },
           ]}
         />
       </InfoSection>
 
       <InfoGridFull>
-        <InfoSection title="Policies" icon={Shield}>
+        <InfoSection title="Product setups" icon={Shield}>
           {policies.length === 0 ? (
-            <InfoEmpty>No policies linked to this brand yet.</InfoEmpty>
+            <InfoEmpty>No product setups linked to this brand yet.</InfoEmpty>
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">
               {policies.map((policy) => (
@@ -652,10 +653,10 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
   if (!details) {
     return (
       <InfoGrid>
-        <InfoSection title="Policy summary" icon={Shield}>
+        <InfoSection title="Product setup summary" icon={Shield}>
           <InfoList
             items={[
-              { label: "Policy name", value: policy.name },
+              { label: "Product name", value: policy.name },
               { label: "Partner", value: partnerName },
               { label: "Brand", value: brandName },
               { label: "Valid from", value: policy.validFrom },
@@ -671,7 +672,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
               { label: "Net rate", value: `${policy.netRate.toFixed(2)}%` },
               { label: "Gross rate", value: `${policy.grossRate.toFixed(2)}%` },
               { label: "Commission", value: `${policy.calCommission.toFixed(1)}%` },
-              { label: "Max liability", value: policy.maxLiability.toLocaleString() },
+              { label: "Max payout", value: policy.maxLiability.toLocaleString() },
               { label: "Currency", value: policy.currency },
             ]}
           />
@@ -679,7 +680,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
 
         <InfoGridFull>
           <InfoEmpty>
-            Full policy form details are only available for policies created in this session.
+            Full product setup details are only available for setups created in this session.
           </InfoEmpty>
         </InfoGridFull>
       </InfoGrid>
@@ -695,8 +696,8 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
             { label: "Inception date", value: formatDisplayDate(details.inceptionDate) },
             { label: "Expiry date", value: formatDisplayDate(details.expiryDate) },
             { label: "Partner", value: partnerName },
-            { label: "Product", value: details.product },
-            { label: "Policy reference", value: details.policyReference },
+            { label: "Product", value: formatPartnerProductLabel(details.product) },
+            { label: "Product reference", value: details.policyReference },
             { label: "Distribution", value: details.distribution },
             {
               label: "Partner contribution",
@@ -711,7 +712,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
       <InfoSection title="References" icon={Tag}>
         <InfoList
           items={[
-            { label: "Capacity policy number", value: details.capacityPolicyNumber },
+            { label: "Capacity reference number", value: details.capacityPolicyNumber },
             { label: "Lineslip reference", value: details.lineslipReference },
             { label: "UMR", value: details.umr },
             {
@@ -722,7 +723,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
         />
       </InfoSection>
 
-      <InfoSection title="Policy config" icon={SlidersHorizontal}>
+      <InfoSection title="Product config" icon={SlidersHorizontal}>
         <InfoList
           items={[
             { label: "Rating basis", value: details.ratingBasis },
@@ -737,15 +738,18 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
       <InfoSection title="Rating" icon={Percent}>
         <InfoList
           items={[
-            { label: "Insured limit", value: details.insuredLimit },
-            { label: "Net rate exc. IPT", value: details.netRateExIpt ? `${details.netRateExIpt}%` : "" },
+            { label: "Max payout per booking", value: details.insuredLimit },
             {
-              label: "Gross rate inc. IPT",
+              label: "Net product rate excl. Insurance Premium Tax (IPT)",
+              value: details.netRateExIpt ? `${details.netRateExIpt}%` : "",
+            },
+            {
+              label: "Gross product rate incl. IPT",
               value: details.grossRateIncIpt ? `${details.grossRateIncIpt}%` : "",
             },
             { label: "Commission", value: details.commissionPercent ? `${details.commissionPercent}%` : "" },
-            { label: "Gross premium estimate", value: details.grossPremiumEstimate },
-            { label: "Net premium estimate", value: details.netPremiumEstimate },
+            { label: "Gross product cost estimate", value: details.grossPremiumEstimate },
+            { label: "Net product cost estimate", value: details.netPremiumEstimate },
           ]}
         />
       </InfoSection>
@@ -761,7 +765,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
                 : "",
             },
             {
-              label: "% policy count related to consumers",
+              label: "% product count related to consumers",
               value: details.policyCountRelatedToConsumers
                 ? `${details.policyCountRelatedToConsumers}%`
                 : "",
@@ -787,7 +791,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
             { label: "Net rate", value: `${policy.netRate.toFixed(2)}%` },
             { label: "Gross rate", value: `${policy.grossRate.toFixed(2)}%` },
             { label: "Commission", value: `${policy.calCommission.toFixed(1)}%` },
-            { label: "Max liability", value: policy.maxLiability.toLocaleString() },
+            { label: "Max payout", value: policy.maxLiability.toLocaleString() },
             { label: "Currency", value: policy.currency },
             { label: "Brand", value: brandName },
           ]}
@@ -806,7 +810,7 @@ export function PolicyInfoContent({ policy, details, partnerName, brandName }: P
 
       {details.fileNames.length > 0 ? (
         <InfoGridFull>
-          <InfoSection title="Policy files" icon={Paperclip}>
+          <InfoSection title="Product files" icon={Paperclip}>
             <ul className="grid gap-2 sm:grid-cols-2">
               {details.fileNames.map((name) => (
                 <li

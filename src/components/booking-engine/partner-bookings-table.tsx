@@ -45,7 +45,7 @@ export function PartnerBookingsTable({ bookings }: PartnerBookingsTableProps) {
             <TableHead className="px-4 text-right text-xs">Nights</TableHead>
             <TableHead className="px-4 text-right text-xs">Guests</TableHead>
             <TableHead className="px-4 text-right text-xs">Value</TableHead>
-            <TableHead className="px-4 text-xs">CAL</TableHead>
+            <TableHead className="px-4 text-xs">Flexible Cancellation</TableHead>
             <TableHead className="px-4 text-xs">Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -72,7 +72,7 @@ export function PartnerBookingsTable({ bookings }: PartnerBookingsTableProps) {
               <TableCell className="px-4 py-3">
                 {booking.hasCal ? (
                   <span className="inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                    CAL
+                    Yes
                   </span>
                 ) : (
                   <span className="text-muted-foreground">—</span>

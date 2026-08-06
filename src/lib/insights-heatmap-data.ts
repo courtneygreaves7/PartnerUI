@@ -132,10 +132,10 @@ export const RELET_HEAT_CELLS = buildCube({
 export const HEAT_METRICS: Record<HeatMetricId, HeatMetricConfig> = {
   attachment: {
     id: "attachment",
-    label: "CAL attachment",
+    label: "Flexible Cancellation attachment",
     unit: "%",
     higherIsBetter: true,
-    help: "Flexible Cancellation (FC / CAL) attachment across lead time, bedrooms, and departure. Swap rows and columns, or filter the third dimension. How we calculate it: attached bookings ÷ bookings in each cell.",
+    help: "Flexible Cancellation attachment across lead time, bedrooms, and departure. Swap rows and columns, or filter the third dimension. How we calculate it: attached bookings ÷ bookings in each cell.",
     cells: ATTACHMENT_HEAT_CELLS,
   },
   cancellation: {

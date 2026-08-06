@@ -58,10 +58,10 @@ export function PolicyRatesTable({
             Gross rate
           </TableHead>
           <TableHead className={cn("text-right", compact ? "h-8 px-3 text-xs" : "px-5", preview && "h-7 px-2 text-[10px]")}>
-            CAL commission
+            Flexible Cancellation commission
           </TableHead>
           <TableHead className={cn("text-right", compact ? "h-8 px-3 text-xs" : "px-5", preview && "h-7 px-2 text-[10px]")}>
-            Max liability
+            Max payout
           </TableHead>
           <TableHead className={cn(compact ? "h-8 px-3 text-xs" : "px-5", preview && "h-7 px-2 text-[10px]")}>
             Currency
@@ -191,7 +191,7 @@ export function PolicyRatesTable({
                       })
                     }
                     className={cn(inputClassName, "ml-auto text-right")}
-                    aria-label={`CAL commission for ${policy.name}`}
+                    aria-label={`Flexible Cancellation commission for ${policy.name}`}
                   />
                 ) : policy.calCommission > 0 ? (
                   `${formatRate(policy.calCommission)}%`
@@ -218,7 +218,7 @@ export function PolicyRatesTable({
                       })
                     }
                     className={cn(liabilityInputClassName, "ml-auto text-right")}
-                    aria-label={`Max liability for ${policy.name}`}
+                    aria-label={`Max payout for ${policy.name}`}
                   />
                 ) : (
                   formatCurrency(policy.maxLiability, policy.currency)

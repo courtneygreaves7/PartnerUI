@@ -357,11 +357,11 @@ export function buildReportingCompareSections(
       ],
     },
     {
-      title: "Flexible Cancellation (CAL)",
+      title: "Flexible Cancellation",
       metrics: [
-        buildMetric("FC bookings", left.calBookings, right.calBookings, "number"),
-        buildMetric("FC attachment", left.calAttachment, right.calAttachment, "percent"),
-        buildMetric("FC partner margin", left.calMargin, right.calMargin, "currency"),
+        buildMetric("Flexible Cancellation bookings", left.calBookings, right.calBookings, "number"),
+        buildMetric("Flexible Cancellation attachment", left.calAttachment, right.calAttachment, "percent"),
+        buildMetric("Flexible Cancellation partner margin", left.calMargin, right.calMargin, "currency"),
         buildMetric(
           "Incremental cancellations & relets",
           left.calBenefit,
@@ -371,11 +371,11 @@ export function buildReportingCompareSections(
       ],
     },
     {
-      title: "Damage Deposit Waiver (DDL)",
+      title: "Damage Deposit Waiver",
       metrics: [
-        buildMetric("DDL bookings", left.ddlBookings, right.ddlBookings, "number"),
-        buildMetric("DDL attachment", left.ddlAttachment, right.ddlAttachment, "percent"),
-        buildMetric("DDL partner margin", left.ddlMargin, right.ddlMargin, "currency"),
+        buildMetric("Damage Deposit Waiver bookings", left.ddlBookings, right.ddlBookings, "number"),
+        buildMetric("Damage Deposit Waiver attachment", left.ddlAttachment, right.ddlAttachment, "percent"),
+        buildMetric("Damage Deposit Waiver partner margin", left.ddlMargin, right.ddlMargin, "currency"),
         buildMetric(
           "Out of test conversion benefit",
           left.ddlBenefit,

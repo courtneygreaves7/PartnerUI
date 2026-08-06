@@ -16,6 +16,7 @@ import {
   PARTNER_CONNECTION_LABELS,
   PARTNER_CONNECTION_TYPES,
   PARTNER_GROUP_OPTIONS,
+  formatPartnerProductLabel,
   type AddPartnerBrandValues,
   type AddPartnerFormValues,
   type PartnerConnectionType,
@@ -425,7 +426,7 @@ export function AddPartnerPage({
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">Partners &amp; policies</p>
+          <p className="text-xs font-medium text-muted-foreground">Partners &amp; products</p>
           <h1 className="mt-1 text-[22px] font-semibold tracking-tight">{pageTitle}</h1>
         </div>
 
@@ -723,8 +724,8 @@ export function AddPartnerPage({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="draft">Draft — setup in progress</SelectItem>
-                  <SelectItem value="active">Active — ready for bookings</SelectItem>
+                  <SelectItem value="draft">Draft · setup in progress</SelectItem>
+                  <SelectItem value="active">Active · ready for bookings</SelectItem>
                 </SelectContent>
               </Select>
             </FormField>
@@ -757,7 +758,7 @@ export function AddPartnerPage({
                       updateField("products", toggleInList(values.products, product))
                     }
                   >
-                    {product}
+                    {formatPartnerProductLabel(product)}
                   </ToggleChip>
                 ))}
               </div>

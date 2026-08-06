@@ -84,7 +84,7 @@ function addTag(
   x: number,
   y: number
 ) {
-  const w = Math.min(2.4, text.length * 0.075 + 0.45)
+  const w = Math.min(3.4, text.length * 0.09 + 0.5)
   slide.addShape(ShapeType.roundRect, {
     x,
     y,
@@ -314,7 +314,7 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
       lineSpacingMultiple: 1.1,
     })
     slide.addText(
-      "Partner products are driving attachment, margin, and incremental booking value — with consistent outperformance vs market benchmarks.",
+      "Partner products are driving attachment, margin, and incremental booking value, with consistent outperformance vs market benchmarks.",
       {
         x: 0.75,
         y: 2.55,
@@ -431,8 +431,8 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
   {
     const slide = pptx.addSlide()
     slide.background = { color: COLORS.white }
-    addTag(slide, ShapeType, "CAL", 0.75, 0.6)
-    slide.addText("Flexible Cancellation\nis performing strongly", {
+    addTag(slide, ShapeType, "Flexible Cancellation", 0.75, 0.6)
+    slide.addText("Strong attachment and margin\nfrom Flexible Cancellation", {
       x: 0.75,
       y: 1.0,
       w: 4.4,
@@ -458,8 +458,8 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
     )
 
     const calMetrics = [
-      { value: gridTotal(0, FLEXIBLE_CANCELLATION_GRID), label: "FC bookings" },
-      { value: gridTotal(1, FLEXIBLE_CANCELLATION_GRID), label: "FC attachment" },
+      { value: gridTotal(0, FLEXIBLE_CANCELLATION_GRID), label: "Flexible Cancellation bookings" },
+      { value: gridTotal(1, FLEXIBLE_CANCELLATION_GRID), label: "Guest take-up" },
       { value: gridTotal(4, FLEXIBLE_CANCELLATION_GRID), label: "Partner margin" },
     ]
     calMetrics.forEach((m, i) => {
@@ -489,7 +489,7 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
       ChartType.bar,
       [
         {
-          name: "FC by channel",
+          name: "Flexible Cancellation by channel",
           labels: ["Website", "App", "Offline", "OTA"],
           values: [48300, 19320, 9660, 19320],
         },
@@ -527,8 +527,8 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
   {
     const slide = pptx.addSlide()
     slide.background = { color: COLORS.white }
-    addTag(slide, ShapeType, "DDL", 0.75, 0.6)
-    slide.addText("Damage Deposit Waiver\nadds incremental margin", {
+    addTag(slide, ShapeType, "Damage Deposit Waiver", 0.75, 0.6)
+    slide.addText("Incremental margin\nfrom Damage Deposit Waiver", {
       x: 0.75,
       y: 1.0,
       w: 4.4,
@@ -540,7 +540,7 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
       lineSpacingMultiple: 1.08,
     })
     slide.addText(
-      "DDL continues to convert on direct channels with a steady guest price and competitive premium rate.",
+      "Damage Deposit Waiver continues to convert on direct channels with a steady guest price and competitive product cost.",
       {
         x: 0.75,
         y: 2.35,
@@ -554,8 +554,8 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
     )
 
     const ddlMetrics = [
-      { value: gridTotal(0, DAMAGE_DEPOSIT_WAIVER_GRID), label: "DDL bookings" },
-      { value: gridTotal(1, DAMAGE_DEPOSIT_WAIVER_GRID), label: "DDL attachment" },
+      { value: gridTotal(0, DAMAGE_DEPOSIT_WAIVER_GRID), label: "Damage Deposit Waiver bookings" },
+      { value: gridTotal(1, DAMAGE_DEPOSIT_WAIVER_GRID), label: "Waiver take-up" },
       { value: gridTotal(4, DAMAGE_DEPOSIT_WAIVER_GRID), label: "Partner margin" },
     ]
     ddlMetrics.forEach((m, i) => {
@@ -688,7 +688,7 @@ export async function downloadInsightsPitchDeck(filters: ActiveFilters): Promise
       color: COLORS.white,
       fontFace: FONT,
     })
-    slide.addText("Partner metrics vs market — selected highlights.", {
+    slide.addText("Partner metrics vs market: selected highlights.", {
       x: 0.75,
       y: 1.3,
       w: 4.5,

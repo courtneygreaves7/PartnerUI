@@ -45,10 +45,10 @@ export type MapRegion = {
 
 export const MAP_METRICS: Array<{ id: MapMetricId; label: string }> = [
   { id: "bookings", label: "Bookings" },
-  { id: "abv", label: "ABV" },
-  { id: "calTakeUp", label: "CAL take-up" },
-  { id: "ddlTakeUp", label: "DDW take-up" },
-  { id: "gwp", label: "GWP" },
+  { id: "abv", label: "Average booking value (ABV)" },
+  { id: "calTakeUp", label: "Flexible Cancellation take-up" },
+  { id: "ddlTakeUp", label: "Damage Deposit Waiver take-up" },
+  { id: "gwp", label: "Product cost (GWP)" },
   { id: "cancellationRate", label: "Cancellation rate" },
   { id: "reletRate", label: "Re-let rate" },
   { id: "recoveryRate", label: "Recovery rate" },

@@ -65,7 +65,7 @@ export function PropertyBookingsWidget({ helpText, className }: PropertyBookings
               <InsightStatRow
                 columns={[
                   { label: "Month avg", value: String(PROPERTY_BOOKINGS_INSIGHT.monthAvg) },
-                  { label: "CAL", value: String(PROPERTY_BOOKINGS_INSIGHT.calBookings) },
+                  { label: "Flexible Cancellation", value: String(PROPERTY_BOOKINGS_INSIGHT.calBookings) },
                   { label: "Cancelled", value: String(PROPERTY_BOOKINGS_INSIGHT.cancelledCount) },
                 ]}
               />

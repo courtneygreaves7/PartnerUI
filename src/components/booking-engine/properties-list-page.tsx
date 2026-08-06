@@ -31,7 +31,7 @@ export function PropertiesListPage({
         <div>
           <div className="mb-3 flex items-center justify-between gap-4">
             <nav className="text-xs text-muted-foreground">
-              <span>Policy admin system</span>
+              <span>Partner admin</span>
               <span className="mx-2">/</span>
               <span className="text-foreground">Properties</span>
             </nav>
@@ -67,9 +67,9 @@ export function PropertiesListPage({
                 clarification: `${formatCount(totalBookings)} in this list`,
               }}
               datasetB={{
-                title: "With CAL",
+                title: "With Flexible Cancellation",
                 value: formatCount(partner.activity.withCal),
-                clarification: `${formatCount(partner.activity.withDdl)} with DDL`,
+                clarification: `${formatCount(partner.activity.withDdl)} with Damage Deposit Waiver`,
               }}
             />
           </div>

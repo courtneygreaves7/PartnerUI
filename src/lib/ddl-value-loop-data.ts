@@ -23,14 +23,14 @@ export type DdlOpportunity = {
 }
 
 export const DDL_LOOP_OPPORTUNITIES_HELP =
-  "Signals flag where Damage Deposit Waiver (DDL) attachment is soft, where margin already pays, and where a small lift in take-up is worth chasing. Use Ask AI to dig into the segment."
+  "Signals flag where Damage Deposit Waiver attachment is soft, where margin already pays, and where a small lift in take-up is worth chasing. Use Ask AI to dig into the segment."
 
 function channelAttach(key: "website" | "app" | "offline" | "ota") {
   return DAMAGE_DEPOSIT_WAIVER_GRID[1][key].value
 }
 
 function channelMargin(key: "website" | "app" | "offline" | "ota") {
-  return DAMAGE_DEPOSIT_WAIVER_GRID[4][key].value
+  return DAMAGE_DEPOSIT_WAIVER_GRID[3][key].value
 }
 
 const valuePerPpTotal =
@@ -42,7 +42,7 @@ export const DDL_OPPORTUNITIES: DdlOpportunity[] = [
     signal: "risk",
     title: "OTA · soft take-up",
     detail:
-      "OTA attachment trails direct channels — guests are less likely to take the waiver at checkout.",
+      "OTA attachment trails direct channels: guests are less likely to take the waiver at checkout.",
     metricsList: [
       { label: "Attachment", value: channelAttach("ota") },
       { label: "Margin", value: channelMargin("ota") },
@@ -58,7 +58,7 @@ export const DDL_OPPORTUNITIES: DdlOpportunity[] = [
     signal: "risk",
     title: "Offline · lowest attach",
     detail:
-      "Offline has the softest Damage Waiver take-up — contact-centre scripts and offer timing may be leaving margin behind.",
+      "Offline has the softest Damage Waiver take-up: contact-centre scripts and offer timing may be leaving margin behind.",
     metricsList: [
       { label: "Attachment", value: channelAttach("offline") },
       { label: "Margin", value: channelMargin("offline") },
@@ -73,7 +73,7 @@ export const DDL_OPPORTUNITIES: DdlOpportunity[] = [
     signal: "success",
     title: "Website · strongest attach",
     detail:
-      "Website leads Damage Waiver take-up and margin — copy the checkout pattern into app and OTA where possible.",
+      "Website leads Damage Waiver take-up and margin: copy the checkout pattern into app and OTA where possible.",
     metricsList: [
       { label: "Attachment", value: channelAttach("website") },
       { label: "Margin", value: channelMargin("website") },
@@ -103,7 +103,7 @@ export const DDL_OPPORTUNITIES: DdlOpportunity[] = [
     signal: "opportunity",
     title: "App · middle of the pack",
     detail:
-      "App attachment sits between website and OTA — a focused in-app prompt could close the gap to web.",
+      "App attachment sits between website and OTA: a focused in-app prompt could close the gap to web.",
     metricsList: [
       { label: "Attachment", value: channelAttach("app") },
       { label: "Margin", value: channelMargin("app") },
@@ -121,7 +121,7 @@ export const DDL_OPPORTUNITIES: DdlOpportunity[] = [
       "Direct channels carry most Damage Waiver margin. Protect offer rate here before chasing thinner OTA conversion.",
     metricsList: [
       { label: "Direct attach", value: DAMAGE_DEPOSIT_WAIVER_GRID[1].direct.value },
-      { label: "Direct margin", value: DAMAGE_DEPOSIT_WAIVER_GRID[4].direct.value },
+      { label: "Direct margin", value: DAMAGE_DEPOSIT_WAIVER_GRID[3].direct.value },
     ],
     actionLabel: "Ask AI",
     actionTarget: "ask-ai",

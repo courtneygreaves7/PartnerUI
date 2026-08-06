@@ -18,6 +18,7 @@ import {
   POLICY_DISTRIBUTION_OPTIONS,
   POLICY_RATING_BASIS_OPTIONS,
   POLICY_SETTLEMENT_BASIS_OPTIONS,
+  formatPartnerProductLabel,
   type AddPolicyFormValues,
   type Partner,
   type PartnerProduct,
@@ -72,7 +73,7 @@ const POLICY_TYPE_OPTIONS: {
   title: string
   description: string
 }[] = [
-  { value: "policy", title: "Policy", description: "Create a full policy" },
+  { value: "policy", title: "Product setup", description: "Create a full product setup" },
   { value: "quote", title: "Quote", description: "Create a quote" },
 ]
 
@@ -320,8 +321,8 @@ export function AddPolicyPage({
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">Partners &amp; policies</p>
-          <h1 className="mt-1 text-[22px] font-semibold tracking-tight">New policy</h1>
+          <p className="text-xs font-medium text-muted-foreground">Partners &amp; products</p>
+          <h1 className="mt-1 text-[22px] font-semibold tracking-tight">New product setup</h1>
         </div>
 
         <Button
@@ -339,7 +340,7 @@ export function AddPolicyPage({
         <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
           <SectionHeader
             title="Main details"
-            description="Basic information about the policy"
+            description="Basic information about the product setup"
           />
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -413,14 +414,14 @@ export function AddPolicyPage({
                 <SelectContent>
                   {productOptions.map((product) => (
                     <SelectItem key={product} value={product}>
-                      {product}
+                      {formatPartnerProductLabel(product)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FormField>
 
-            <FormField id="policyReference" label="Policy reference">
+            <FormField id="policyReference" label="Product reference">
               <Input
                 id="policyReference"
                 value={values.policyReference}
@@ -488,7 +489,7 @@ export function AddPolicyPage({
           />
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <FormField id="capacityPolicyNumber" label="Capacity policy number">
+            <FormField id="capacityPolicyNumber" label="Capacity reference number">
               <Input
                 id="capacityPolicyNumber"
                 value={values.capacityPolicyNumber}
@@ -512,7 +513,7 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="policyDocumentIssueDate" label="Policy document issue date">
+            <FormField id="policyDocumentIssueDate" label="Product document issue date">
               <Input
                 id="policyDocumentIssueDate"
                 type="date"
@@ -525,8 +526,8 @@ export function AddPolicyPage({
 
         <div className="space-y-4 rounded-xl border border-border p-5 shadow-xs">
           <SectionHeader
-            title="Policy config"
-            description="Policy configuration and settings"
+            title="Product config"
+            description="Product configuration and settings"
           />
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -612,7 +613,7 @@ export function AddPolicyPage({
           <SectionHeader title="Rating" description="Financial information and calculations" />
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <FormField id="insuredLimit" label="Insured limit">
+            <FormField id="insuredLimit" label="Max payout per booking">
               <Input
                 id="insuredLimit"
                 type="number"
@@ -623,7 +624,10 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="netRateExIpt" label="Net rate exc. IPT (%)">
+            <FormField
+              id="netRateExIpt"
+              label="Net product rate excl. Insurance Premium Tax (IPT) (%)"
+            >
               <Input
                 id="netRateExIpt"
                 type="number"
@@ -635,7 +639,7 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="grossRateIncIpt" label="Gross rate inc. IPT (%)">
+            <FormField id="grossRateIncIpt" label="Gross product rate incl. IPT (%)">
               <Input
                 id="grossRateIncIpt"
                 type="number"
@@ -647,7 +651,7 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="commissionPercent" label="Comm % (%)">
+            <FormField id="commissionPercent" label="Commission (%)">
               <Input
                 id="commissionPercent"
                 type="number"
@@ -659,7 +663,7 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="grossPremiumEstimate" label="Gross premium estimate">
+            <FormField id="grossPremiumEstimate" label="Gross product cost estimate">
               <Input
                 id="grossPremiumEstimate"
                 type="number"
@@ -670,7 +674,7 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="netPremiumEstimate" label="Net premium estimate">
+            <FormField id="netPremiumEstimate" label="Net product cost estimate">
               <Input
                 id="netPremiumEstimate"
                 type="number"
@@ -722,7 +726,7 @@ export function AddPolicyPage({
               />
             </FormField>
 
-            <FormField id="policyCountRelatedToConsumers" label="% policy count related to consumers">
+            <FormField id="policyCountRelatedToConsumers" label="% product count related to consumers">
               <Input
                 id="policyCountRelatedToConsumers"
                 type="number"
@@ -776,7 +780,7 @@ export function AddPolicyPage({
             Cancel
           </Button>
           <Button type="submit" className="h-9 text-xs">
-            Save policy
+            Save product setup
           </Button>
         </div>
       </form>

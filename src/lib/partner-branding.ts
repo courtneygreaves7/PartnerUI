@@ -23,7 +23,7 @@ export const PARTNER_BRANDING = {
       phoneDisplay: "+44 20 3890 2140",
       linkedInUrl: "https://www.linkedin.com/in/connor-greaves/",
       detail: "Day-to-day product & commercial support",
-      photo: "amelia" as const,
+      photo: "initials" as const,
     },
     {
       id: "james",

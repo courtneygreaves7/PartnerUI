@@ -96,7 +96,7 @@ export function AbvPerDayChart({ filters, compact }: AbvPerDayChartProps) {
 
   return (
     <ReportSection
-      title="ABV (excl. fees) per day"
+      title="Average booking value (ABV, excl. fees) per day"
       exportSlug="abv-per-day"
       filters={filters}
       headingClassName="mb-4"

@@ -75,12 +75,12 @@ export function PartnerCard({ partner, expanded, onToggle, onViewProperty }: Par
               <PartnerVolumeWidget
                 productSplit={{
                   datasetA: {
-                    title: "With CAL",
+                    title: "With Flexible Cancellation",
                     value: formatCount(partner.activity.withCal),
                     clarification: `${calPct} of bookings`,
                   },
                   datasetB: {
-                    title: "With DDL",
+                    title: "With Damage Deposit Waiver",
                     value: formatCount(partner.activity.withDdl),
                     clarification: `${ddlPct} of bookings`,
                   },
@@ -142,7 +142,7 @@ export function PartnerCard({ partner, expanded, onToggle, onViewProperty }: Par
 
             <div className="bg-[var(--panel-bg)] px-7 py-7 dark:bg-canvas">
               <p className="mb-4 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Policy rates
+                Product rates
               </p>
               <PolicyRatesTable policies={visiblePolicies} selectedBrandId={selectedBrandId} />
             </div>

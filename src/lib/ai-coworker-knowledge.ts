@@ -34,17 +34,17 @@ export type AiChatMessage = {
   text: string
 }
 
-/** Clickable starter prompts — max-revenue ops, not ancillary product asks. */
+/** Clickable starter prompts: max-revenue ops, not ancillary product asks. */
 export const AI_COWORKER_EXAMPLE_PROMPTS = [
-  "How do we use Flexible Cancellation to drive max revenue — conversion, margin, and re-lets?",
+  "How do we drive max revenue with Flexible Cancellation: conversion, margin, and re-lets?",
   "Where can we increase re-lets and protect more revenue?",
-  "Which regions have weak re-let recovery — and what does history predict?",
-  "What is driving guest behaviour — and how should we run the business?",
+  "Which regions have weak re-let recovery, and what does history predict?",
+  "What is driving guest behaviour, and how should we run the business?",
 ] as const
 
 export const AI_COWORKER_SUGGESTIONS = [
   ...AI_COWORKER_EXAMPLE_PROMPTS,
-  "Jun 2025 – Jun 2026 sales vs cancellations — is cancellation rate improving?",
+  "Jun 2025 – Jun 2026 sales vs cancellations: is cancellation rate improving?",
   "Which bedrooms and travel dates are leaking cancelled stays?",
   "Summarise portfolio performance",
   "Compare Manor vs Lake Lovers",
@@ -127,7 +127,7 @@ function summariseCal(brandId?: string): string {
     "### Current performance",
     "",
     `• **Bookings in scope:** ${formatCount(snap.calBookings)}`,
-    `• **Cover take-up:** ${formatPct(snap.calAttachment)}`,
+    `• **Guest take-up:** ${formatPct(snap.calAttachment)}`,
     `• **Margin earned:** ${formatMoney(snap.calMargin)}`,
     `• **Incremental benefit:** ${formatMoney(snap.calBenefit)}`,
     "",
@@ -202,7 +202,7 @@ function opportunityNextStep(kind: "leak" | "undersold" | "split" | "region") {
     return "Clear open cancels first, then check pricing and lead-in for this slice."
   }
   if (kind === "undersold") {
-    return "Push Flexible Cancellation harder here — re-let demand already supports it."
+    return "Push Flexible Cancellation harder here: re-let demand already supports it."
   }
   return "Treat this as the playbook: look for similar long stays to split-fill."
 }
@@ -213,7 +213,7 @@ function summariseReletOpportunities(): string {
   const live = summariseLiveCancellations(LIVE_CANCELLATIONS)
   const opportunities = getFcLoopOpportunities()
   const marketRelet = MARKET_COMPARISON_VALUES.find((m) => m.metric === "Relet rate")
-  const cover = FC_VALUE_LOOP.steps.find((s) => s.id === "sales")
+  const guestTakeUp = FC_VALUE_LOOP.steps.find((s) => s.id === "sales")
   const relet = FC_VALUE_LOOP.steps.find((s) => s.id === "relet")
   const extra = FC_VALUE_LOOP.steps.find((s) => s.id === "incremental")
   const proof = PARTIAL_RELETS_INSIGHT.example
@@ -238,7 +238,7 @@ function summariseReletOpportunities(): string {
     "",
     "### At a glance",
     "",
-    `• **Cover take-up:** ${cover?.value ?? "12.5%"}`,
+    `• **Guest take-up:** ${guestTakeUp?.value ?? "12.5%"}`,
     `• **Product margin:** ${formatMoney(snap.calMargin)} (benefit ${formatMoney(snap.calBenefit)})`,
     `• **Re-let rate:** ${relet?.value ?? formatPct(snap.reletRate)}` +
       (marketRelet ? ` · market ${marketRelet.marketLabel}` : ""),
@@ -247,15 +247,15 @@ function summariseReletOpportunities(): string {
     "",
     "### Priority gaps",
     "",
-    "Act on these first — bedrooms, travel dates, and regions with the clearest upside:",
+    "Act on these first: bedrooms, travel dates, and regions with the clearest upside:",
     "",
     ...opportunityBlocks,
     "### This week",
     "",
-    "1. **Sell cover where re-let is strong** — safest place to grow conversion and margin.",
-    "2. **Clear open cancels** — recover live value before chasing new demand.",
-    "3. **Fix high-cancel, low re-let slices** — fastest top-line leak.",
-    "4. **Split-fill longer cancels** — e.g. 7 nights as 3n + 4n can beat one full rebook" +
+    "1. **Push guest take-up where re-let is strong:** safest place to grow conversion and margin.",
+    "2. **Clear open cancels:** recover live value before chasing new demand.",
+    "3. **Fix high-cancel, low re-let slices:** fastest top-line leak.",
+    "4. **Split-fill longer cancels:** e.g. 7 nights as 3n + 4n can beat one full rebook" +
       ` (example kept **${formatMoney(proof.recoveredValue)}** vs **${formatMoney(proof.cancelledValue)}**, +${uplift}%).`,
     "",
     "### Dig deeper",
@@ -277,7 +277,7 @@ function summariseBookingTypeDrilldown(bedroomLabel: string, departureLabel: str
     return [
       `## I could not match that booking type`,
       "",
-      "Try a prompt like **Drill into 5+ bed · Aug — cancel vs re-let by lead time**, or ask **where can we increase re-lets** for the opportunity list.",
+      "Try a prompt like **Drill into 5+ bed · Aug: cancel vs re-let by lead time**, or ask **where can we increase re-lets** for the opportunity list.",
     ].join("\n")
   }
 
@@ -290,7 +290,7 @@ function summariseBookingTypeDrilldown(bedroomLabel: string, departureLabel: str
 
   const leadLines = byLeadTime.map(
     (row) =>
-      `• **${row.leadLabel}** — Cancel ${row.metrics.cancel}% · Re-let ${row.metrics.relet}% · Cover ${row.metrics.sales}% · Kept ${row.metrics.recoveredPct}%`
+      `• **${row.leadLabel}:** Cancel ${row.metrics.cancel}% · Re-let ${row.metrics.relet}% · Take-up ${row.metrics.sales}% · Kept ${row.metrics.recoveredPct}%`
   )
 
   const signal = gap >= 15 ? "risk" : overall.relet >= 70 && overall.sales < 16 ? "opportunity" : "success"
@@ -298,20 +298,20 @@ function summariseBookingTypeDrilldown(bedroomLabel: string, departureLabel: str
     gap >= 15
       ? "Treat this as a leak: clear open cancels, then tighten pricing and lead-in on the softest band."
       : overall.relet >= 70 && overall.sales < 16
-        ? "Re-let demand looks healthy — push Flexible Cancellation harder on this bedroom and month."
+        ? "Re-let demand looks healthy: push Flexible Cancellation harder on this bedroom and month."
         : "Copy what works in the strongest lead-time band into the weaker ones."
 
   return [
     `## ${slice.bedroomLabel} · ${slice.departureLabel}`,
     "",
-    "A focused cut of this booking type — so you can act with confidence.",
+    "A focused cut of this booking type, so you can act with confidence.",
     "",
     `:::signal ${signal}`,
     `:::metrics Cancel–re-let gap ${gap.toFixed(1)} pts`,
     "",
     "### Snapshot",
     "",
-    `• **Cover take-up:** ${overall.sales}% · ${gapLabel(portfolioGap.sales)}`,
+    `• **Guest take-up:** ${overall.sales}% · ${gapLabel(portfolioGap.sales)}`,
     `• **Cancel:** ${overall.cancel}% · ${gapLabel(portfolioGap.cancel)}`,
     `• **Re-let:** ${overall.relet}% · ${gapLabel(portfolioGap.relet)}`,
     `• **Value kept:** ${overall.recoveredPct}% · ${gapLabel(portfolioGap.recoveredPct)}`,
@@ -345,7 +345,7 @@ function summariseRevenue(): string {
     .map((d) => {
       const note = d.versus ? `vs ${d.versus}` : d.side
       const roleNote = d.role === "volume" ? "volume base, not incremental" : "profile comparison"
-      return `• **${d.label}:** ${d.value} (${d.trend})${note ? ` — ${note}` : ""} · ${roleNote}`
+      return `• **${d.label}:** ${d.value} (${d.trend})${note ? `: ${note}` : ""} · ${roleNote}`
     })
     .join("\n")
 
@@ -410,16 +410,16 @@ function compareBrands(prompt: string): string {
   return [
     `## Brand comparison`,
     "",
-    `**${a.brandLabel}** vs **${b.brandLabel}** — side by side.`,
+    `**${a.brandLabel}** vs **${b.brandLabel}**: side by side.`,
     "",
     "### Snapshot",
     "",
     `| Metric | ${a.brandLabel} | ${b.brandLabel} |`,
     `| --- | --- | --- |`,
     `| Portfolio share | ${formatShare(BRAND_VOLUME_SHARE[a.brandId as (typeof BRAND_IDS)[number]])} | ${formatShare(BRAND_VOLUME_SHARE[b.brandId as (typeof BRAND_IDS)[number]])} |`,
-    `| Cover take-up | ${formatPct(a.calAttachment)} | ${formatPct(b.calAttachment)} |`,
-    `| Flexi Cancellation margin | ${formatMoney(a.calMargin)} | ${formatMoney(b.calMargin)} |`,
-    `| Damage Waiver attachment | ${formatPct(a.ddlAttachment)} | ${formatPct(b.ddlAttachment)} |`,
+    `| Guest take-up | ${formatPct(a.calAttachment)} | ${formatPct(b.calAttachment)} |`,
+    `| Flexible Cancellation margin | ${formatMoney(a.calMargin)} | ${formatMoney(b.calMargin)} |`,
+    `| Damage Deposit Waiver attachment | ${formatPct(a.ddlAttachment)} | ${formatPct(b.ddlAttachment)} |`,
     `| Cancellation rate | ${formatPct(a.cancellationRate)} | ${formatPct(b.cancellationRate)} |`,
     `| Re-let rate | ${formatPct(a.reletRate)} | ${formatPct(b.reletRate)} |`,
     `| Avg lead time | ${formatDays(a.avgLeadTravel)} | ${formatDays(b.avgLeadTravel)} |`,
@@ -427,8 +427,8 @@ function compareBrands(prompt: string): string {
     "### The takeaway",
     "",
     a.calAttachment >= b.calAttachment
-      ? `${a.brandLabel} leads on Flexible Cancellation take-up; ${b.brandLabel} ${a.calMargin >= b.calMargin ? "trails on margin given share" : "still contributes solid margin relative to share"}.`
-      : `${b.brandLabel} leads on Flexible Cancellation take-up in this cut.`,
+      ? `${a.brandLabel} leads on Flexible Cancellation guest take-up; ${b.brandLabel} ${a.calMargin >= b.calMargin ? "trails on margin given share" : "still contributes solid margin relative to share"}.`
+      : `${b.brandLabel} leads on Flexible Cancellation guest take-up in this cut.`,
     "",
     "### Want more?",
     "",
@@ -441,7 +441,7 @@ function summariseFinancials(): string {
   return [
     `## Contribution financials`,
     "",
-    "Insurance and re-let economics that sit under Contribution to performance.",
+    "Product cost and re-let economics that sit under Contribution to performance.",
     "",
     "### Totals",
     "",
@@ -462,7 +462,7 @@ function draftReport(): string {
     "",
     "### Headline",
     "",
-    `Partner revenue **${PARTNER_REVENUE.headline}** net of premium + IPT, with estimated Pikl'd Stays uplift of **${ADDITIONAL_PARTNER_REVENUE.headline}**.`,
+    `Partner revenue **${PARTNER_REVENUE.headline}** after product cost, with estimated Pikl'd Stays uplift of **${ADDITIONAL_PARTNER_REVENUE.headline}**.`,
     "",
     "### Volume & attachment",
     "",
@@ -496,7 +496,7 @@ function helpReply(partnerName: string): string {
     "",
     `I read live partner data for **${PARTNER_BRANDING.name}**, ${partnerName}.`,
     "",
-    "Flexible Cancellation here is a **revenue loop** — conversion, margin, behaviour, and re-lets — not an add-on.",
+    "Grow revenue through conversion, margin, behaviour, and re-lets with Flexible Cancellation, not as an add-on.",
     "",
     "### Gaps & growth",
     "",
@@ -548,6 +548,7 @@ function wantsReletOpportunityAdvice(lower: string) {
     lower.includes("cancelled stay") ||
     lower.includes("flexible cancellation") ||
     lower.includes("cover take-up") ||
+    lower.includes("guest take-up") ||
     lower.includes("cover conversion") ||
     lower.includes("value loop") ||
     lower.includes("max revenue") ||
@@ -597,9 +598,9 @@ function summariseSalesCancelTrendReport(): string {
   const period = summariseSalesCancelPeriod()
   const trendLine =
     period.cancelTrend === "improving"
-      ? `Yes — cancellation rate is **improving**. First half **${period.earlyCancelRate}%**, second half **${period.lateCancelRate}%** (**${period.cancelRateDelta.toFixed(1)} pp**).`
+      ? `Yes: cancellation rate is **improving**. First half **${period.earlyCancelRate}%**, second half **${period.lateCancelRate}%** (**${period.cancelRateDelta.toFixed(1)} pp**).`
       : period.cancelTrend === "worsening"
-        ? `No — cancellation rate is **worsening**. First half **${period.earlyCancelRate}%**, second half **${period.lateCancelRate}%** (**+${Math.abs(period.cancelRateDelta).toFixed(1)} pp**).`
+        ? `No: cancellation rate is **worsening**. First half **${period.earlyCancelRate}%**, second half **${period.lateCancelRate}%** (**+${Math.abs(period.cancelRateDelta).toFixed(1)} pp**).`
         : `Cancellation rate is **broadly stable**. First half **${period.earlyCancelRate}%**, second half **${period.lateCancelRate}%** (**${period.cancelRateDelta >= 0 ? "+" : ""}${period.cancelRateDelta.toFixed(1)} pp**).`
 
   const monthlyLines = period.rows.map(
@@ -612,7 +613,7 @@ function summariseSalesCancelTrendReport(): string {
     "",
     `Departure-window view for **${PARTNER_BRANDING.shortName}** from **${period.fromLabel}** to **${period.toLabel}**.`,
     "",
-    "> Same shape as Phasing & trends — bookings, cancels, and re-lets tied to when guests were due to travel.",
+    "> Same shape as Phasing & trends: bookings, cancels, and re-lets tied to when guests were due to travel.",
     "",
     "### Headline",
     "",
@@ -620,7 +621,7 @@ function summariseSalesCancelTrendReport(): string {
     "",
     "### Totals for the window",
     "",
-    `• **Sales (FC bookings):** ${formatCount(period.bookings)}`,
+    `• **Sales (Flexible Cancellation bookings):** ${formatCount(period.bookings)}`,
     `• **Cancellations:** ${formatCount(period.cancellations)}`,
     `• **Cancellation rate:** ${period.cancelRate}%`,
     `• **Re-lets:** ${formatCount(period.relets)}`,
@@ -641,8 +642,8 @@ function summariseSalesCancelTrendReport(): string {
     "### What this means",
     "",
     period.cancelTrend === "improving"
-      ? "Volume still peaks in summer, but a lower cancel rate into 2026 means less revenue at risk for the same sales — keep pushing re-lets on peak months."
-      : "Watch months where cancel rate is highest alongside re-let performance — that is where revenue protection pays off fastest.",
+      ? "Volume still peaks in summer, but a lower cancel rate into 2026 means less revenue at risk for the same sales. Keep pushing re-lets on peak months."
+      : "Watch months where cancel rate is highest alongside re-let performance: that is where revenue protection pays off fastest.",
     "",
     "### Dig deeper",
     "",
@@ -678,7 +679,7 @@ function summariseRegionRecoveryOverview(): string {
   return [
     `## Region recovery gaps`,
     "",
-    `Where cancelled stays fill again — and what history suggests next — for **${PARTNER_BRANDING.shortName}**.`,
+    `Where cancelled stays fill again, and what history suggests next, for **${PARTNER_BRANDING.shortName}**.`,
     "",
     "> Outlooks extend the recent trend; they are indicative, not a guarantee.",
     "",
@@ -687,14 +688,14 @@ function summariseRegionRecoveryOverview(): string {
     ...opportunityBlocks,
     "### This week",
     "",
-    "1. **Fix soft regions first** — high cancel with low re-let is recoverable revenue.",
-    "2. **Copy strong regions** — where recovery regularly beats cancelled value.",
-    "3. **Use history for planning** — drill in for the monthly series and next-quarter outlook.",
+    "1. **Fix soft regions first:** high cancel with low re-let is recoverable revenue.",
+    "2. **Copy strong regions:** where recovery regularly beats cancelled value.",
+    "3. **Use history for planning:** drill in for the monthly series and next-quarter outlook.",
     "",
     "### Dig deeper",
     "",
-    ">>> Drill into North East region recovery — historical re-let and outlook",
-    ">>> Drill into South West region recovery — historical re-let and outlook",
+    ">>> Drill into North East region recovery: historical re-let and outlook",
+    ">>> Drill into South West region recovery: historical re-let and outlook",
     ">>> Where can we increase re-lets and protect more revenue?",
   ].join("\n")
 }
@@ -705,7 +706,7 @@ function summariseRegionRecoveryDrilldown(regionId: RegionRecoveryId): string {
   const recent = history.slice(-6)
   const historyLines = recent.map(
     (row) =>
-      `• **${row.label}** — Cancel ${row.cancelRate}% · Re-let ${row.reletRate}% · Kept ${row.recoveryRate}% · ${formatCount(row.cancellations)} → ${formatCount(row.relets)}`
+      `• **${row.label}:** Cancel ${row.cancelRate}% · Re-let ${row.reletRate}% · Kept ${row.recoveryRate}% · ${formatCount(row.cancellations)} → ${formatCount(row.relets)}`
   )
 
   const reletTrendLine =
@@ -755,12 +756,12 @@ function summariseRegionRecoveryDrilldown(regionId: RegionRecoveryId): string {
     latest.reletRate < 55
       ? "Add this to the recovery watchlist: clear open cancels early, and price for short-lead demand before soft months."
       : latest.recoveryRate >= 100
-        ? "Use this as proof that re-lets can beat cancelled value — and look for similar stay lengths to split-fill elsewhere."
+        ? "Use this as proof that re-lets can beat cancelled value, and look for similar stay lengths to split-fill elsewhere."
         : "Keep the re-let playbook ready for peak months; history suggests recovery stays workable if demand holds.",
     "",
     "### Dig deeper",
     "",
-    ">>> Which regions have weak re-let recovery — and what does history predict?",
+    ">>> Which regions have weak re-let recovery, and what does history predict?",
     `>>> Compare brands on re-lets for ${profile.label}`,
     ">>> Where can we increase re-lets and protect more revenue?",
   ].join("\n")
@@ -804,6 +805,7 @@ export function buildAiCoworkerReply(prompt: string, partnerName = "George"): st
       lower.includes("break down") ||
       lower.includes("dig into") ||
       lower.includes("by lead time") ||
+      lower.includes("guest take-up vs") ||
       lower.includes("cover take-up vs") ||
       lower.includes("value kept"))
 
@@ -906,9 +908,9 @@ export function buildAiCoworkerReply(prompt: string, partnerName = "George"): st
         "",
         ...snap.summary.map((s) => `• **${s.label}:** ${s.value}`),
         "",
-        `Flexi Cancellation attachment **${formatPct(snap.calAttachment)}**, Damage Waiver **${formatPct(snap.ddlAttachment)}**, cancellation rate **${formatPct(snap.cancellationRate)}**.`,
+        `Flexible Cancellation attachment **${formatPct(snap.calAttachment)}**, Damage Deposit Waiver **${formatPct(snap.ddlAttachment)}**, cancellation rate **${formatPct(snap.cancellationRate)}**.`,
         "",
-        "Ask for Flexi Cancellation detail, cancellations, or a comparison with another brand.",
+        "Ask for Flexible Cancellation detail, cancellations, or a comparison with another brand.",
       ].join("\n")
     }
     return summarisePortfolio()
@@ -921,8 +923,8 @@ export function buildAiCoworkerReply(prompt: string, partnerName = "George"): st
     "",
     "### Try asking",
     "",
-    "• **How do we use Flexible Cancellation to drive max revenue — conversion, margin, and re-lets?**",
-    "• **What is driving guest behaviour — and how should we run the business?**",
+    "• **How do we drive max revenue with Flexible Cancellation: conversion, margin, and re-lets?**",
+    "• **What is driving guest behaviour, and how should we run the business?**",
     "• **Where can we increase re-lets and protect more revenue?**",
     "",
     "Or pick an example prompt from the home screen.",
@@ -938,7 +940,7 @@ export function welcomeAiMessage(partnerName: string): AiChatMessage {
       "",
       `I am your AI coworker for **${PARTNER_BRANDING.name}**.`,
       "",
-      "I help you run Flexible Cancellation as a **revenue loop** — conversion, margin, behaviour, and re-lets — not as an add-on.",
+      "I help you grow revenue through conversion, margin, behaviour, and re-lets with Flexible Cancellation, not as an add-on.",
       "",
       "### Get started",
       "",

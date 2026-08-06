@@ -234,34 +234,34 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       description: "Total number of bookings across all selected partners and brands.",
     },
     {
-      label: "CAL sales",
+      label: "Flexible Cancellation sales",
       value: booking.calSales,
       icon: TrendingUp,
-      description: "Sales completed through Flexible Cancellation (FC / CAL) for the selected period.",
+      description: "Sales completed through Flexible Cancellation for the selected period.",
     },
     {
-      label: "CAL take-up %",
+      label: "Flexible Cancellation take-up %",
       value: booking.calPct,
       icon: Percent,
-      description: "Share of eligible bookings that bought Flexible Cancellation (FC / CAL).",
+      description: "Share of eligible bookings that bought Flexible Cancellation.",
     },
     {
-      label: "DDL sales",
+      label: "Damage Deposit Waiver sales",
       value: booking.ddlSales,
       icon: CreditCard,
-      description: "Sales completed through Damage Deposit Waiver (DDL) for the selected period.",
+      description: "Sales completed through Damage Deposit Waiver for the selected period.",
     },
     {
-      label: "DDL take-up %",
+      label: "Damage Deposit Waiver take-up %",
       value: booking.ddlPct,
       icon: Gauge,
-      description: "Share of eligible bookings that bought Damage Deposit Waiver (DDL).",
+      description: "Share of eligible bookings that bought Damage Deposit Waiver.",
     },
   ]
 
   const abvKpis: KpiCard[] = [
     {
-      label: "ABV (excl. fee) GBP",
+      label: "Average booking value (ABV) excl. fee GBP",
       value: abv.gbpAbv,
       subtext: abv.gbpCal,
       icon: Wallet,
@@ -289,11 +289,11 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       description: "Average booking value including the booking fee, in EUR.",
     },
     {
-      label: "CAL customer price",
+      label: "Flexible Cancellation guest price",
       value: abv.calPct,
       subtext: "% of ABV inc. booking fee",
       icon: Percent,
-      description: "Share of customer price against ABV including booking fee.",
+      description: "Share of guest price against ABV including booking fee.",
     },
   ]
 
@@ -305,10 +305,10 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       description: "Total amount payable to partners in GBP for the selected period.",
     },
     {
-      label: "IPT",
+      label: "Product tax (IPT)",
       value: calFin.ipt,
       icon: PoundSterling,
-      description: "Insurance premium tax amount in GBP for the selected period.",
+      description: "Tax on product cost in GBP for the selected period.",
     },
     {
       label: "PISL comm",
@@ -329,17 +329,17 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       description: "Total PISL amount payable in GBP for the selected period.",
     },
     {
-      label: "Premium inc. IPT",
+      label: "Product cost inc. tax",
       value: calFin.premiumInc,
       icon: PoundSterling,
-      description: "Total premium including insurance premium tax in GBP.",
+      description: "Total product cost including tax in GBP.",
     },
     {
-      label: "GWP",
+      label: "Product cost (GWP)",
       value: calFin.gwp,
-      subtext: "Gross written premium",
+      subtext: "Before tax",
       icon: PoundSterling,
-      description: "Gross written premium in GBP for the selected period.",
+      description: "Product cost in GBP for the selected period, before tax.",
     },
   ]
 
@@ -373,23 +373,23 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       title: "Bookings",
       heading: "Booking volume & take-up",
       description:
-        "Total bookings alongside CAL and DDL sales and take-up rates for your selected partners, brands and period.",
+        "Total bookings alongside Flexible Cancellation and Damage Deposit Waiver sales and take-up rates for your selected partners, brands and period.",
       content: <KpiGrid kpis={bookingKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" />,
     },
     {
       id: "abv",
-      title: "Average booking value",
-      heading: "Average booking value",
+      title: "Average booking value (ABV)",
+      heading: "Average booking value (ABV)",
       description:
-        "ABV in GBP and EUR, with and without booking fees, plus CAL customer price as a share of ABV.",
+        "ABV in GBP and EUR, with and without booking fees, plus Flexible Cancellation guest price as a share of ABV.",
       content: <KpiGrid kpis={abvKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" />,
     },
     {
       id: "cal-financials",
-      title: "CAL financials (GBP)",
-      heading: "CAL financials",
+      title: "Flexible Cancellation financials (GBP)",
+      heading: "Flexible Cancellation financials",
       description:
-        "Premium breakdown in GBP — payable totals, IPT, commissions, capacity net and gross written premium.",
+        "Product cost breakdown in GBP: payable totals, product tax (IPT), commissions, capacity net and product cost (GWP).",
       content: (
         <KpiGrid kpis={calFinancialKpis} columns="grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" />
       ),
@@ -412,10 +412,10 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     },
     {
       id: "cal-ddl-takeup",
-      title: "CAL & DDL take-up %",
-      heading: "CAL & DDL take-up",
+      title: "Flexi Cancellation & Damage Waiver take-up %",
+      heading: "Flexi Cancellation & Damage Waiver take-up",
       description:
-        "Daily take-up percentages for cancellation liability and deposit loss cover, including partner-level splits.",
+        "Daily take-up percentages for Flexible Cancellation and Damage Deposit Waiver, including partner-level splits.",
       content: <CalDdlTakeupChart filters={filters} compact />,
     },
     {
@@ -428,8 +428,8 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
     },
     {
       id: "abv-per-day",
-      title: "ABV per day",
-      heading: "ABV per day",
+      title: "Average booking value (ABV) per day",
+      heading: "Average booking value (ABV) per day",
       description:
         "Daily average booking value excluding fees, broken down by partner for the filtered period.",
       content: <AbvPerDayChart filters={filters} compact />,
@@ -439,7 +439,7 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       title: "Bookings made per day",
       heading: "Bookings made per day",
       description:
-        "Daily booking count across the selected filters — a quick read on volume momentum through the month.",
+        "Daily booking count across the selected filters: a quick read on volume momentum through the month.",
       content: <BookingsMadePerDayChart filters={filters} compact />,
     },
     {
@@ -447,7 +447,7 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
       title: "Partner performance",
       heading: "Partner performance",
       description:
-        "Side-by-side bookings, CAL and DDL totals by brand and currency for the active filter set.",
+        "Side-by-side bookings, Flexible Cancellation and Damage Deposit Waiver totals by brand and currency for the active filter set.",
       content: (
         <Table>
           <TableHeader>
@@ -455,8 +455,8 @@ export function InsightsDashboardPage({ filters, hasRun, onRun }: InsightsDashbo
               <TableHead className="h-11 px-5">Brand</TableHead>
               <TableHead className="px-5">CCY</TableHead>
               <TableHead className="px-5 text-right">Bookings</TableHead>
-              <TableHead className="px-5 text-right">CAL</TableHead>
-              <TableHead className="px-5 text-right">DDL</TableHead>
+              <TableHead className="px-5 text-right">Flexible Cancellation</TableHead>
+              <TableHead className="px-5 text-right">Damage Deposit Waiver</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

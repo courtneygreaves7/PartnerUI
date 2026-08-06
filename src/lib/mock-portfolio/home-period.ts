@@ -145,7 +145,7 @@ export function homeMetricsForPeriod(period: ImpactPeriodId) {
         margin: `${Math.round((margin / generated) * 100)}% of total partner revenue`,
         incremental: `${Math.round((incremental / generated) * 100)}% of total partner revenue`,
         conversion: "Website conversion uplift",
-        total: "(net of insurance premium rate + IPT)",
+        total: "(after product cost)",
       },
       driverBars: [
         {

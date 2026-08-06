@@ -117,13 +117,13 @@ function buildStatRows(
       metricId: "bookings",
     },
     {
-      label: "With CAL",
+      label: "With Flexible Cancellation",
       value: stats.withCal.toLocaleString("en-GB"),
       sub: `${stats.withCalPct.toFixed(1)}%`,
       icon: ShieldCheck,
     },
     {
-      label: "With DDL",
+      label: "With Damage Deposit Waiver",
       value: stats.withDdl.toLocaleString("en-GB"),
       sub: `${stats.withDdlPct.toFixed(1)}%`,
       icon: FileText,
@@ -135,13 +135,13 @@ function buildStatRows(
       metricId: "gwp",
     },
     {
-      label: "ABV",
+      label: "Average booking value (ABV)",
       value: formatMapMetric(stats.abv, "abv"),
       icon: TrendingUp,
       metricId: "abv",
     },
     {
-      label: "CAL take-up",
+      label: "Flexible Cancellation take-up",
       value: formatMapMetric(stats.calTakeUp, "calTakeUp"),
       icon: ShieldCheck,
       metricId: "calTakeUp",
@@ -460,7 +460,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-6 py-3">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-border/60 px-6 py-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="-ml-2 h-8 gap-1.5 px-2" onClick={onBack}>
             <ArrowLeft className="size-3.5" />
@@ -472,7 +472,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted p-1.5">
             {countryTabs.map((tab) => (
               <button
@@ -666,7 +666,7 @@ export function InsightsMapPage({ filters, onBack, onFilterRegion }: InsightsMap
                   </div>
                 ) : (
                   <p className="max-w-[14rem] text-xs text-white/60 sm:max-w-[18rem]">
-                    Flexi Cancellation, Damage Waiver, cancellations &amp; re-lets
+                    Flexible Cancellation, Damage Deposit Waiver, cancellations &amp; re-lets
                   </p>
                 )}
               </div>

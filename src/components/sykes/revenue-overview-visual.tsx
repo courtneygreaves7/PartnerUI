@@ -182,7 +182,7 @@ export function RevenueOverviewVisual() {
         <KpiTile
           label="Additional partner revenue"
           value={ADDITIONAL_PARTNER_REVENUE.headline}
-          hint="Pikl'd Stays effect — estimated uplift"
+          hint="Pikl'd Stays effect: estimated uplift"
           className="border-border bg-card md:col-span-2 xl:col-span-1"
         />
       </div>

@@ -19,19 +19,19 @@ export function CalFinancials({ filters }: { filters: ActiveFilters }) {
   const trendChart = buildFinancialTrendChart(profile.totalPayable)
 
   const breakdownRows = [
-    { label: "IPT (GBP)", value: profile.ipt },
-    { label: "PISL comm (GBP)", value: profile.pislComm },
-    { label: "Capacity net (GBP)", value: profile.capacityNet },
-    { label: "PISL amount payable (GBP)", value: profile.pislPayable },
-    { label: "Premium inc. IPT (GBP)", value: profile.premiumInc },
-    { label: "GWP (GBP)", value: profile.gwp },
+    { label: "Product tax (IPT), GBP", value: profile.ipt },
+    { label: "Pikl Insurance Services Ltd commission (PISL), GBP", value: profile.pislComm },
+    { label: "Capacity net, GBP", value: profile.capacityNet },
+    { label: "PISL amount payable, GBP", value: profile.pislPayable },
+    { label: "Product cost incl. Product tax (IPT), GBP", value: profile.premiumInc },
+    { label: "Product cost (GWP), GBP", value: profile.gwp },
   ]
   const breakdownHighlight = buildCalFinBreakdown(breakdownRows)
 
   return (
     <TooltipProvider>
       <ReportSection
-        title="CAL financials (GBP)"
+        title="Flexible Cancellation financials (GBP)"
         exportSlug="cal-financials"
         filters={filters}
       >

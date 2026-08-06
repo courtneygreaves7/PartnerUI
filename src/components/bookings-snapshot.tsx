@@ -148,7 +148,7 @@ export function BookingsSnapshot({ filters }: { filters: ActiveFilters }) {
             <TooltipContent variant="plain">
               {showBreakdown
                 ? "Hide partner breakdown"
-                : "View bookings broken down by partner — includes CAL and DDL figures per brand"}
+                : "View bookings broken down by partner: includes Flexible Cancellation (CAL) and Damage Deposit Waiver (DDL) figures per brand"}
             </TooltipContent>
           </Tooltip>
         }
@@ -169,14 +169,14 @@ export function BookingsSnapshot({ filters }: { filters: ActiveFilters }) {
             <ProductSplitWidget
               totalLabel={productSplit.totalLabel}
               segmentA={{
-                label: "CAL",
+                label: "Flexible Cancellation (CAL)",
                 value: profile.calSales,
                 sharePercent: productSplit.calSharePercent,
                 takeUpLabel: `${profile.calPct} take-up`,
                 trend: productSplit.calTrend,
               }}
               segmentB={{
-                label: "DDL",
+                label: "Damage Deposit Waiver (DDL)",
                 value: profile.ddlSales,
                 sharePercent: productSplit.ddlSharePercent,
                 takeUpLabel: `${profile.ddlPct} take-up`,
@@ -195,8 +195,8 @@ export function BookingsSnapshot({ filters }: { filters: ActiveFilters }) {
                   <TableHead>Brand</TableHead>
                   <TableHead>CCY</TableHead>
                   <TableHead className="text-right">Bookings</TableHead>
-                  <TableHead className="text-right">CAL</TableHead>
-                  <TableHead className="text-right">DDL</TableHead>
+                  <TableHead className="text-right">Flexible Cancellation (CAL)</TableHead>
+                  <TableHead className="text-right">Damage Deposit Waiver (DDL)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

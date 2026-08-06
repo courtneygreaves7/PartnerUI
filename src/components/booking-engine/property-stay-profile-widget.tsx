@@ -58,7 +58,7 @@ export function PropertyStayProfileWidget({
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <Shield className="size-3.5 shrink-0" strokeWidth={2} />
                 <span>
-                  <span className="font-medium text-foreground">CAL bookings</span> · {data.calFooter}
+                  <span className="font-medium text-foreground">Flexible Cancellation bookings</span> · {data.calFooter}
                 </span>
               </div>
             }
