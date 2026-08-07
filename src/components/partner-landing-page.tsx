@@ -173,7 +173,7 @@ function MeasureHelpButton({
   title: string
   helpText?: string
   className?: string
-  tone?: "default" | "onPrimary"
+  tone?: "default" | "onPrimary" | "onSolid"
   side?: "top" | "bottom" | "left" | "right"
 }) {
   const text = helpText ?? getMetricHelp(title)
@@ -186,8 +186,10 @@ function MeasureHelpButton({
           className={cn(
             "shrink-0 rounded-md p-1 transition-colors",
             tone === "onPrimary"
-              ? "text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              ? "text-white/80 hover:bg-white/15 hover:text-white"
+              : tone === "onSolid"
+                ? "text-[var(--pikl-deep-ferment,#004657)]/75 hover:bg-[var(--pikl-deep-ferment,#004657)]/10 hover:text-[var(--pikl-deep-ferment,#004657)]"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             className
           )}
           aria-label={`More information about ${title}`}
@@ -210,7 +212,7 @@ function MetricHelpActions({
 }: {
   title: string
   helpText?: string
-  tone?: "default" | "onPrimary"
+  tone?: "default" | "onPrimary" | "onSolid"
 }) {
   return <MeasureHelpButton title={title} helpText={helpText} tone={tone} />
 }
@@ -223,7 +225,7 @@ function CardCornerLink({
 }: {
   title: string
   onOpenInsights?: () => void
-  tone?: "default" | "onPrimary"
+  tone?: "default" | "onPrimary" | "onSolid"
 }) {
   if (!onOpenInsights) return null
 
@@ -235,8 +237,10 @@ function CardCornerLink({
       className={cn(
         "absolute top-3 right-3 grid size-7 place-items-center rounded-md transition-colors",
         tone === "onPrimary"
-          ? "text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          ? "text-white/80 hover:bg-white/15 hover:text-white"
+          : tone === "onSolid"
+            ? "text-[var(--pikl-deep-ferment,#004657)]/80 hover:bg-[var(--pikl-deep-ferment,#004657)]/10 hover:text-[var(--pikl-deep-ferment,#004657)]"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
       <ArrowUpRight className="size-4" />
@@ -255,7 +259,7 @@ function HeadingWithHelp({
   title: string
   helpTitle?: string
   helpText?: string
-  tone?: "default" | "onPrimary"
+  tone?: "default" | "onPrimary" | "onSolid"
   className?: string
   titleClassName?: string
 }) {
@@ -278,7 +282,7 @@ function LabelWithHelp({
   title: string
   helpTitle?: string
   helpText?: string
-  tone?: "default" | "onPrimary"
+  tone?: "default" | "onPrimary" | "onSolid"
   className?: string
   titleClassName?: string
 }) {
@@ -980,7 +984,7 @@ function PiklStaysDriverCards({
               PANEL,
               "relative flex flex-col gap-4 p-5",
               highlight &&
-                "border-primary/80 bg-gradient-to-br from-primary to-[var(--brand-primary-dark)] text-primary-foreground shadow-sm"
+                "border-[var(--pikl-kimchi-kick,#ed7953)] bg-[var(--pikl-kimchi-kick,#ed7953)] text-white shadow-sm"
             )}
           >
             <CardCornerLink
@@ -990,7 +994,7 @@ function PiklStaysDriverCards({
             />
             <div>
               {highlight ? (
-                <Sigma className="size-4 shrink-0 text-primary-foreground" />
+                <Sigma className="size-4 shrink-0 text-white" />
               ) : (
                 <TileIcon label={driver.label} />
               )}
@@ -1000,13 +1004,13 @@ function PiklStaysDriverCards({
                 title={driver.label}
                 tone={highlight ? "onPrimary" : "default"}
                 titleClassName={
-                  highlight ? "text-primary-foreground/80" : "text-muted-foreground"
+                  highlight ? "text-white/85" : "text-muted-foreground"
                 }
               />
               <p
                 className={cn(
                   "text-xl font-bold tracking-tight tabular-nums",
-                  highlight ? "text-primary-foreground" : "text-foreground"
+                  highlight ? "text-white" : "text-foreground"
                 )}
               >
                 {driver.label === "Total" ? metrics.stays.headline : driver.value}
@@ -1015,7 +1019,7 @@ function PiklStaysDriverCards({
             <p
               className={cn(
                 "mt-auto text-xs",
-                highlight ? "text-primary-foreground/75" : "text-muted-foreground"
+                highlight ? "text-white/80" : "text-muted-foreground"
               )}
             >
               {driver.support}
