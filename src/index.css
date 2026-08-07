@@ -60,58 +60,69 @@ html[data-brand="sykes"] {
 }
 
 /*
-  Pikl skin — softened reading of pikl.com (pink + sage).
-  Dusty rose primary + calm sage accent on warm paper surfaces.
-  Temporary until the new Pikl palette ships.
+  Pikl skin — official primary + secondary palette.
+  Equity: Kimchi Kick + Deep Ferment. Neutrals: Black, White, Pickling Salt.
+  Support: Blush Brine, Gherkin Water, First Fizz.
 */
 html[data-brand="pikl"] {
-  --brand-primary: #b55e76;
-  --brand-primary-dark: #8f4559;
-  --brand-accent: #6f8f7a;
-  --brand-surface: #f3f0ec;
-  --brand-pink: #b55e76;
-  --brand-dark-blue: #8f4559;
-  --brand-light-blue: #f3f0ec;
-  --brand-green: #6f8f7a;
-  --brand-grey-blue: #f7f4f1;
+  /* Named palette */
+  --pikl-black: #151515;
+  --pikl-white: #ffffff;
+  --pikl-pickling-salt: #f3f3eb;
+  --pikl-kimchi-kick: #ed7953;
+  --pikl-pickled-peach: #ffa57f;
+  --pikl-deep-ferment: #004657;
+  --pikl-blush-brine: #ffdbcc;
+  --pikl-gherkin-water: #e3f7e2;
+  --pikl-first-fizz: #fff2b9;
 
-  --background: #fffcfa;
-  --foreground: #1c1a19;
+  --brand-primary: #ed7953;
+  --brand-primary-dark: #004657;
+  --brand-accent: #ffa57f;
+  --brand-surface: #f3f3eb;
+  --brand-pink: #ed7953;
+  --brand-dark-blue: #004657;
+  --brand-light-blue: #f3f3eb;
+  --brand-green: #e3f7e2;
+  --brand-grey-blue: #f7f7f1;
+
+  --background: #f3f3eb;
+  --foreground: #151515;
   --card: #ffffff;
-  --card-foreground: #1c1a19;
-  --canvas: #f7f4f1;
-  --field: #f7f4f1;
+  --card-foreground: #151515;
+  --canvas: #f3f3eb;
+  --field: #ffffff;
 
-  --primary: #b55e76;
+  --primary: #ed7953;
   --primary-foreground: #ffffff;
-  --primary-rgb: 181 94 118;
-  --primary-dark-rgb: 143 69 89;
+  --primary-rgb: 237 121 83;
+  --primary-dark-rgb: 0 70 87;
 
-  --muted: #f1ece8;
-  --muted-foreground: #6a635c;
-  --accent: #e7eee8;
-  --accent-foreground: #3f5748;
-  --border: #e2dad3;
-  --input: #e2dad3;
-  --ring: #b55e76;
+  --muted: #ebebe3;
+  --muted-foreground: #4a5560;
+  --accent: #ffdbcc;
+  --accent-foreground: #004657;
+  --border: #dddcd4;
+  --input: #dddcd4;
+  --ring: #ed7953;
   --popover: #ffffff;
-  --popover-foreground: #1c1a19;
+  --popover-foreground: #151515;
   --destructive: #c2410c;
 
-  --gradient-from: #fffcfa;
-  --gradient-mid: #f7f4f1;
-  --gradient-to: #fffcfa;
-  --glow-pink: rgb(181 94 118 / 0.08);
-  --glow-green: rgb(111 143 122 / 0.08);
-  --glow-blue: rgb(181 94 118 / 0.06);
-  --panel-bg: #fffcfa;
-  --panel-border: rgb(181 94 118 / 0.1);
-  --tooltip: #8f4559;
-  --tooltip-foreground: #fafafa;
+  --gradient-from: #f3f3eb;
+  --gradient-mid: #ffdbcc;
+  --gradient-to: #f3f3eb;
+  --glow-pink: rgb(237 121 83 / 0.1);
+  --glow-green: rgb(227 247 226 / 0.55);
+  --glow-blue: rgb(0 70 87 / 0.08);
+  --panel-bg: #ffffff;
+  --panel-border: rgb(0 70 87 / 0.1);
+  --tooltip: #004657;
+  --tooltip-foreground: #f3f3eb;
 
-  --compare-primary: #b55e76;
-  --compare-comparison: #6f8f7a;
-  --compare-comparison-bar: #557866;
+  --compare-primary: #ed7953;
+  --compare-comparison: #004657;
+  --compare-comparison-bar: #003643;
 }
 
 .dark,
@@ -157,53 +168,63 @@ html.dark[data-brand="sykes"] {
 }
 
 html.dark[data-brand="pikl"] {
-  --brand-primary: #d4899a;
-  --brand-primary-dark: #b55e76;
-  --brand-accent: #8fad98;
-  --brand-surface: #1e2421;
-  --brand-pink: #d4899a;
-  --brand-dark-blue: #b55e76;
-  --brand-light-blue: #1e2421;
-  --brand-green: #8fad98;
-  --brand-grey-blue: #1a1f1c;
+  --pikl-black: #151515;
+  --pikl-white: #ffffff;
+  --pikl-pickling-salt: #f3f3eb;
+  --pikl-kimchi-kick: #ed7953;
+  --pikl-pickled-peach: #ffa57f;
+  --pikl-deep-ferment: #004657;
+  --pikl-blush-brine: #ffdbcc;
+  --pikl-gherkin-water: #e3f7e2;
+  --pikl-first-fizz: #fff2b9;
 
-  --background: #141614;
-  --foreground: #f7f4f1;
-  --card: #1c211e;
-  --card-foreground: #f7f4f1;
-  --canvas: #1a1f1c;
-  --field: #1a1f1c;
+  --brand-primary: #ffa57f;
+  --brand-primary-dark: #ed7953;
+  --brand-accent: #ed7953;
+  --brand-surface: #0a2f38;
+  --brand-pink: #ffa57f;
+  --brand-dark-blue: #ed7953;
+  --brand-light-blue: #0a2f38;
+  --brand-green: #e3f7e2;
+  --brand-grey-blue: #0c252c;
 
-  --primary: #d4899a;
-  --primary-foreground: #1c1a19;
-  --primary-rgb: 212 137 154;
-  --primary-dark-rgb: 181 94 118;
+  --background: #151515;
+  --foreground: #f3f3eb;
+  --card: #1a2a30;
+  --card-foreground: #f3f3eb;
+  --canvas: #0c252c;
+  --field: #0c252c;
 
-  --muted: #1a211c;
-  --muted-foreground: #b5bfb7;
-  --accent: #243028;
-  --accent-foreground: #c5d6c9;
-  --border: #2f3a33;
-  --input: #2f3a33;
-  --ring: #d4899a;
-  --popover: #1c211e;
-  --popover-foreground: #f7f4f1;
-  --destructive: #f0a58a;
+  --primary: #ffa57f;
+  --primary-foreground: #151515;
+  --primary-rgb: 255 165 127;
+  --primary-dark-rgb: 237 121 83;
 
-  --gradient-from: #141614;
-  --gradient-mid: #171c19;
-  --gradient-to: #141614;
-  --glow-pink: rgb(212 137 154 / 0.14);
-  --glow-green: rgb(143 173 152 / 0.12);
-  --glow-blue: rgb(212 137 154 / 0.12);
-  --panel-bg: #1a211c;
-  --panel-border: rgb(212 137 154 / 0.14);
-  --tooltip: #d4899a;
-  --tooltip-foreground: #1c1a19;
+  --muted: #0a2f38;
+  --muted-foreground: #c5cfc8;
+  --accent: #24383a;
+  --accent-foreground: #ffdbcc;
+  --border: #2a454c;
+  --input: #2a454c;
+  --ring: #ffa57f;
+  --popover: #1a2a30;
+  --popover-foreground: #f3f3eb;
+  --destructive: #ffdbcc;
 
-  --compare-primary: #d4899a;
-  --compare-comparison: #8fad98;
-  --compare-comparison-bar: #6f8f7a;
+  --gradient-from: #151515;
+  --gradient-mid: #0a2f38;
+  --gradient-to: #151515;
+  --glow-pink: rgb(255 165 127 / 0.14);
+  --glow-green: rgb(227 247 226 / 0.1);
+  --glow-blue: rgb(0 70 87 / 0.35);
+  --panel-bg: #1a2a30;
+  --panel-border: rgb(255 165 127 / 0.16);
+  --tooltip: #ffa57f;
+  --tooltip-foreground: #151515;
+
+  --compare-primary: #ffa57f;
+  --compare-comparison: #ed7953;
+  --compare-comparison-bar: #004657;
 }
 
 @theme inline {
