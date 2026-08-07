@@ -210,13 +210,11 @@ export function PartnerImpactHero({
                 />
               </div>
               <div className="min-w-0 pr-7">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className={MONO_LABEL}>{PARTNER_IMPACT_HERO.generatedLabel}</p>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-800 uppercase dark:text-emerald-300">
-                    <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
-                    Secured
-                  </span>
-                </div>
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.12em] text-emerald-800 uppercase dark:text-emerald-300">
+                  <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+                  Secured
+                </span>
+                <p className={cn(MONO_LABEL, "mt-2")}>{PARTNER_IMPACT_HERO.generatedLabel}</p>
                 <p className="mt-2 text-[26px] font-bold tracking-tight tabular-nums text-primary sm:text-[28px]">
                   {formatGbp(impact.generated, "exact")}
                 </p>
@@ -269,16 +267,14 @@ export function PartnerImpactHero({
                 />
               </div>
               <div className="min-w-0 pr-7">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className={MONO_LABEL}>{PARTNER_IMPACT_HERO.availableLabel}</p>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.12em] text-amber-800 uppercase dark:text-amber-300">
-                    <span className="relative flex size-1.5">
-                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-500 opacity-60" />
-                      <span className="relative inline-flex size-1.5 rounded-full bg-amber-500" />
-                    </span>
-                    At risk
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.12em] text-amber-800 uppercase dark:text-amber-300">
+                  <span className="relative flex size-1.5">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-500 opacity-60" />
+                    <span className="relative inline-flex size-1.5 rounded-full bg-amber-500" />
                   </span>
-                </div>
+                  At risk
+                </span>
+                <p className={cn(MONO_LABEL, "mt-2")}>{PARTNER_IMPACT_HERO.availableLabel}</p>
                 <p className="mt-2 text-[26px] font-bold tracking-tight tabular-nums text-amber-700 sm:text-[28px] dark:text-amber-400">
                   {formatGbp(periodMissed, "exact")}
                 </p>

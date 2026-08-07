@@ -1007,8 +1007,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                     ? "border-white bg-white text-black"
                     : "border-primary bg-primary text-primary-foreground"
                   : isDarkStage
-                    ? "text-white/80 hover:border-white/30 hover:bg-white/[0.14] hover:text-white"
-                    : "text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                    ? "text-white/80 hover:border-white/35 hover:bg-white/[0.16] hover:text-white"
+                    : "text-foreground hover:border-white/35 hover:bg-[#061428]/88 hover:text-white"
               )}
             >
               <Globe2 className="size-3.5 shrink-0" strokeWidth={2} />
@@ -1029,8 +1029,8 @@ export function InsightsGlobe({ className, onOpenUkDetail, onOpenCountry }: Insi
                         ? "border-white bg-white text-black"
                         : "border-primary bg-primary text-primary-foreground"
                       : isDarkStage
-                        ? "text-white/80 hover:border-white/30 hover:bg-white/[0.14] hover:text-white"
-                        : "text-foreground hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary"
+                        ? "text-white/80 hover:border-white/35 hover:bg-white/[0.16] hover:text-white"
+                        : "text-foreground hover:border-white/35 hover:bg-[#061428]/88 hover:text-white"
                   )}
                 >
                   <CountryFlag code={country.code} />
